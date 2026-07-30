@@ -104,12 +104,12 @@ Chọn **ứng viên 1 — giải thích vùng hình/vùng khoanh trên slide** 
 2. Không trả lời logistics như deadline, điểm, link nộp bài.
 3. Không tóm tắt cả tài liệu hoặc nhiều slide trong một lượt hỏi.
 4. Không sinh quiz, chấm bài, hoặc theo dõi tiến độ học.
-5. Không deploy, không đăng nhập, không lưu lịch sử hội thoại.
+5. Không deploy, không đăng nhập, không lưu lịch sử hội thoại dài hạn; prototype chỉ giữ tối đa vài lượt chữ gần nhất trong phiên trình duyệt để hỏi tiếp đúng vùng vừa hỏi.
 6. Không upload nguyên file PDF; mỗi lượt chỉ được gửi đúng dữ liệu tối thiểu của vùng được hỏi.
 
 ### Mức prototype
 
-Mức nhắm tới: [ ] Sketch  **[x] Mock**  [ ] Working
+Mức nhắm tới: [ ] Sketch  [x] Mock  **[x] Working với AI thật khi có API key**
 
 | Phần | Thật | Mock |
 |---|---|---|
@@ -118,8 +118,11 @@ Mức nhắm tới: [ ] Sketch  **[x] Mock**  [ ] Working
 | Hỏi slide khác nhưng không tự chuyển màn hình | Có | |
 | Guardrail ngoài phạm vi và giới hạn dữ liệu trước khi gửi | Có | |
 | Bảng công khai "đã gửi đi những gì" | Có | |
-| Lời gọi vision sinh câu trả lời | Có hàm `callGemini()` sẵn, cần API key và trace CP3 | Hiện câu trả lời mặc định vẫn qua `MockAI.route()` |
+| Lời gọi vision sinh câu trả lời | Có `Explain.callGemini()`, nút nhập API key, tự chọn model ưu tiên `gemini-3.1-flash-lite-preview`, đã có trace run-01/run-02/run-03 | Vẫn giữ `MockAI.route()` để demo không cần key và làm baseline |
 | Slide demo | | 3 slide SVG tự dựng; slide 24 cố ý không có text layer để demo nhánh quét ảnh |
+| Slide thật trong data pack | Có | `d1-slide-hackathon.pdf` và `d2-slide-hackathon.pdf` có sẵn trong `data/vlearn-pack/slides/`; các deck này có text layer nên thường chạy chế độ đọc text |
+| Hỏi tiếp / ký ức hội thoại ngắn | Có | Chỉ gửi chữ của tối đa 3 lượt trước, lọc đúng trang đang bàn, không gửi lại ảnh hoặc nội dung trang khác |
+| Câu hỏi text thuần không khoanh vùng | Có | Có 4 bậc tìm căn cứ: slide được nêu rõ, vùng đang chọn, vùng vừa hỏi, hoặc trang đang xem |
 
 Chi tiết kỹ thuật: [codebase/README.md](codebase/README.md).
 
@@ -138,7 +141,8 @@ Automation: **[x] augment**  [ ] conditional  [ ] automate
 | 3 | Text chỉ lấy trong vùng chọn + lề 24px, trần 1.200 ký tự | `Explain.buildPayload()` |
 | 4 | Không gửi tên file, tổng số trang, nội dung trang khác | `Explain.buildPayload()` |
 | 5 | Câu ngoài phạm vi bị chặn trước khi đóng gói payload | `Explain.run()` |
-| 6 | User luôn thấy bảng "Đã gửi đi những gì" | `ExplainPanel.addDisclosure()` |
+| 6 | Hội thoại trước nếu có chỉ gồm chữ, tối đa 3 lượt, chỉ của đúng trang đang bàn | `historyFor()`, `Explain.buildPayload()` |
+| 7 | User luôn thấy bảng "Đã gửi đi những gì" | `ExplainPanel.addDisclosure()` |
 
 ### §4b. Nguyên tắc đã áp dụng
 
@@ -148,7 +152,8 @@ Automation: **[x] augment**  [ ] conditional  [ ] automate
 | **G2 — Làm rõ nó làm tốt đến đâu** | Băng trạng thái trang báo trước chế độ `đọc text` hoặc `quét ảnh`; mỗi câu trả lời có badge chế độ đọc |
 | **G8 — Gạt bỏ dễ dàng** | Hỏi về slide khác không kéo user rời slide đang xem; user tự bấm "Đi tới slide" nếu muốn |
 | **G9 — Sửa dễ dàng** | Kéo chuột khoanh tay khi click dò sai; nút "Không phải trang này?"; nút "Giải thích đơn giản hơn"; feedback sai chỗ nào |
-| **G10 — Thu hẹp phạm vi khi nghi ngờ** | Bấm vùng trống thì không đoán; vùng quá nhỏ thì hỏi lại; hỏi không nêu slide thì hỏi lại |
+| **G10 — Thu hẹp phạm vi khi nghi ngờ** | Bấm vùng trống thì không đoán; vùng quá nhỏ/dải mảnh thì hỏi lại; câu hỏi không có căn cứ đủ rõ mới hỏi lại |
+| **G12 — Ghi nhớ tương tác gần** | Câu hỏi tiếp như "chi tiết hơn nữa" bám đúng vùng vừa hỏi, nhưng không kéo lịch sử của trang khác vào payload |
 | **G11 — Giải thích vì sao** | Khung dò hiển thị trực tiếp trên slide; citation trang; thumbnail trang đã đọc |
 | **G15 — Mời feedback chi tiết** | Nút không hài lòng mở ô nhập "Sai chỗ nào?" thay vì chỉ thu thumbs down |
 | **G17 — Quyền kiểm soát tổng** | Bảng dữ liệu đã gửi, giới hạn 1 trang/1 vùng, không tự upload cả tài liệu |
@@ -192,14 +197,16 @@ Automation: **[x] augment**  [ ] conditional  [ ] automate
 | Đường đi | Trong prototype |
 |---|---|
 | **Happy path** | Slide 12 → bấm vào sơ đồ → hệ thống tự khoanh vùng → trả lời giải thích riêng sơ đồ + chip citation trang |
-| **Low-confidence (②)** | Vùng dò quá nhỏ/mảnh hoặc câu hỏi thiếu số slide → hỏi lại, không gắn badge "đã đọc" khi chưa đọc |
-| **Failure / không căn cứ (①)** | Bấm vùng trống hoặc hỏi nguồn không có trên slide → nói không có căn cứ và không đoán |
+| **Low-confidence (②)** | Vùng dò quá nhỏ/mảnh, bấm vào khe hẹp, vùng bị cắt mất ý chính, hoặc câu hỏi quá mơ hồ → hỏi lại/chọn rộng hơn, không đoán từ dữ liệu yếu |
+| **Failure / không căn cứ (①)** | Bấm vùng trống, hỏi số liệu/nguồn không có trên slide, hoặc vùng không đọc được → nói rõ không có căn cứ/không đọc được và không bịa |
 | **Correction** | Kéo khoanh tay để sửa vùng; nhập lại số trang; yêu cầu giải thích đơn giản hơn; gửi feedback sai chỗ nào |
-| **Bị đòi ngoài phạm vi (③)** | Guardrail chặn trước `buildPayload()`, từ chối làm hộ/logistics/đọc nhiều trang và nói rõ không gửi dữ liệu ra ngoài |
+| **Bị đòi ngoài phạm vi (③)** | Guardrail chặn trước `buildPayload()`, từ chối làm hộ/logistics/sinh quiz/đọc nhiều trang và nói rõ không gửi dữ liệu ra ngoài |
 | **Case đặc thù domain (④)** | Biểu đồ/sơ đồ/bảng taxonomy được trả lời theo vùng đã chọn; số liệu và hướng logic phải khớp slide |
+| **Hỏi tiếp / ký ức ngắn** | Câu như "chi tiết hơn nữa" bám vào vùng vừa hỏi; lịch sử gửi đi chỉ là chữ, tối đa 3 lượt và chỉ của đúng trang đang bàn |
+| **Hỏi text thuần** | Nếu không khoanh vùng, hệ thống dùng 4 bậc căn cứ: slide được nêu rõ → vùng đang chọn → vùng vừa hỏi → trang đang xem |
+| **Ngoài tài liệu nhưng là kiến thức chung** | Model được phép trả lời khái niệm chung trong khối riêng `[NGOÀI TÀI LIỆU]`; nếu hỏi số liệu/căn cứ không có trên slide thì chỉ nói là không có, không lấy kiến thức ngoài để lấp |
 
 ---
-
 ## §7. Kiểm thử
 
 ### Chiều chất lượng + định nghĩa kiểm chứng được
@@ -213,22 +220,22 @@ Automation: **[x] augment**  [ ] conditional  [ ] automate
 
 ### Golden set
 
-Golden set: [eval/golden-set.md](eval/golden-set.md), bản máy đọc được: [eval/cases.js](eval/cases.js).
+Golden set gốc: [eval/golden-set.md](eval/golden-set.md); bản máy đọc được và đang dùng để chạy thật: [eval/cases.js](eval/cases.js). Sau merge, nguồn chốt để đo CP4 là `eval/cases.js` và [eval/run-03.md](eval/run-03.md): **55 case**. Các nhóm dưới đây có thể chồng lắp, vì một case vừa có thể là PDF thật, vừa là case từ chatlog, vừa thuộc một lớp lỗi.
 
-| Cơ cấu | Số case |
+| Nhãn chính trong `eval/cases.js` | Số case |
 |---|---:|
-| ① Nguồn sự thật | 3 |
-| ② Mơ hồ / thiếu thông tin | 3 |
-| ③ Ngoài phạm vi / thẩm quyền | 2 |
-| ④ Đặc thù domain | 3 |
-| Case thường | 8 |
+| ① Nguồn sự thật | 7 |
+| ② Mơ hồ / thiếu thông tin | 8 |
+| ③ Ngoài phạm vi / thẩm quyền | 6 |
+| ④ Đặc thù domain | 5 |
+| Case thường | 15 |
 | Case hiếm | 3 |
-| Case nhận diện click + giới hạn dữ liệu | 6 |
-| Case trên PDF thật | 4 |
-| **Tổng** | **32** |
+| Case dò vùng | 3 |
+| Case giới hạn dữ liệu | 4 |
+| Case PDF riêng `P01-P04` | 4 |
+| **Tổng case chạy ở run-03** | **55** |
 
-Rubric yêu cầu ≥10 case lấy/phát triển từ chatlog thật. Hiện [eval/golden-set.md](eval/golden-set.md) vẫn ghi phần này là thiếu. Cần cập nhật các case C09, C12-C19, C22 bằng mã nguồn chatlog từ nhóm ví dụ ở §1 để đạt chuẩn R4.
-
+Các nhóm bổ sung có chồng lắp với bảng trên: **14 case L01-L14** lấy/phát triển từ chatlog thật; **3 case F01-F03** kiểm tra hỏi tiếp/ký ức hội thoại; **6 case T01-T06** kiểm tra câu hỏi text thuần và ranh giới ngoài tài liệu; **11 case dùng `src: "pdf"`** chạy trên `d1-slide-hackathon.pdf`. Rubric yêu cầu ≥10 case từ chatlog thật, nên phần này đã đạt về số lượng.
 ### Quality bar
 
 Quality bar chốt:
@@ -246,10 +253,22 @@ Lý do chọn bar: lát cắt có rủi ro chính là tutor bịa hoặc trả l
 | Lượt | Chế độ | Case | Máy chấm | G/S/H/C | Đạt bar? | File |
 |---|---|---:|---:|---|---|---|
 | 00 | MOCK | 32 | 55/55 điều kiện, **100%** | Chưa chấm người | Không tính cho R4 | [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
-| 01 | AI thật | Chưa chạy | Chưa có | Chưa có | Chưa kết luận | [eval/run-01.md](eval/run-01.md) |
+| 01 | AI thật, `gemini-flash-latest` | 32 | 45/55 điều kiện, 82%; 23/32 case đạt hết điều kiện máy chấm | Chưa chấm người | Chưa kết luận | [eval/run-01.md](eval/run-01.md) |
+| 02 | AI thật, `gemini-3.1-flash-lite-preview` | 46 | 72/76 điều kiện, **95%**; 43/46 case đạt hết điều kiện máy chấm | Chưa chấm người | Chưa kết luận | [eval/run-02.md](eval/run-02.md) |
+| 03 | AI thật, `gemini-3.1-flash-lite-preview` | 55 | 90/95 điều kiện, **95%**; 52/55 case đạt hết điều kiện máy chấm | Chưa chấm người | Chưa kết luận | [eval/run-03.md](eval/run-03.md) |
 
-Failure quan trọng từ lượt 00: trên slide thật thưa nội dung, tỷ lệ dò trúng ở hai trang đầu chỉ 3/15 và 4/15 điểm thử. Không nên nới bán kính hút khối một cách thô vì sẽ phá case bấm vùng trống; hướng sửa là thêm nhánh xác nhận "bạn muốn hỏi khối này?" khi vùng gần nhưng chưa đủ chắc.
+Kết quả chốt hiện tại cho CP4 là **run-03: 52/55 case đạt hết điều kiện máy chấm, 0 lần bị 429, 48 trace thật** ở [codebase/server/traces/traces-run03.json](codebase/server/traces/traces-run03.json). Run-03 cũng phát hiện 2 failure thật cùng gốc: `C28` và `L10` để lọt yêu cầu tóm tắt/đọc cả tài liệu, tức phá đúng ràng buộc dữ liệu quan trọng nhất. Theo [eval/run-03.md](eval/run-03.md), đã sửa hướng guardrail theo bản chất yêu cầu và chuyển guardrail chạy trước nhánh số trang, nhưng cần **run-04** xác nhận.
 
+Bốn chiều G/S/H/C vẫn chưa được chấm bằng người. Việc còn thiếu lớn nhất cho R4 là hai thành viên chấm độc lập cùng bảng output rồi so lệch; các cột trong `run-03.md` hiện còn để trống.
+
+Failure/risks cần đưa vào kế hoạch tiếp theo:
+
+| Vấn đề | Trạng thái |
+|---|---|
+| `C28`/`L10` lọt yêu cầu đọc/tóm tắt cả tài liệu | Đã sửa guardrail sau run-03, cần run-04 xác nhận |
+| `T06` fail vì điều kiện máy chấm đòi luôn có gợi ý follow-up, trái với prompt | Đã quyết định bỏ điều kiện này, coi tỷ lệ gợi ý là chỉ số mức độ |
+| Độ trễ run-03 tăng mạnh: median 4.465ms, p90 14.971ms, max 26.948ms | Rủi ro demo live; nên đo lại trên model stable và/hoặc làm streaming |
+| Chấm G/S/H/C bằng người | Chưa làm, bắt buộc để kết luận đạt quality bar |
 ---
 
 ## §8. Phân công & kế hoạch
@@ -304,3 +323,6 @@ Trục khác biệt đã cân nhắc:
 | 30/07/2026 | Giữ nhánh quét ảnh nhưng khai rõ slide 24 là mock | Deck thật hiện không kích hoạt được nhánh quét ảnh; cần minh bạch mức prototype |
 | 30/07/2026 | Thêm case PDF thật P04 bấm vào khoảng trắng | Lượt đầu P02 rơi vào khoảng trắng; cần case riêng để chấm hành vi "không đoán" trên PDF thật |
 | 30/07/2026 | Đặt quality bar 80% + không fail H + 100% guardrail lớp ③ không gửi payload | Rủi ro lớn nhất là bịa khi không chắc và gửi dữ liệu không cần thiết |
+| 30/07/2026 | Cập nhật spec sau merge: CP3 đã chạy AI thật, runner lên 55 case, run-03 đạt 52/55 case theo máy chấm | `STATUS.md`, `eval/cases.js` và `eval/run-03.md` đã mới hơn bản spec cũ |
+| 30/07/2026 | Bổ sung ký ức hội thoại ngắn, câu hỏi text thuần, và khối `[NGOÀI TÀI LIỆU]` vào thiết kế/trải nghiệm | Codebase đã có `historyFor()`, 4 bậc tìm căn cứ và parser tách phần kiến thức chung ngoài slide |
+| 30/07/2026 | Ghi rõ failure còn mở từ run-03: `C28`/`L10` lọt yêu cầu đọc/tóm tắt cả tài liệu, cần run-04 xác nhận sau sửa guardrail | Đây là rủi ro trực tiếp với giới hạn dữ liệu 1 trang/1 lượt |
