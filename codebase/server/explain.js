@@ -18,6 +18,34 @@
 const Explain = {
   _promptTemplate: null,
 
+  // --- Kiểm key + tự chọn model ---
+  // Gọi ListModels để biết key này dùng được model nào. Làm vậy để không
+  // phải đoán tên model (đoán sai là nhận 404 ngay giữa lúc demo).
+  async listModels(key) {
+    const res = await fetch(`${CONFIG.GEMINI_ENDPOINT}?key=${key}&pageSize=100`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status}${body ? " — " + body.slice(0, 200) : ""}`);
+    }
+    const data = await res.json();
+    return (data.models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map((m) => ({
+        id: m.name.replace(/^models\//, ""),
+        display: m.displayName || m.name,
+        inputLimit: m.inputTokenLimit,
+      }));
+  },
+
+  // Chọn model theo thứ tự ưu tiên trong CONFIG.GEMINI_PREFER
+  pickModel(models) {
+    for (const pref of CONFIG.GEMINI_PREFER) {
+      const hit = models.find((m) => m.id.includes(pref));
+      if (hit) return hit.id;
+    }
+    return models[0] ? models[0].id : null;
+  },
+
   // --- Quyết định 1: đọc bằng cách nào ---
   // "text" = trang có lớp text -> grounding bằng text trong vùng (nhanh, rẻ)
   // "scan" = trang không có lớp text (slide ảnh/scan) -> cho model NHÌN ảnh vùng
@@ -102,6 +130,13 @@ const Explain = {
         mode, grounded: false,
       };
     }
+    const model = CONFIG.GEMINI_MODEL || localStorage.getItem("GEMINI_MODEL");
+    if (!model) {
+      return {
+        text: "Chưa chọn được model. Bấm **API key** trên header để app dò lại danh sách model của key này.",
+        mode, grounded: false,
+      };
+    }
 
     let prompt;
     try {
@@ -121,44 +156,67 @@ const Explain = {
       parts.push({ inlineData: { mimeType: "image/png", data: stripDataUrl(image) } });
     }
 
-    const url = `${CONFIG.GEMINI_ENDPOINT}/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`;
+    const url = `${CONFIG.GEMINI_ENDPOINT}/${model}:generateContent?key=${key}`;
     const started = performance.now();
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ role: "user", parts }] }),
-    });
+    let res;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ role: "user", parts }] }),
+      });
+    } catch (err) {
+      return { text: `Không gọi được model (mạng): ${err.message}`, mode, grounded: false };
+    }
     if (!res.ok) {
-      return { text: `Gọi model lỗi (${res.status}). Bạn thử lại giúp mình nhé.`, mode, grounded: false };
+      const body = await res.text().catch(() => "");
+      const hint = res.status === 404
+        ? ` — model \`${model}\` không dùng được với key này. Bấm **API key** để dò lại danh sách.`
+        : res.status === 429 ? " — vượt quota free tier, chờ một lát rồi thử lại." : "";
+      console.warn("[AI ERROR]", res.status, body.slice(0, 500));
+      return { text: `Gọi model lỗi (${res.status})${hint}`, mode, grounded: false };
     }
     const data = await res.json();
     const answer = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "";
+    const blockReason = data?.promptFeedback?.blockReason
+      || data?.candidates?.[0]?.finishReason;
 
     // Trace cho R5 ("≥1 lời gọi AI thật, có log/trace trong repo").
-    // Ghi cả disclosure để chứng minh được đã gửi đi đúng những gì đã khai.
+    // Ghi cả disclosure để chứng minh đã gửi đi đúng những gì đã khai.
     const trace = {
       page: page.num, mode, question: question || "(trống)",
-      model: CONFIG.GEMINI_MODEL,
+      model,
       latency_ms: Math.round(performance.now() - started),
       usage: data?.usageMetadata || null,
+      finish_reason: blockReason || null,
       sent: disclosure,
       answer,
     };
     console.log("[AI TRACE]", JSON.stringify(trace, null, 2));
+    Explain.traces.push(trace);
 
+    if (!answer) {
+      return {
+        text: `Model không trả về nội dung${blockReason ? ` (lý do: ${blockReason})` : ""}.`,
+        mode, grounded: false, trace,
+      };
+    }
     return {
-      text: answer || "Model không trả về nội dung.",
+      text: answer,
       citation: `Trang ${page.num}${mode === "scan" ? " (quét ảnh)" : ""}`,
       mode, raw: data, trace,
     };
   },
 
+  // Bộ trace của phiên hiện tại — runner tải xuống thành file cho eval/
+  traces: [],
+
   // Prompt là file riêng (server/prompts/explain-region.md) để sửa được
   // mà không đụng code, và để trình bày ở CP5 khi bị hỏi về prompt.
   async buildPrompt({ question, text, page, mode }) {
     if (!this._promptTemplate) {
-      const res = await fetch("../server/prompts/explain-region.md");
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      const res = await fetch(CONFIG.PROMPT_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status} khi tải ${CONFIG.PROMPT_URL}`);
       this._promptTemplate = await res.text();
     }
     const grounding =

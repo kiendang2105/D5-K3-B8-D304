@@ -6,6 +6,8 @@
 
 Khi gặp sơ đồ, biểu đồ hoặc hình minh hoạ trong slide, học viên không nhờ được AI Tutor giải thích vì tutor chưa đọc được hình ảnh và chưa nhận biết được vùng nội dung được chọn.
 
+> 👉 **Vào nhóm giữa chừng, hoặc lâu chưa mở repo?** Đọc [STATUS.md](STATUS.md) — đang làm gì, đang dở chỗ nào, nhảy vào đâu.
+
 ## Thành viên & phân công
 
 > ⚠️ **Điền trước khi nộp** — R7 cho 1 điểm cho việc phân công có tên người cho từng phần. Mỗi người phải giải thích được phần mang tên mình (vibe-coding rule, kiểm tại CP5).
@@ -36,6 +38,7 @@ Chi tiết phần nào mock / phần nào thật: [codebase/README.md](codebase/
 
 ```
 ├── README.md              ← file này: thành viên + phân công
+├── STATUS.md              ← đang làm gì / dở chỗ nào / việc còn trống
 ├── spec.md                ← AI Spec (hạn cứng 23:59 N1)
 ├── demo-slides.pdf        ← slide 6 trang
 ├── codebase/              ← prototype

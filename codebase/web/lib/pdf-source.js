@@ -116,16 +116,28 @@ class PdfSource {
     this.cache = new Map();
   }
 
+  // Từ file người dùng chọn (nút "Mở PDF…")
   static async open(file) {
+    return PdfSource.openBuffer(await file.arrayBuffer(), file.name);
+  }
+
+  // Từ URL — dùng bởi eval/runner.html để chạy golden set trên PDF thật
+  static async openUrl(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Không tải được PDF (HTTP ${res.status}): ${url}`);
+    const name = url.split("/").pop();
+    return PdfSource.openBuffer(await res.arrayBuffer(), name);
+  }
+
+  static async openBuffer(buf, name) {
     if (!window.pdfjsLib) {
       await loadScriptOnce(CONFIG.PDFJS_URL);
       // Worker cross-origin có thể bị chặn; pdf.js tự lùi về fake worker
       // (chạy trên main thread) — chậm hơn chút nhưng vẫn đúng kết quả.
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = CONFIG.PDFJS_WORKER_URL;
     }
-    const buf = await file.arrayBuffer();
     const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
-    return new PdfSource(pdf, file.name);
+    return new PdfSource(pdf, name);
   }
 
   get pageCount() {
@@ -145,6 +157,20 @@ class PdfSource {
 
   rangeText() {
     return `trang 1–${this.pdf.numPages}`;
+  }
+
+  // Chỉ đo độ dài lớp text, KHÔNG render trang. Dùng để khảo sát nhanh cả
+  // tài liệu xem trang nào phải quét ảnh — render 1536px mỗi trang chỉ để
+  // đếm ký tự là quá đắt.
+  async textLenOf(num) {
+    if (!this.hasPage(num)) return null;
+    if (this._textLens && this._textLens.has(num)) return this._textLens.get(num);
+    this._textLens = this._textLens || new Map();
+    const p = await this.pdf.getPage(num);
+    const tc = await p.getTextContent();
+    const len = tc.items.map((i) => i.str).join(" ").replace(/\s+/g, " ").trim().length;
+    this._textLens.set(num, len);
+    return len;
   }
 
   async getPage(num) {

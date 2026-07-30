@@ -49,15 +49,32 @@ const CONFIG = {
   SCAN_MAX_WIDTH: 1536,
 
   // --- Lời gọi AI ---
-  // CP2 = false (mock). CP3 = true + đặt key bằng nút "Cấu hình API key"
-  // (key lưu ở localStorage của trình duyệt, KHÔNG commit vào repo).
+  // Bật/tắt bằng nút "API key" trên header. Có key trong localStorage thì
+  // tự bật AI thật; xoá key thì quay lại mock.
+  // Key KHÔNG BAO GIỜ được commit vào repo.
   USE_REAL_AI: false,
-  GEMINI_MODEL: "gemini-flash-latest",
-  GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models",
 
-  // --- pdf.js (bản UMD, nạp khi user mở PDF) ---
-  PDFJS_URL: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
-  PDFJS_WORKER_URL: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+  // Tên model không hardcode: sau khi nhập key, app gọi ListModels để xem
+  // key đó thực sự dùng được model nào rồi tự chọn — tránh đoán sai tên
+  // model và nhận 404 giữa lúc demo.
+  GEMINI_MODEL: null,
+  GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models",
+  // Thứ tự ưu tiên khi tự chọn model (khớp theo chuỗi con trong tên)
+  GEMINI_PREFER: ["flash-latest", "2.5-flash", "2.0-flash", "flash", "pro"],
+
+  // Đường dẫn file prompt, tính từ trang đang mở. eval/runner.html ghi đè
+  // giá trị này vì nó nằm ở thư mục khác.
+  PROMPT_URL: "../server/prompts/explain-region.md",
+
+  // --- pdf.js (bản UMD 3.11.174, nạp khi user mở PDF) ---
+  // Để LOCAL, không dùng CDN, vì hai lý do:
+  //   1. Worker phải CÙNG ORIGIN — Chrome/Edge chặn tạo Worker từ URL khác
+  //      origin, và pdf.js treo (không resolve, không reject) khi worker
+  //      không init được. Đã gặp thật khi dùng CDN.
+  //   2. Demo tại CP6 không phụ thuộc mạng.
+  // eval/runner.html ghi đè hai giá trị này vì nó nằm ở thư mục khác.
+  PDFJS_URL: "vendor/pdf.min.js",
+  PDFJS_WORKER_URL: "vendor/pdf.worker.min.js",
 };
 
 // Nhận diện số slide trong câu hỏi: "giải thích slide 12", "trang 3 nói gì"

@@ -7,9 +7,18 @@
 | **Phiên bản prototype** | ⬜ *commit hash* |
 | **Model** | ⬜ *vd: gemini-flash-latest* |
 | **Prompt** | `codebase/server/prompts/explain-region.md` @ ⬜ *commit hash* |
-| **Chế độ** | ⬜ AI thật · ⬜ mock |
+| **Chế độ** | AI thật (bắt buộc cho lượt này) |
+| **Số trace thu được** | ⬜ *(phải > 0)* |
 
-> ⚠️ **Chưa chạy.** Bảng dưới phải điền bằng output THẬT của prototype. Rubric: bảng phải đủ **mọi case kể cả case chưa đạt** — kết quả thấp vẫn được tính đủ điểm nếu ghi nhận trung thực và có phân tích nguyên nhân; số liệu bị chỉnh sửa hoặc che giấu thì không.
+> ⚠️ **Chưa chạy — đây là lượt đo với AI THẬT.** Baseline chế độ mock đã có ở
+> [run-00-baseline-mock.md](run-00-baseline-mock.md) (32/32 case, 55/55 điều kiện máy chấm).
+>
+> **Cách chạy:** bật AI thật ở app (nút **API key**) → mở `eval/runner.html` qua server tĩnh
+> → bấm *"Chạy trọn bộ golden set"* → copy bảng markdown vào mục dưới, tải `traces.json`
+> vào `codebase/server/traces/`.
+>
+> Rubric: bảng phải đủ **mọi case kể cả case chưa đạt** — kết quả thấp vẫn được tính đủ điểm
+> nếu ghi nhận trung thực và có phân tích nguyên nhân; số liệu bị chỉnh sửa hoặc che giấu thì không.
 
 ## Kết quả từng case
 

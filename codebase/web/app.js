@@ -46,6 +46,7 @@ const App = {
     document.getElementById("btn-mock").onclick = () => this.useMock();
     document.getElementById("btn-key").onclick = () => this.configKey();
 
+    this.restoreKey();
     await this.useMock();
   },
 
@@ -304,24 +305,67 @@ const App = {
 
   // ---------- API key (CP3) ----------
 
-  configKey() {
+  async configKey() {
     const cur = localStorage.getItem("GEMINI_API_KEY") || "";
     const v = prompt(
-      "Nhập Gemini API key (chỉ lưu trong localStorage của trình duyệt này, KHÔNG commit vào repo).\n" +
+      "Nhập Gemini API key (lấy ở aistudio.google.com/apikey).\n" +
+      "Key chỉ lưu trong localStorage của trình duyệt này, KHÔNG commit vào repo.\n\n" +
       "Để trống = xoá key và quay lại chế độ mock.",
       cur
     );
     if (v === null) return;
-    if (v.trim()) {
-      localStorage.setItem("GEMINI_API_KEY", v.trim());
-      CONFIG.USE_REAL_AI = true;
-      document.getElementById("badge-mode").textContent = "CP3 · AI THẬT";
-      document.getElementById("badge-mode").classList.add("real");
-    } else {
+
+    if (!v.trim()) {
       localStorage.removeItem("GEMINI_API_KEY");
+      localStorage.removeItem("GEMINI_MODEL");
       CONFIG.USE_REAL_AI = false;
-      document.getElementById("badge-mode").textContent = "CP2 · MOCK — chưa gọi AI thật";
-      document.getElementById("badge-mode").classList.remove("real");
+      CONFIG.GEMINI_MODEL = null;
+      this.setModeBadge(false);
+      ExplainPanel.addSystemNote("Đã xoá key → quay lại chế độ **mock**.");
+      return;
+    }
+
+    const key = v.trim();
+    const note = ExplainPanel.addSystemNote("Đang kiểm key và dò danh sách model…");
+
+    // Dò model thay vì hardcode tên: key khác nhau mở khoá model khác nhau
+    try {
+      const models = await Explain.listModels(key);
+      if (!models.length) throw new Error("key hợp lệ nhưng không có model nào dùng được");
+
+      const picked = Explain.pickModel(models);
+      localStorage.setItem("GEMINI_API_KEY", key);
+      localStorage.setItem("GEMINI_MODEL", picked);
+      CONFIG.GEMINI_MODEL = picked;
+      CONFIG.USE_REAL_AI = true;
+      this.setModeBadge(true, picked);
+
+      const others = models.filter((m) => m.id !== picked).slice(0, 8).map((m) => m.id);
+      note.innerHTML = mdBold(
+        `Key hợp lệ. Đang dùng model **${picked}** (${models.length} model khả dụng).\n\n` +
+        (others.length ? `Model khác: ${others.join(", ")}` : "") +
+        `\n\nĐổi model: chạy \`localStorage.setItem("GEMINI_MODEL","<tên>")\` trong Console rồi tải lại trang.`);
+    } catch (err) {
+      note.innerHTML = mdBold(
+        `**Key không dùng được:** ${err.message}\n\n` +
+        "Kiểm lại key ở aistudio.google.com/apikey. Vẫn đang ở chế độ mock.");
+    }
+  },
+
+  setModeBadge(real, model) {
+    const b = document.getElementById("badge-mode");
+    b.textContent = real ? `CP3 · AI THẬT · ${model}` : "CP2 · MOCK — chưa gọi AI thật";
+    b.classList.toggle("real", !!real);
+  },
+
+  // Có key sẵn từ phiên trước thì bật AI thật luôn
+  restoreKey() {
+    const key = localStorage.getItem("GEMINI_API_KEY");
+    const model = localStorage.getItem("GEMINI_MODEL");
+    if (key && model) {
+      CONFIG.GEMINI_MODEL = model;
+      CONFIG.USE_REAL_AI = true;
+      this.setModeBadge(true, model);
     }
   },
 };

@@ -62,7 +62,9 @@ Loại: **[x] Tối ưu tính năng có sẵn**  [ ] Tính năng mới
 
 ### Ứng viên đã loại + vì sao
 
-**B — Bắt tutor luôn trích dẫn trang.** Con số mining mạnh nhất (46,2%, đếm được, kiểm lại được) nhưng nguyên nhân nằm ở tầng retrieval của tutor hiện tại, không phải ở tầng trả lời. Sửa đúng chỗ đó là việc của team kỹ thuật VLearn, không demo được trong 5 phút. *Giữ lại làm bối cảnh cho A: một phần của 46,2% này chính là các slide dạng ảnh không rút được text — A xử lý đúng phần đó.*
+**B — Bắt tutor luôn trích dẫn trang.** Con số mining mạnh nhất (46,2%, đếm được, kiểm lại được) nhưng nguyên nhân nằm ở tầng retrieval của tutor hiện tại, không phải ở tầng trả lời. Sửa đúng chỗ đó là việc của team kỹ thuật VLearn, không demo được trong 5 phút.
+
+> ⚠️ **Đã kiểm và phải sửa lại giả thuyết.** Bản trước của spec này viết *"một phần của 46,2% là do slide dạng ảnh không rút được text"*. Đo thật trên hai deck được cấp (`d1`/`d2-slide-hackathon.pdf`, 29 trang mỗi deck) thì **cả 58 trang đều có lớp text** (132–1331 ký tự/trang, ngưỡng 30). Vậy giả thuyết đó **không có bằng chứng** trên tài liệu này — đã bỏ. Số đo: [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md).
 
 **C — Tutor chủ động kiểm tra hiểu bài.** Khả thi về kỹ thuật, nhưng "hiểu thật" là một chiều chất lượng khó định nghĩa kiểm chứng được trong 1,5 ngày; nguy cơ golden set toàn case cảm tính.
 
@@ -237,11 +239,23 @@ VÀ không có case nào fail chiều H (trung thực khi không chắc).
 
 *Điều kiện cứng chọn H vì: bịa ra một lời giải thích nghe hợp lý cho sơ đồ là lỗi nguy hiểm nhất của lát cắt — học viên không có cách nào tự phát hiện.*
 
+### Cách chạy
+
+`eval/runner.html` chạy trọn bộ một lượt và xuất bảng markdown + traces. Máy chấm phần cơ học (kích thước vùng dò, số trang gửi đi, có từ chối/hỏi lại không); bốn chiều G/S/H/C vẫn chấm bằng người.
+
+```bash
+npx serve .            # hoặc: python -m http.server 8765
+# mở http://localhost:PORT/eval/runner.html
+```
+
 ### Kết quả các lượt chạy
 
-| Lượt | Thời điểm | % qua bộ | Đạt bar? | File |
-|---|---|---|---|---|
-| 01 | ⬜ | ⬜ | ⬜ | [eval/run-01.md](eval/run-01.md) |
+| Lượt | Chế độ | Case | Máy chấm | G/S/H/C | Đạt bar? | File |
+|---|---|---|---|---|---|---|
+| 00 | **MOCK** | 32 | **100%** (55/55 điều kiện) | chưa chấm | — *(baseline, không tính R4)* | [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
+| 01 | AI thật | ⬜ | ⬜ | ⬜ | ⬜ | [eval/run-01.md](eval/run-01.md) |
+
+**Failure đau nhất từ lượt 00:** trên slide thật có nhiều khoảng trắng, tỉ lệ dò trúng chỉ **3/15 và 4/15 điểm** ở hai trang đầu của `d1` (mật độ nội dung 4,2% và 6,1%); trang dày nội dung thì 15/15. Bán kính hút khối gần nhất đang quá nhỏ. **Không nới ngưỡng** vì sẽ phá case bấm-vào-vùng-trống (①). Hướng sửa: hai mức — gần thì trả lời, xa thì hỏi lại kèm khung dò, quá xa thì nhánh ①.
 
 ---
 

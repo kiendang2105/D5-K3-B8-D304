@@ -8,14 +8,24 @@
 codebase/web/index.html      ← mở thẳng bằng trình duyệt: chạy ngay với slide mẫu
 ```
 
-Đủ để demo toàn bộ 4 đường đi trải nghiệm + nhánh quét ảnh. **Mở PDF thật** và **gọi AI thật** cần chạy qua server tĩnh (pdf.js phải tải worker; prompt được nạp từ file):
+Đủ để demo toàn bộ 4 đường đi trải nghiệm + nhánh quét ảnh. **Mở PDF thật** và **gọi AI thật** cần chạy qua server tĩnh (Worker của pdf.js không tạo được từ `file://`; prompt nạp bằng fetch):
 
 ```bash
-npx serve codebase        # lưu ý: serve từ codebase/, KHÔNG phải codebase/web/
-# mở http://localhost:3000/web/index.html
+npx serve .            # hoặc: python -m http.server 8765   (chạy từ GỐC REPO)
+# app:    http://localhost:PORT/codebase/web/index.html
+# runner: http://localhost:PORT/eval/runner.html
 ```
 
-*(Serve từ `codebase/` vì `web/index.html` nạp `../server/explain.js`.)*
+*(Serve từ gốc repo vì runner cần đọc `data/vlearn-pack/slides/*.pdf`.)*
+
+## Bật AI thật (CP3)
+
+1. Lấy key ở [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+2. Bấm **API key** trên header, dán key.
+3. App gọi `ListModels` để xem key đó dùng được model nào rồi **tự chọn** — không hardcode tên model (đoán sai tên là nhận 404 giữa lúc demo). Badge đổi thành `CP3 · AI THẬT · <tên model>`.
+4. Đổi model thủ công: `localStorage.setItem("GEMINI_MODEL","<tên>")` trong Console rồi tải lại.
+
+Key lưu trong `localStorage` của trình duyệt, **không bao giờ vào repo**. Mỗi lời gọi in `[AI TRACE]` ra Console và cộng vào `Explain.traces` — runner tải xuống thành `traces.json` cho `server/traces/`.
 
 ## Cấu trúc
 
@@ -37,6 +47,7 @@ codebase/
 │       ├── pdf-source.js         ← nguồn slide: MockSource | PdfSource (pdf.js)
 │       ├── content-detector.js   ← dò khối nội dung tại chỗ bấm + cắt ảnh vùng
 │       └── mock-ai.js            ← router mock (CP2)
+│   └── vendor/                   ← pdf.js 3.11.174 để local (xem ghi chú dưới)
 └── server/
     ├── explain.js                ← QUYẾT ĐỊNH AI TRUNG TÂM — CP3 chỉ sửa file này
     ├── prompts/
@@ -45,6 +56,8 @@ codebase/
 ```
 
 **Vì sao `server/` chạy ở client:** mức prototype là Mock nên `explain.js` được nạp thẳng vào trang, không dựng backend riêng. Khi tách backend thật, đem nguyên hàm `callGemini()` sang server và đổi `fetch` trong `Explain.run()` — giao diện không đổi.
+
+**Vì sao vendor pdf.js thay vì dùng CDN:** Chrome/Edge chặn tạo `Worker` từ URL khác origin, và pdf.js **treo** (không resolve, không reject) khi worker không init được — đã gặp thật khi thử CDN. Để local thì worker cùng origin, và demo tại CP6 không phụ thuộc mạng.
 
 ## Tính năng: click một phát là nhận diện được vùng
 

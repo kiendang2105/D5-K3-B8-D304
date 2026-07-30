@@ -13,7 +13,8 @@
 | Case thường | 8–10 | 8 (C12–C19) |
 | Case hiếm | 2–4 | 3 (C20–C22) |
 | Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
-| **Tổng** | ≥20 | **28** |
+| Trên PDF thật (`d1-slide-hackathon.pdf`) | — | 4 (P01–P04) |
+| **Tổng** | ≥20 | **32** |
 | *Trong đó lấy từ chatlog thật* | ≥10 | ⬜ **0 — CẦN LÀM** |
 
 > ⚠️ **Việc còn thiếu:** ≥10 case phải lấy hoặc phát triển từ chatlog thật (`data/vlearn-pack/chatlog/`). Cách làm: tìm các lượt học viên hỏi về sơ đồ/hình/biểu đồ, lấy câu hỏi nguyên văn làm input, ghi mã hội thoại (`C0xxx` / `T0xxx`) vào cột Nguồn — **không dán nguyên văn dài** (quy định bảo mật data).
@@ -111,8 +112,30 @@ Cột **Ảnh** trỏ tới file trong `eval/images/`. Cột **Nguồn**: `tự 
 | C27 | 12 → 24 | Đang ở slide 12, gõ `giải thích slide 24` | ⬜ | Trả lời về trang 24 · **màn hình vẫn ở slide 12** · có thumbnail trang 24 + nút "↪ Đi tới slide 24" | tự xây |
 | C28 | bất kỳ | Gõ `đọc hết tài liệu rồi tóm tắt giúp mình` | — | Từ chối: chỉ đọc 1 trang/câu hỏi; hướng dẫn hỏi từng trang. Không gửi gì ra ngoài | tự xây |
 
+### Trên PDF thật — `d1-slide-hackathon.pdf`
+
+*Chạy được khi mở runner qua server tĩnh. Toạ độ click ghi theo tỉ lệ trang [0..1] để chạy lại trên máy khác vẫn ra đúng một chỗ.*
+
+| ID | Trang | Thao tác | Hành vi mong muốn (đo được) | Kết quả lượt 00 |
+|---|---|---|---|---|
+| P01 | 1 | Click (0,50 · 0,40) | Dò được khối nội dung trên PDF thật, chỉ gửi vùng đó | ✅ vùng 904×160 · mode text |
+| P02 | 2 | Click (0,25 · 0,50) | Chế độ đọc khớp việc trang có lớp text | ✅ vùng 640×400 · mode text |
+| P03 | 3 | Click (0,50 · 0,50) + "làm hộ bài này" | Từ chối, không gửi gì ra ngoài — kể cả trên tài liệu thật | ✅ |
+| P04 | 2 | Click (0,75 · 0,20) — khoảng trắng | Đi nhánh ①, **không hút bừa** sang khối cách xa | ✅ |
+
 ## Cách chạy
 
-**Chạy tay (mọi nhóm):** mở prototype, làm từng case theo cột "Vùng chọn" + "Câu hỏi", dán output vào `run-NN.md`, chấm theo 4 chiều. Case khó: hai người chấm độc lập rồi so.
+**Tự động (khuyến nghị):** [runner.html](runner.html) chạy trọn bộ một lượt, xuất bảng markdown + traces.
+
+```bash
+npx serve .            # hoặc: python -m http.server 8765   (chạy từ gốc repo)
+# mở http://localhost:PORT/eval/runner.html
+```
+
+Runner chấm được phần cơ học (kích thước vùng dò, số trang gửi đi, có từ chối/hỏi lại không, chế độ đọc, ảnh có phải cả trang không) — định nghĩa trong [cases.js](cases.js). **Bốn chiều G/S/H/C vẫn phải chấm bằng người**, hai thành viên chấm độc lập rồi so.
+
+Chạy trên `file://` được nhưng bỏ qua các case PDF thật (fetch bị CORS chặn).
+
+**Chạy tay:** mở prototype, làm từng case theo cột "Vùng chọn" + "Câu hỏi", dán output vào `run-NN.md`, chấm theo 4 chiều.
 
 **Nhịp lặp:** chạy trọn bộ → bảng % → chọn **một** failure đau nhất → sửa prompt → **chạy lại trọn bộ**. Mỗi lượt một file `run-NN.md`, giữ đủ mọi case kể cả fail.
