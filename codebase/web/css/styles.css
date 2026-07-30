@@ -208,6 +208,15 @@ body.dark .badge-mode.real { background: #0f2c1c; color: #86efac; }
 .doc-item small { display: block; font-size: 10.5px; color: var(--faint); margin-top: 2px; }
 #pdf-input { display: none; }
 
+/* Nút deck do app.js sinh ra (chỉ có text) — mặc cùng áo với .doc-item */
+#deck-buttons button {
+  display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
+  padding: 11px 10px; border-radius: 9px; cursor: pointer;
+  border: 1px solid transparent; background: var(--panel);
+  font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--text);
+}
+#deck-buttons button:hover { border-color: var(--indigo); }
+
 .demo-script { margin: 14px 4px 8px; font-size: 12px; }
 .demo-script summary { cursor: pointer; color: var(--indigo); font-weight: 700; }
 .demo-script ol { margin: 9px 0 0 17px; color: var(--muted); line-height: 1.7; }
@@ -459,12 +468,121 @@ body.dark .outside-doc .body b { color: #c4b5fd; }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* ============================================================
-   Màn hẹp: sidebar ẩn trước, khung đọc giữ chỗ
+   RESPONSIVE
+
+   Thứ tự hy sinh khi màn hẹp dần — quyết định theo việc học viên
+   đang làm, không theo thẩm mỹ:
+     1. Sidebar học liệu  → ngăn kéo (chọn tài liệu là việc làm 1 lần)
+     2. Panel Tutor       → tấm trượt từ dưới (là NƠI CÂU TRẢ LỜI HIỆN
+                            RA, nên không bao giờ ẩn hẳn — thu thành nút
+                            nổi và tự bật lên khi có tin nhắn mới)
+     3. Khung đọc slide   → không bao giờ nhường chỗ; đây là thứ học
+                            viên phải nhìn và bấm vào
    ============================================================ */
-@media (max-width: 1400px) {
-  .workspace { grid-template-columns: 250px minmax(0, 1fr) 360px; }
+
+.only-narrow { display: none !important; }
+
+.scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(15, 23, 42, .45);
+  opacity: 0; pointer-events: none; transition: opacity .18s ease;
 }
-@media (max-width: 1150px) {
+body.nav-open .scrim, body.tutor-open .scrim { opacity: 1; pointer-events: auto; }
+
+.fab {
+  position: fixed; right: 16px; bottom: 16px; z-index: 45;
+  border: none; border-radius: 999px; padding: 13px 20px;
+  background: var(--indigo); color: #fff; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 700;
+  box-shadow: 0 6px 20px rgba(29, 78, 216, .38);
+}
+body.dark .fab { color: #0b1020; }
+
+/* --- 1400px: bóp hai cột hai bên, khung đọc vẫn co giãn --- */
+@media (max-width: 1400px) {
+  .workspace { grid-template-columns: 260px minmax(0, 1fr) 360px; }
+  .doc-sub { display: none; }
+}
+
+/* --- 1180px: sidebar thành ngăn kéo trượt từ trái --- */
+@media (max-width: 1180px) {
   .workspace { grid-template-columns: minmax(0, 1fr) 340px; }
-  .sidebar { display: none; }
+
+  .sidebar {
+    position: fixed; z-index: 50; top: 60px; left: 0; bottom: 0; width: 290px;
+    transform: translateX(-100%); transition: transform .2s ease;
+    box-shadow: var(--shadow);
+  }
+  body.nav-open .sidebar { transform: none; }
+
+  /* Chỉ nút mở học liệu xuất hiện ở mốc này — panel Tutor vẫn là một cột,
+     chưa cần nút nổi hay nút đóng của nó. */
+  #btn-menu { display: grid !important; }
+  .hide-narrow { display: none !important; }
+}
+
+/* --- 980px: một cột. Tutor thành tấm trượt từ dưới --- */
+@media (max-width: 980px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+
+  .tutor {
+    position: fixed; z-index: 50; left: 0; right: 0; bottom: 0;
+    height: min(72vh, 560px);
+    border-left: none; border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    transform: translateY(101%); transition: transform .22s ease;
+  }
+  body.tutor-open .tutor { transform: none; }
+
+  #btn-tutor-open { display: inline-flex !important; align-items: center; gap: 7px; }
+  #btn-tutor-close { display: grid !important; margin-left: auto; }
+  /* Mở tấm Tutor rồi thì nút nổi biến mất, không đè lên ô nhập.
+     Mở ngăn học liệu cũng vậy — nút nổi nằm trên lớp mờ trông như bấm được. */
+  body.tutor-open #btn-tutor-open,
+  body.nav-open #btn-tutor-open { display: none !important; }
+
+  .tutor-head { padding-right: 10px; }
+  .tutor-sub { display: none; }
+
+  /* Khung đọc chiếm trọn bề ngang, chừa chỗ cho nút nổi */
+  .pager { margin-bottom: 78px; }
+}
+
+/* --- 720px: điện thoại ngang / tablet dọc --- */
+@media (max-width: 720px) {
+  .app-bar { height: 54px; gap: 10px; padding: 0 10px; }
+  .brand span { display: none; }
+  .doc-chip { padding-left: 10px; }
+  .doc-name { font-size: 13.5px; max-width: 38vw; }
+  .badge-mode { display: none; }
+
+  .reader-bar { padding: 10px 12px 8px; flex-wrap: wrap; }
+  .tool { padding: 7px 10px; font-size: 12px; }
+  .page-meta { margin-left: 0; width: 100%; text-align: center; }
+
+  .hint { padding: 0 12px 8px; font-size: 11.5px; }
+  .paper { margin: 0 10px; padding: 12px; }
+  .pager { margin: 0 10px 78px; padding: 8px 10px; }
+  .page-tabs { gap: 6px; }
+  .page-tabs button { padding: 7px 11px; font-size: 12px; }
+
+  .popover { width: min(268px, calc(100% - 16px)); }
+  .sidebar { width: min(290px, 86vw); top: 54px; }  /* app-bar thấp lại còn 54px */
+}
+
+/* --- 420px: điện thoại dọc --- */
+@media (max-width: 420px) {
+  .doc-name { max-width: 30vw; }
+  .ghost-btn { padding: 0 10px; font-size: 11.5px; }
+  .fab { right: 12px; bottom: 12px; padding: 12px 16px; font-size: 13px; }
+  .msg.user, .msg.bot { max-width: 100%; }
+}
+
+/* Máy cảm ứng: kéo trên slide là chọn vùng, không phải cuộn trang */
+#overlay { touch-action: none; }
+
+/* Ai đặt máy ở chế độ giảm chuyển động thì bỏ mọi hiệu ứng trượt */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .tutor, .scrim { transition: none; }
+  .cursor-blink { animation: none; }
 }

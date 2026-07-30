@@ -47,9 +47,46 @@ const App = {
     document.getElementById("btn-mock").onclick = () => this.useMock();
     document.getElementById("btn-key").onclick = () => this.configKey();
 
+    const theme = document.getElementById("btn-theme");
+    if (theme) theme.onclick = () => this.toggleTheme();
+    this.restoreTheme();
+
     this.buildDeckButtons();
     this.restoreKey();
     await this.useMock();
+  },
+
+  // ---------- sáng / tối ----------
+  // CSS đã có sẵn bộ biến cho body.dark; phần này chỉ bật/tắt class và nhớ
+  // lựa chọn. Nhớ được là quan trọng: học viên ngồi học buổi tối bật chế độ
+  // tối rồi tải lại trang mà mất là bực.
+
+  applyTheme(dark) {
+    document.body.classList.toggle("dark", dark);
+    const b = document.getElementById("btn-theme");
+    if (b) {
+      b.textContent = dark ? "☀" : "🌙";
+      b.title = dark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối";
+    }
+    // Slide vẽ trên canvas nên không theo CSS — vẽ lại để nền letterbox
+    // khớp với chủ đề mới, nếu không thì viền quanh slide lệch màu hẳn.
+    if (SlideViewer.page) SlideViewer.draw();
+    RegionSelector.draw();
+  },
+
+  toggleTheme() {
+    const dark = !document.body.classList.contains("dark");
+    localStorage.setItem("VLEARN_THEME", dark ? "dark" : "light");
+    this.applyTheme(dark);
+  },
+
+  restoreTheme() {
+    const saved = localStorage.getItem("VLEARN_THEME");
+    // Chưa chọn bao giờ thì theo cài đặt hệ điều hành
+    const dark = saved
+      ? saved === "dark"
+      : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    this.applyTheme(dark);
   },
 
   // ---------- nguồn tài liệu ----------

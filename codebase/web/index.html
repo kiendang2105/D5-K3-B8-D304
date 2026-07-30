@@ -19,7 +19,9 @@
      ============================================================ -->
 
 <header class="app-bar">
-  <button class="icon-btn chrome" disabled title="Khung giao diện VLearn — không thuộc lát cắt">‹</button>
+  <!-- Chỉ hiện ở màn hẹp: mở ngăn học liệu -->
+  <button class="icon-btn only-narrow" id="btn-menu" title="Học liệu môn học">☰</button>
+  <button class="icon-btn chrome hide-narrow" disabled title="Khung giao diện VLearn — không thuộc lát cắt">‹</button>
 
   <a class="brand" href="#" onclick="return false">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h5l4 9 4-9h5L13 21h-2L3 4z"/></svg>
@@ -37,15 +39,18 @@
   <div class="app-bar-right">
     <span class="badge-mode" id="badge-mode">CP2 · MOCK — chưa gọi AI thật</span>
     <button class="ghost-btn" id="btn-key">API key</button>
-    <button class="icon-btn chrome" disabled title="Khung giao diện VLearn">VI</button>
+    <button class="icon-btn chrome hide-narrow" disabled title="Khung giao diện VLearn">VI</button>
     <button class="icon-btn" id="btn-theme" title="Sáng / tối">🌙</button>
   </div>
 </header>
 
+<!-- Nền mờ khi mở ngăn kéo ở màn hẹp — bấm ra ngoài là đóng -->
+<div class="scrim" id="scrim"></div>
+
 <main class="workspace">
 
   <!-- ---------- Sidebar: học liệu môn học ---------- -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="side-head">
       <span class="side-ico" aria-hidden="true">📚</span>
       <div>
@@ -155,13 +160,14 @@
   </section>
 
   <!-- ---------- Panel VLearn Tutor ---------- -->
-  <aside class="tutor">
+  <aside class="tutor" id="tutor">
     <div class="tutor-head">
       <span class="tutor-ava" aria-hidden="true">🤖</span>
       <div class="tutor-id">
         <div class="tutor-name">VLearn Tutor</div>
         <div class="tutor-sub">Giải thích đúng vùng bạn chọn · luôn cho biết đọc từ text hay ảnh quét</div>
       </div>
+      <button class="icon-btn only-narrow" id="btn-tutor-close" title="Thu gọn">✕</button>
     </div>
 
     <div class="chat-body" id="chat-body">
@@ -179,6 +185,11 @@
 
 </main>
 
+<!-- Màn hẹp: panel Tutor thu thành nút nổi, mở ra là tấm trượt từ dưới lên -->
+<button class="fab only-narrow" id="btn-tutor-open">
+  <span aria-hidden="true">🤖</span> Hỏi Tutor
+</button>
+
 <!-- lib: cấu hình + dữ liệu + nguồn slide -->
 <script src="lib/config.js"></script>
 <script src="lib/mock-data.js"></script>
@@ -193,18 +204,49 @@
 <script src="components/ExplainPanel.js"></script>
 <script src="app.js"></script>
 
-<!-- Sáng/tối: thuần giao diện, không đụng vào logic nên để tại chỗ -->
+<!-- Sáng/tối + hai ngăn kéo của màn hẹp.
+     Thuần giao diện, không chạm vào logic chọn vùng / gọi AI nên để tại chỗ. -->
 <script>
   (function () {
+    // ---- sáng / tối ----
     const btn = document.getElementById("btn-theme");
-    const saved = localStorage.getItem("VLEARN_THEME");
-    if (saved === "dark") document.body.classList.add("dark");
-    btn.textContent = document.body.classList.contains("dark") ? "☀" : "🌙";
+    if (localStorage.getItem("VLEARN_THEME") === "dark") document.body.classList.add("dark");
+    const paint = () => { btn.textContent = document.body.classList.contains("dark") ? "☀" : "🌙"; };
+    paint();
     btn.onclick = () => {
       const dark = document.body.classList.toggle("dark");
       localStorage.setItem("VLEARN_THEME", dark ? "dark" : "light");
-      btn.textContent = dark ? "☀" : "🌙";
+      paint();
     };
+
+    // ---- ngăn kéo: học liệu (trái) và Tutor (dưới) ----
+    const body = document.body;
+    const scrim = document.getElementById("scrim");
+
+    const close = () => body.classList.remove("nav-open", "tutor-open");
+    const openNav = () => { body.classList.add("nav-open"); body.classList.remove("tutor-open"); };
+    const openTutor = () => {
+      body.classList.add("tutor-open");
+      body.classList.remove("nav-open");
+      document.getElementById("chat-q").focus();
+    };
+
+    document.getElementById("btn-menu").onclick = openNav;
+    document.getElementById("btn-tutor-open").onclick = openTutor;
+    document.getElementById("btn-tutor-close").onclick = close;
+    scrim.onclick = close;
+    addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+    // Chọn xong một vùng thì câu trả lời nằm trong panel Tutor — ở màn hẹp
+    // panel đang đóng, nên tự mở ra. Không có bước này thì học viên bấm vào
+    // slide và tưởng máy không phản hồi gì.
+    const chat = document.getElementById("chat-body");
+    new MutationObserver(() => {
+      if (matchMedia("(max-width: 980px)").matches) body.classList.add("tutor-open");
+    }).observe(chat, { childList: true });
+
+    // Về lại màn rộng thì bỏ mọi trạng thái ngăn kéo, tránh kẹt lớp phủ
+    matchMedia("(min-width: 981px)").addEventListener("change", (e) => { if (e.matches) close(); });
   })();
 </script>
 </body>

@@ -26,9 +26,16 @@ const SlideViewer = {
     this.draw();
   },
 
+  // Canvas không nhận CSS nên phải tự đọc biến chủ đề, nếu không thì đổi
+  // sáng/tối xong viền letterbox quanh slide lệch màu hẳn với khung đọc.
+  cssVar(name, fallback) {
+    const v = getComputedStyle(document.body).getPropertyValue(name).trim();
+    return v || fallback;
+  },
+
   draw() {
     const { SLIDE_W, SLIDE_H } = CONFIG;
-    this.ctx.fillStyle = "#1f2937";
+    this.ctx.fillStyle = this.cssVar("--paper", "#1f2937");
     this.ctx.fillRect(0, 0, SLIDE_W, SLIDE_H);
     if (!this.page) return;
 
