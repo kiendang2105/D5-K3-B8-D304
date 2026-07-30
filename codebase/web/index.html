@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VLearn — AI Tutor giải thích vùng slide</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header>
+    <span class="logo">VLearn</span>
+    <!-- HAX G1: nói rõ phạm vi ngay câu đầu tiên user thấy -->
+    <span class="scope-note">Khoanh vùng trên slide, mình giải thích phần đó theo tài liệu buổi học — ngoài tài liệu mình sẽ nói rõ.</span>
+    <div class="header-actions">
+      <label class="file-btn" for="pdf-input">📄 Mở PDF…</label>
+      <input type="file" id="pdf-input" accept="application/pdf" />
+      <button id="btn-mock">Slide mẫu</button>
+      <button id="btn-key">API key</button>
+      <span class="badge-mode" id="badge-mode">CP2 · MOCK — chưa gọi AI thật</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="slide-area">
+      <div class="doc-bar">Tài liệu: <b id="doc-name">—</b></div>
+      <div class="page-tabs" id="page-tabs"></div>
+      <div class="page-meta" id="page-meta"></div>
+      <p class="hint"><b>Bấm vào</b> sơ đồ / biểu đồ / đoạn chữ — AI tự nhận diện ranh giới phần đó. Muốn chọn khác thì <b>kéo chuột</b> khoanh tay. Hoặc gõ <b>"giải thích slide 24"</b> ở ô chat.</p>
+
+      <div class="slide-wrap" id="slide-wrap">
+        <canvas id="slide" width="960" height="540"></canvas>
+        <canvas id="overlay" width="960" height="540"></canvas>
+
+        <div class="popover" id="popover">
+          <input id="question" type="text" placeholder="Hỏi gì về vùng này? (bỏ trống = giải thích)" />
+          <div class="row">
+            <button class="ask" id="btn-ask">Hỏi AI Tutor</button>
+            <button class="cancel" id="btn-cancel">Huỷ</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="demo-script">
+        <summary>Kịch bản demo — click nhận diện · quét ảnh · 4 đường đi trải nghiệm</summary>
+        <ol>
+          <li><b>Click nhận diện (happy path):</b> Slide 12 → <b>bấm một phát</b> vào giữa sơ đồ bên phải → máy tự khoanh trọn sơ đồ → giải thích + trích dẫn trang.</li>
+          <li><b>Quét ảnh khi PDF không đọc được text:</b> sang <b>Slide 24</b> — băng vàng báo trang không có lớp text → bấm vào ô ① → quét ảnh vùng đó, trả lời kèm thumbnail trang đã đọc.</li>
+          <li><b>Hỏi slide khác mà không rời chỗ đang đọc:</b> đang ở Slide 12, gõ <code>giải thích slide 24</code> → trả lời về slide 24 nhưng <b>màn hình vẫn ở slide 12</b>, kèm nút <b>"↪ Đi tới slide 24"</b>.</li>
+          <li><b>Giới hạn dữ liệu:</b> mở <b>"🔒 Đã gửi đi…"</b> dưới câu trả lời — chỉ 1 ảnh vùng + text trong vùng, đúng 1 trang.</li>
+          <li><b>Sai trang (bẫy số trang lệch):</b> bấm <b>"Không phải trang này?"</b> → nhập trang khác → đọc lại.</li>
+          <li><b>Low-confidence ②:</b> bấm vào khe hẹp giữa hai hộp trên Slide 24 → máy dò ra dải mảnh, không chắc → hỏi lại. Hoặc gõ <code>giải thích cái sơ đồ đó</code> (không nêu số slide) → hỏi lại slide nào.</li>
+          <li><b>Không căn cứ ①:</b> bấm vào vùng trống hẳn (dưới slide 12) → nói không nhận diện được, không bịa.</li>
+          <li><b>Ngoài phạm vi ③:</b> bấm vào sơ đồ + gõ <code>làm hộ bài tập này</code> → từ chối, và <b>không gửi gì ra ngoài</b>.</li>
+          <li><b>Correction:</b> <b>kéo chuột</b> khoanh tay khi máy dò không đúng ý · nút <b>"Giải thích đơn giản hơn"</b> · 👎 <b>"Sai chỗ nào?"</b>.</li>
+        </ol>
+      </details>
+    </section>
+
+    <aside class="chat-panel">
+      <div class="chat-head">
+        <div class="title">AI Tutor</div>
+        <div class="sub">Giải thích vùng bạn chọn · luôn cho biết đọc từ text hay từ ảnh quét</div>
+      </div>
+      <div class="chat-body" id="chat-body">
+        <div class="empty-chat">
+          Chưa có hội thoại.<br />
+          Khoanh một vùng trên slide 👈 hoặc hỏi <br /><i>"giải thích slide 24"</i> ở ô dưới.
+        </div>
+      </div>
+      <div class="chat-input">
+        <input id="chat-q" type="text" placeholder='Hỏi về một slide bất kỳ — vd: "giải thích slide 24"' />
+        <button id="chat-send">Gửi</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- lib: cấu hình + dữ liệu + nguồn slide -->
+  <script src="lib/config.js"></script>
+  <script src="lib/mock-data.js"></script>
+  <script src="lib/pdf-source.js"></script>
+  <script src="lib/content-detector.js"></script>
+  <script src="lib/mock-ai.js"></script>
+  <!-- quyết định AI trung tâm (mức Sketch: chạy thẳng ở client) -->
+  <script src="../server/explain.js"></script>
+  <!-- components -->
+  <script src="components/SlideViewer.js"></script>
+  <script src="components/RegionSelector.js"></script>
+  <script src="components/ExplainPanel.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

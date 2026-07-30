@@ -1,0 +1,227 @@
+// ============================================================
+// NGUỒN SLIDE — hai cài đặt cùng một giao diện:
+//   MockSource : 3 slide SVG dựng sẵn (chạy được không cần mạng)
+//   PdfSource  : file PDF thật do user mở (pdf.js)
+//
+// Cả hai trả về "page" cùng hình dạng:
+//   { num, label, canvas, width, height, hasText, text, textLen }
+//
+// `hasText` là TRỌNG TÂM của tính năng quét ảnh: trang nào rút text
+// ra dưới CONFIG.MIN_TEXT_CHARS ký tự thì coi là PDF không đọc được
+// -> hệ thống chuyển sang gửi ẢNH TRANG cho model nhìn.
+// ============================================================
+
+// ---------- tiện ích ----------
+
+function loadScriptOnce(url) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = url;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error("Không nạp được " + url));
+    document.head.appendChild(s);
+  });
+}
+
+function svgToCanvas(svg, width) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const h = Math.round((width * CONFIG.SLIDE_H) / CONFIG.SLIDE_W);
+      const c = document.createElement("canvas");
+      c.width = width;
+      c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, width, h);
+      resolve(c);
+    };
+    img.onerror = reject;
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  });
+}
+
+// ---------- Nguồn mock ----------
+
+class MockSource {
+  constructor() {
+    this.kind = "mock";
+    this.name = "Slide mẫu (mock)";
+    this.cache = new Map();
+  }
+
+  get pageCount() {
+    return MOCK_SLIDES.length;
+  }
+
+  // Mock đánh số trang theo số in trên slide (12/18/24) để mô phỏng đúng
+  // cái bẫy "số trang trên slide ≠ chỉ số trang trong file".
+  pageLabels() {
+    return MOCK_SLIDES.map((s) => ({ index: s.num, label: s.label }));
+  }
+
+  hasPage(num) {
+    return MOCK_SLIDES.some((s) => s.num === num);
+  }
+
+  rangeText() {
+    return "các slide " + MOCK_SLIDES.map((s) => s.num).join(", ");
+  }
+
+  async getPage(num) {
+    if (this.cache.has(num)) return this.cache.get(num);
+    const slide = MOCK_SLIDES.find((s) => s.num === num);
+    if (!slide) return null;
+
+    const canvas = await svgToCanvas(slide.svg, CONFIG.SCAN_MAX_WIDTH);
+
+    // Zone khai trong mock-data theo hệ 960x540 -> đổi sang toạ độ trang
+    const k = canvas.width / CONFIG.SLIDE_W;
+    const zones = slide.zones.map((z) => ({
+      ...z,
+      rect: [z.rect[0] * k, z.rect[1] * k, z.rect[2] * k, z.rect[3] * k],
+    }));
+
+    // Mock text layer: slide "scan" cố tình không có text.
+    // Text được gắn vào từng zone để lọc theo vùng chọn giống PDF thật.
+    const textItems = slide.hasText
+      ? zones.map((z) => ({
+          str: z.label, x: z.rect[0], y: z.rect[1], w: z.rect[2], h: z.rect[3],
+        }))
+      : [];
+    const text = textItems.map((t) => t.str).join(" ");
+
+    const page = {
+      num: slide.num,
+      label: slide.label,
+      canvas,
+      width: canvas.width,
+      height: canvas.height,
+      hasText: slide.hasText,
+      text,
+      textLen: text.length,
+      textItems,
+      zones,
+    };
+    this.cache.set(num, page);
+    return page;
+  }
+}
+
+// ---------- Nguồn PDF thật ----------
+
+class PdfSource {
+  constructor(pdf, name) {
+    this.kind = "pdf";
+    this.name = name;
+    this.pdf = pdf;
+    this.cache = new Map();
+  }
+
+  // Từ file người dùng chọn (nút "Mở PDF…")
+  static async open(file) {
+    return PdfSource.openBuffer(await file.arrayBuffer(), file.name);
+  }
+
+  // Từ URL — dùng bởi eval/runner.html để chạy golden set trên PDF thật
+  static async openUrl(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Không tải được PDF (HTTP ${res.status}): ${url}`);
+    const name = url.split("/").pop();
+    return PdfSource.openBuffer(await res.arrayBuffer(), name);
+  }
+
+  static async openBuffer(buf, name) {
+    if (!window.pdfjsLib) {
+      await loadScriptOnce(CONFIG.PDFJS_URL);
+      // Worker cross-origin có thể bị chặn; pdf.js tự lùi về fake worker
+      // (chạy trên main thread) — chậm hơn chút nhưng vẫn đúng kết quả.
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = CONFIG.PDFJS_WORKER_URL;
+    }
+    const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+    return new PdfSource(pdf, name);
+  }
+
+  get pageCount() {
+    return this.pdf.numPages;
+  }
+
+  pageLabels() {
+    return Array.from({ length: this.pdf.numPages }, (_, i) => ({
+      index: i + 1,
+      label: "Trang " + (i + 1),
+    }));
+  }
+
+  hasPage(num) {
+    return num >= 1 && num <= this.pdf.numPages;
+  }
+
+  rangeText() {
+    return `trang 1–${this.pdf.numPages}`;
+  }
+
+  // Chỉ đo độ dài lớp text, KHÔNG render trang. Dùng để khảo sát nhanh cả
+  // tài liệu xem trang nào phải quét ảnh — render 1536px mỗi trang chỉ để
+  // đếm ký tự là quá đắt.
+  async textLenOf(num) {
+    if (!this.hasPage(num)) return null;
+    if (this._textLens && this._textLens.has(num)) return this._textLens.get(num);
+    this._textLens = this._textLens || new Map();
+    const p = await this.pdf.getPage(num);
+    const tc = await p.getTextContent();
+    const len = tc.items.map((i) => i.str).join(" ").replace(/\s+/g, " ").trim().length;
+    this._textLens.set(num, len);
+    return len;
+  }
+
+  async getPage(num) {
+    if (this.cache.has(num)) return this.cache.get(num);
+    if (!this.hasPage(num)) return null;
+
+    // CHỈ nạp đúng trang được hỏi — không có bước đọc cả tài liệu.
+    const p = await this.pdf.getPage(num);
+
+    // (1) Thử rút text — đây là phép đo quyết định chế độ đọc
+    const tc = await p.getTextContent();
+    const text = tc.items.map((i) => i.str).join(" ").replace(/\s+/g, " ").trim();
+    const hasText = text.length >= CONFIG.MIN_TEXT_CHARS;
+
+    // (2) Render trang thành ảnh (dùng cho hiển thị + cho vision khi scan)
+    const base = p.getViewport({ scale: 1 });
+    const scale = Math.min(CONFIG.SCAN_MAX_WIDTH / base.width, 3);
+    const viewport = p.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await p.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+
+    // (3) Ghi vị trí từng đoạn text trong toạ độ trang, để sau này chỉ
+    // gửi đi phần text NẰM TRONG vùng học viên chọn (xem GIỚI HẠN DỮ LIỆU).
+    const textItems = [];
+    for (const it of tc.items) {
+      if (!it.str || !it.str.trim()) continue;
+      const [x, y] = viewport.convertToViewportPoint(it.transform[4], it.transform[5]);
+      const h = Math.abs(it.height || it.transform[3] || 10) * scale;
+      textItems.push({
+        str: it.str,
+        x, y: y - h, // convertToViewportPoint trả về đường chân chữ
+        w: (it.width || 0) * scale,
+        h,
+      });
+    }
+
+    const page = {
+      num,
+      label: "Trang " + num,
+      canvas,
+      width: canvas.width,
+      height: canvas.height,
+      hasText,
+      text,
+      textLen: text.length,
+      textItems,
+      zones: null, // PDF thật không có zone khai sẵn -> mock trả lời chung
+    };
+    this.cache.set(num, page);
+    return page;
+  }
+}
