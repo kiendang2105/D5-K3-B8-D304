@@ -15,6 +15,38 @@ const ExplainPanel = {
     this.body = document.getElementById("chat-body");
   },
 
+  // Đổi tài liệu thì xoá sạch hội thoại và dựng lại trạng thái mở đầu.
+  // Trước đây mỗi lần mở một PDF lại NỐI THÊM một dòng thông báo, đổi qua
+  // lại bốn lần là bốn dòng chồng nhau; mà hội thoại về tài liệu cũ cũng
+  // chẳng còn nghĩa gì khi đã sang tài liệu khác.
+  resetFor(source, page) {
+    this.body.innerHTML = "";
+    const wrap = el("div", "empty-chat");
+
+    const h = el("div", "ec-title");
+    h.textContent = source ? source.name : "Chưa mở tài liệu";
+    wrap.appendChild(h);
+
+    const sub = el("div", "ec-sub");
+    sub.textContent = source
+      ? `${source.pageCount} trang · đang ở ${page ? "trang " + page.num : "trang đầu"}`
+      : "";
+    wrap.appendChild(sub);
+
+    const ul = el("ul", "ec-tips");
+    for (const t of [
+      "<b>Bấm vào</b> sơ đồ, biểu đồ hay đoạn chữ trên slide để hỏi riêng phần đó",
+      "Hoặc gõ thẳng câu hỏi ở ô dưới",
+      "Muốn hỏi trang khác thì ghi kèm số trang, ví dụ <i>giải thích trang 3</i>",
+    ]) {
+      const li = el("li");
+      li.innerHTML = t;
+      ul.appendChild(li);
+    }
+    wrap.appendChild(ul);
+    this.body.appendChild(wrap);
+  },
+
   clearEmpty() {
     const el = this.body.querySelector(".empty-chat");
     if (el) el.remove();

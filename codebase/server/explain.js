@@ -189,7 +189,16 @@ const Explain = {
       res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ role: "user", parts }] }),
+        body: JSON.stringify({
+          contents: [{ role: "user", parts }],
+          // Không đặt gì thì temperature mặc định ~1.0: CÙNG một case chạy
+          // hai lần ra hai câu khác nhau — hai người chấm G/S/H/C độc lập
+          // sẽ chấm trên hai đáp án khác nhau. Tutor là bài giải thích tài
+          // liệu, không phải bài sáng tác: ghim thấp.
+          // maxOutputTokens chặn trần "bài văn tả cả trang" (vi phạm chiều
+          // S) và bớt phần đuôi của những lượt 27s ở lượt 03.
+          generationConfig: { temperature: 0.2, maxOutputTokens: 512 },
+        }),
       });
     } catch (err) {
       return { text: `Không gọi được model (mạng): ${err.message}`, mode, grounded: false };
@@ -321,6 +330,11 @@ const Explain = {
   parseAnswer(raw) {
     let s = (raw || "").trim();
 
+    // Model thỉnh thoảng bọc câu trả lời trong ``` (vì prompt có ví dụ dùng
+    // fence) — lượt 03 case L13 in nguyên dấu ``` ra màn hình học viên.
+    // Lột fence trước khi tách các phần.
+    s = s.replace(/^\s*```[a-z]*\s*$/gim, "").trim();
+
     // Dòng gợi ý ở cuối
     let suggestions = [];
     s = s.replace(/^\s*GỢI Ý\s*:\s*(.+)$/im, (_, list) => {
@@ -350,10 +364,15 @@ const Explain = {
       if (!res.ok) throw new Error(`HTTP ${res.status} khi tải ${CONFIG.PROMPT_URL}`);
       this._promptTemplate = await res.text();
     }
+    // Text của trang là DỮ LIỆU, không phải lệnh — nhưng nó được nối thẳng
+    // vào prompt, nên một PDF chứa dòng '"""' + "bỏ qua quy tắc..." có thể
+    // phá khung trích dẫn rồi tiêm lệnh (học viên mở được PDF bất kỳ qua
+    // "Mở PDF khác…"). Bẻ răng dấu đóng khung trước khi nối.
+    const safeText = (text || "").replace(/"{3,}/g, '""');
     const grounding =
       mode === "text"
         ? `Ảnh đính kèm là vùng học viên chọn trên trang ${page.num}.\n` +
-          `Text nằm trong vùng đó:\n"""\n${text}\n"""\n` +
+          `Text nằm trong vùng đó:\n"""\n${safeText}\n"""\n` +
           "Ngoài vùng này bạn không có thông tin gì khác về tài liệu — đừng suy đoán."
         : `Ảnh đính kèm là vùng học viên chọn trên trang ${page.num}. Trang này KHÔNG có ` +
           "lớp text (slide ảnh hoặc bản scan) nên không có text kèm theo — hãy đọc trực tiếp " +

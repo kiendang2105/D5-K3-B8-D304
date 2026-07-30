@@ -118,6 +118,21 @@ const App = {
     document.getElementById("doc-name").textContent = this.source.name;
     await this.buildTabs();
     await this.goToPage(MOCK_SLIDES[0].num);
+    this.resetConversation();
+  },
+
+  // Đổi tài liệu = bắt đầu lại. Xoá cả hội thoại lẫn ký ức, vì:
+  //   1. Hội thoại về tài liệu cũ không còn nghĩa gì ở tài liệu mới.
+  //   2. Quan trọng hơn: `turns` chỉ ghi số trang, không ghi tài liệu. Giữ
+  //      lại thì mở d1 hỏi trang 3, đổi sang d2 hỏi tiếp trang 3, lịch sử
+  //      của d1 sẽ bị trộn vào request — đúng thứ giới hạn dữ liệu cấm.
+  //      (historyFor() giờ lọc thêm theo docId, đây là lớp chặn thứ hai.)
+  resetConversation() {
+    this.turns = [];
+    this.lastAsk = null;
+    this.chitchatTurn = 0;
+    RegionSelector.clear();
+    ExplainPanel.resetFor(this.source, this.currentPage);
   },
 
   // Mở PDF do user tự chọn
@@ -139,9 +154,9 @@ const App = {
         `${this.source.name} · ${this.source.pageCount} trang`;
       await this.buildTabs();
       await this.goToPage(1);
-      note.innerHTML = mdBold(
-        `Đã mở **${this.source.name}** (${this.source.pageCount} trang). ` +
-        `Bấm vào một phần trên slide để hỏi, hoặc gõ *"giải thích trang 3"*.`);
+      // Không nối thêm dòng thông báo nữa — dựng lại hẳn trạng thái mở đầu
+      // cho tài liệu mới. Dòng "Đang mở…" ở trên bị xoá cùng.
+      this.resetConversation();
     } catch (err) {
       const fileProto = location.protocol === "file:";
       note.innerHTML = mdBold(
@@ -601,7 +616,8 @@ const App = {
     // không được thành "vùng đang bàn", nếu không thì học viên gõ tiếp một
     // câu vô thưởng vô phạt lại kéo cả vùng cũ ra trả lời.
     if (reply.grounded !== false) {
-      this.turns.push({ page: page.num, question: question || "(giải thích vùng này)", answer: reply.text });
+      this.turns.push({ doc: this.docId(), page: page.num,
+                        question: question || "(giải thích vùng này)", answer: reply.text });
       if (this.turns.length > CONFIG.HISTORY_MAX_TURNS) this.turns.shift();
       this.lastAsk = { question, region, page };
     }
@@ -611,9 +627,18 @@ const App = {
   // Lịch sử hội thoại cho câu hỏi tiếp — CHỈ các lượt về đúng trang này.
   // Không trộn lượt của trang khác vào: làm vậy là gián tiếp gửi nội dung
   // nhiều trang trong một request, phá giới hạn 1 trang/câu hỏi.
+  // Khoá theo CẢ tài liệu lẫn trang. Lọc mỗi số trang là chưa đủ: d1 và d2
+  // đều có trang 3, nên đổi tài liệu rồi hỏi tiếp sẽ kéo lượt của tài liệu
+  // cũ vào request. resetConversation() đã xoá turns khi đổi tài liệu, đây
+  // là lớp chặn thứ hai phòng khi có đường nào đó quên gọi reset.
+  docId() {
+    return this.source ? this.source.kind + ":" + this.source.name : "?";
+  },
+
   historyFor(pageNum) {
+    const doc = this.docId();
     return this.turns
-      .filter((t) => t.page === pageNum)
+      .filter((t) => t.page === pageNum && t.doc === doc)
       .slice(-CONFIG.HISTORY_MAX_TURNS)
       .map((t) => ({
         question: t.question.slice(0, 300),
