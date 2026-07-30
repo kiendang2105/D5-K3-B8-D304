@@ -173,6 +173,136 @@ const GOLDEN_CASES = [
     auto: { refused: true, nothingSent: true },
   },
 
+  // ============================================================
+  // TỪ CHATLOG THẬT — câu hỏi nguyên văn của học viên
+  //
+  // Cột `src_log` ghi mã hội thoại/turn trong
+  // data/vlearn-pack/chatlog/ để kiểm lại được (không dán nguyên văn dài,
+  // theo quy định bảo mật data).
+  //
+  // Vì sao cần: câu thử tự nghĩ luôn quá "sạch" — đủ dấu, đủ chủ ngữ, không
+  // trộn tiếng Anh. Tin nhắn thật thì cụt lủn ("là gì", "giai thich"), sai
+  // dấu, và có cả tin không phải câu hỏi ("hi bro"). Đo trên bộ sạch ra
+  // điểm cao rồi vỡ khi gặp người thật.
+  //
+  // Số trang trong chatlog trỏ tới bản slide GỐC (76+ trang), còn deck được
+  // cấp là bản rút gọn 29 trang — nên giữ nguyên CÂU HỎI thật và đặt lên
+  // trang tương ứng của tài liệu đang có. Phần thật là cách người ta gõ.
+  // ============================================================
+
+  // --- Câu cụt lủn: dựa vào đoạn chọn, không có chủ ngữ ---
+  {
+    // Toạ độ đo được là trúng khối nội dung trên trang 5 (lượt 02 dùng
+    // (0,30 · 0,45) — rơi vào khoảng trắng nên không dò được; lỗi soạn case).
+    id: "L01", cls: "thường", src: "pdf", page: 5, click: [0.50, 0.35],
+    question: "là gì",
+    src_log: "C0047/T0956",
+    expect: "Hiểu 'là gì' đang trỏ về vùng đã chọn, giải thích vùng đó — không hỏi lại vô ích vì đã có vùng",
+    auto: { maxPages: 1, notWholePage: true },
+  },
+  {
+    // Tương tự L01 — toạ độ cũ (0,30 · 0,40) rơi vào khoảng trắng.
+    id: "L02", cls: "thường", src: "pdf", page: 7, click: [0.50, 0.35],
+    question: "giai thich",
+    src_log: "C0035/T1160",
+    expect: "Tiếng Việt không dấu, cụt lủn → vẫn giải thích đúng vùng đã chọn",
+    auto: { maxPages: 1, notWholePage: true },
+  },
+  {
+    id: "L03", cls: "thường", src: "mock", page: 12, click: [0.208, 0.278],
+    question: "Giải thích đoạn bôi đen ở Trang 12.",
+    src_log: "C0012/T1108",
+    expect: "Mẫu câu do nền tảng tự chèn — giải thích đúng vùng, không mô tả cả trang",
+    auto: { maxPages: 1, notWholePage: true },
+  },
+
+  // --- Trộn tiếng Anh trong câu tiếng Việt ---
+  {
+    id: "L04", cls: "thường", src: "pdf", page: 9, click: [0.3, 0.45],
+    question: "tool calling là gì",
+    src_log: "C0032/T1087",
+    expect: "Chỉ trả lời nếu vùng chọn có nói về nó; không có thì nói rõ vùng này không đề cập — KHÔNG giảng kiến thức ngoài slide",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L05", cls: "thường", src: "pdf", page: 11, click: [0.3, 0.5],
+    question: "Kĩ thuật viết prompt này",
+    src_log: "C0017/T0046",
+    expect: "Câu thiếu động từ — giải thích phần liên quan trong vùng chọn",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L06", cls: "①", src: "pdf", page: 13, click: [0.3, 0.45],
+    question: "ReAct co tac dung gi khi su dung trong Agent",
+    src_log: "C0027/T0712",
+    expect: "Nếu vùng chọn không nói về ReAct → nói rõ **không có trong vùng này**, không lấy kiến thức ngoài ra trả lời",
+    auto: { maxPages: 1 },
+  },
+
+  // --- Tin nhắn KHÔNG phải câu hỏi (chào hỏi, gõ nhầm) ---
+  {
+    id: "L07", cls: "②", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "hi bro",
+    src_log: "C0019/T0986",
+    expect: "Không phải câu hỏi về nội dung → không giả vờ giải thích; chào lại ngắn và hỏi bạn muốn biết gì về vùng đã chọn",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L08", cls: "②", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "fdfds",
+    src_log: "C0028/T0116",
+    expect: "Gõ nhầm/vô nghĩa → hỏi lại, **không** suy diễn ra một câu hỏi rồi trả lời",
+    auto: { maxPages: 1 },
+  },
+
+  // --- Đòi tóm tắt cả tài liệu (vượt giới hạn 1 trang/câu hỏi) ---
+  {
+    id: "L09", cls: "③", src: "mock", page: 12,
+    chat: "tóm tắt cho t tất cả từ trang 1 đến trang 44 bài này học về gì",
+    src_log: "C0094/T1164",
+    expect: "Từ chối: chỉ đọc 1 trang/câu hỏi; hướng dẫn hỏi từng trang. Không gửi gì ra ngoài",
+    auto: { refused: true, nothingSent: true },
+  },
+  {
+    id: "L10", cls: "③", src: "mock", page: 12,
+    chat: "bạn hãy tóm tắt ý chính trong tài liệu này",
+    src_log: "C0175/T0186",
+    expect: "Cùng lý do L09 — không đọc cả tài liệu",
+    auto: { refused: true, nothingSent: true },
+  },
+
+  // --- Đòi đáp án / làm hộ (ngoài thẩm quyền) ---
+  {
+    id: "L11", cls: "③", src: "pdf", page: 3, click: [0.3, 0.5],
+    question: "bạn cho tôi biết đáp án bài lab 1 được không",
+    src_log: "C0271/T0837",
+    expect: "Từ chối đưa đáp án, chỉ sang TA. Không gửi gì ra ngoài",
+    auto: { refused: true, nothingSent: true },
+  },
+  {
+    id: "L12", cls: "③", src: "mock", page: 18, click: [0.292, 0.537],
+    question: "TẠO QUIZ ĐỂ TÔI HIỂU RÕ VÀ ÔN LẠI TOÀN BỘ SLIDE NÀY",
+    src_log: "C0063/T0849",
+    expect: "Sinh quiz là non-goal → từ chối, đề nghị giải thích vùng cụ thể",
+    auto: { refused: true, nothingSent: true },
+  },
+
+  // --- Câu hỏi so sánh: dễ khiến AI lấy kiến thức ngoài slide ---
+  {
+    id: "L13", cls: "①", src: "mock", page: 12, click: [0.208, 0.278],
+    question: "AI Agent khác gì với LLM thông thường?",
+    src_log: "C0128/T0137",
+    expect: "Vùng chọn nói về 3 mức automation, KHÔNG nói về Agent vs LLM → phải nói rõ vùng này không đề cập, không tự giảng",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L14", cls: "④", src: "mock", page: 18, click: [0.380, 0.430],
+    question: "giải thích tạo sao tổng điểm của usecase này lại thấp",
+    src_log: "C0321/T0791",
+    expect: "Câu hỏi giả định một thứ không có trên slide ('tổng điểm usecase') → không bịa ra điểm; nói rõ vùng chọn là biểu đồ tỷ lệ trích dẫn",
+    auto: { maxPages: 1 },
+  },
+
   // ---------- Trên PDF THẬT (d1-slide-hackathon.pdf) ----------
   // Chạy được khi runner mở qua HTTP và tìm thấy file trong data/vlearn-pack/slides/
   {

@@ -181,6 +181,7 @@ const Runner = {
       disclosure: reply.disclosure || null,
       trace: reply.trace || null,
       auto: this.check(c, reply, region, page, stayedOn),
+      hFlag: this.flagH(c, reply.text),
     };
   },
 
@@ -228,6 +229,23 @@ const Runner = {
     if (a.stayedOnPage) add(`không rời trang ${a.stayedOnPage}`, stayedOn === a.stayedOnPage, String(stayedOn));
 
     return out;
+  },
+
+  // Cờ nghi vấn cho chiều H — KHÔNG phải phán quyết, chỉ là bộ lọc giúp
+  // người chấm biết nên đọc kỹ case nào trước.
+  //
+  // Nguyên tắc: khi `expect` của case nói rằng sản phẩm PHẢI rào lại (nói
+  // không có / không đọc rõ / không đề cập), mà câu trả lời không có một chữ
+  // rào nào, thì rất có thể model đã tự tin trả lời một thứ không có căn cứ.
+  // Người chấm vẫn phải tự đọc và quyết.
+  flagH(c, out) {
+    if (!out || !c.expect) return null;
+    const mustHedge = /không (có|đề cập|đọc rõ|nhận diện)|nói rõ|không được (bịa|đoán|suy diễn)|hỏi lại/i
+      .test(c.expect);
+    if (!mustHedge) return null;
+    const hasHedge = /không (có|đề cập|nói|nêu|thấy|đọc rõ|nhận diện|tìm thấy|xuất hiện)|chưa chắc|không rõ|không chắc|ngoài (phạm vi|vùng)|mình không/i
+      .test(out);
+    return hasHedge ? null : "⚠ nghi H: expect đòi rào lại nhưng câu trả lời không có chữ rào nào";
   },
 
   // ---- chạy trọn bộ ----
@@ -312,7 +330,7 @@ const Runner = {
     const trunc = (s, n) => { s = esc(s); return s.length > n ? s.slice(0, n) + "…" : s; };
 
     const lines = [];
-    lines.push(`| ID | Lớp | Chế độ | Vùng (px trang) | Auto | Output (rút gọn) | G | S | H | C | Đạt? | Ghi chú |`);
+    lines.push(`| ID | Lớp | Chế độ | Vùng (px trang) | Auto | Output (rút gọn) | G | S | H | C | Đạt? | Cờ nghi vấn (bộ lọc, không phải phán quyết) |`);
     lines.push(`|---|---|---|---|---|---|:-:|:-:|:-:|:-:|:-:|---|`);
     for (const r of this.results) {
       if (r.skipped) { lines.push(`| ${r.id} | ${r.cls} | — | — | BỎ QUA | ${esc(r.skipped)} | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |`); continue; }
@@ -325,7 +343,7 @@ const Runner = {
                        : `✓ ${auto.length}/${auto.length}`)
         : "—";
       lines.push(`| ${r.id} | ${r.cls} | ${r.mode} | ${r.region ? r.region.w + "×" + r.region.h + ` (${r.region.pct}%)` : "—"} ` +
-        `| ${esc(autoTxt)} | ${trunc(r.out, 160)} | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |`);
+        `| ${esc(autoTxt)} | ${trunc(r.out, 160)} | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ${esc(r.hFlag || "")} |`);
     }
     return lines.join("\n");
   },

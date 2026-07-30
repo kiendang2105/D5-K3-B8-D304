@@ -13,11 +13,15 @@
 | Case thường | 8–10 | 8 (C12–C19) |
 | Case hiếm | 2–4 | 3 (C20–C22) |
 | Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
+| **Từ chatlog thật** (L01–L14) | ≥10 | **14** ✅ |
 | Trên PDF thật (`d1-slide-hackathon.pdf`) | — | 4 (P01–P04) |
-| **Tổng** | ≥20 | **32** |
-| *Trong đó lấy từ chatlog thật* | ≥10 | ⬜ **0 — CẦN LÀM** |
+| **Tổng** | ≥20 | **46** |
 
-> ⚠️ **Việc còn thiếu:** ≥10 case phải lấy hoặc phát triển từ chatlog thật (`data/vlearn-pack/chatlog/`). Cách làm: tìm các lượt học viên hỏi về sơ đồ/hình/biểu đồ, lấy câu hỏi nguyên văn làm input, ghi mã hội thoại (`C0xxx` / `T0xxx`) vào cột Nguồn — **không dán nguyên văn dài** (quy định bảo mật data).
+Phủ 4 lớp chỗ khó sau khi thêm L01–L14: ① 5 · ② 5 · ③ 6 · ④ 4 — mỗi lớp ≥4, vượt yêu cầu ≥2.
+
+**14 case từ chatlog thật** giữ nguyên **câu hỏi nguyên văn** của học viên, kèm mã hội thoại/turn để kiểm lại. Vì sao cần: câu thử tự nghĩ luôn quá *sạch* — đủ dấu, đủ chủ ngữ, không trộn tiếng Anh. Tin nhắn thật thì cụt lủn (*"là gì"*, *"giai thich"*), sai dấu, và có cả tin không phải câu hỏi (*"hi bro"*, *"fdfds"*). Đo trên bộ sạch ra điểm cao rồi vỡ khi gặp người thật.
+
+*Lưu ý về số trang:* số trang trong chatlog trỏ tới bản slide **gốc** (76+ trang), còn deck được cấp là bản rút gọn 29 trang. Nên các case này giữ nguyên **câu hỏi** thật và đặt lên trang tương ứng của tài liệu đang có — phần thật là **cách người ta gõ**, không phải số trang.
 
 ## Chiều chất lượng — định nghĩa kiểm chứng được
 

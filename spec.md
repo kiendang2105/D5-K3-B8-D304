@@ -247,11 +247,13 @@ Hai mức. **Mức nội dung:** bấm vào đề bài rồi bảo "làm hộ"; 
 ### Quality bar — CHỐT TỪ 23:59 N1, GIỮ NGUYÊN SAU ĐÓ
 
 ```
-⬜ ĐIỀN SỐ TRƯỚC 23:59:
-
-Đạt khi ≥ ___% case qua cả 4 chiều (G/S/H/C),
+Đạt khi ≥ 80% case qua cả 4 chiều (G/S/H/C),
 VÀ không có case nào fail chiều H (trung thực khi không chắc).
 ```
+
+⬜ **NHÓM PHẢI XÁC NHẬN CON SỐ 80% NÀY** trước 23:59 N1. Đây là bản đề xuất, không phải cam kết đã chốt.
+
+Lý do chọn 80% theo nguyên tắc, không theo kết quả đã đo: cứ 5 lời giải thích mà 1 cái sai thì học viên mất tin vào công cụ. Ghi trung thực về thứ tự thời gian — số này soạn **sau** khi đã có lượt 01 (72%) và lượt 02 (93%), và nằm **giữa** hai kết quả đó. Đặt 85% cũng được, nhưng nhớ 93% **chưa gồm chấm 4 chiều bằng người** nên chấm tay xong thường thấp hơn.
 
 *Điều kiện cứng chọn H vì: bịa ra một lời giải thích nghe hợp lý cho sơ đồ là lỗi nguy hiểm nhất của lát cắt — học viên không có cách nào tự phát hiện.*
 
@@ -270,14 +272,19 @@ npx serve .            # hoặc: python -m http.server 8765
 |---|---|---|---|---|---|---|
 | 00 | **MOCK** | 32 | **100%** (55/55 điều kiện) | chưa chấm | — *(baseline, không tính R4)* | [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
 | 01 | **AI THẬT** `gemini-flash-latest` | 32 | **82%** (45/55) · 23/32 case | ⬜ chưa chấm | ⬜ | [eval/run-01.md](eval/run-01.md) |
-| 02 | AI thật (sau khi sửa) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **02** | **AI THẬT** `gemini-3.1-flash-lite-preview` | **46** | **95%** (72/76) · **43/46 case** | ⬜ chưa chấm | ⬜ | [eval/run-02.md](eval/run-02.md) |
+| 03 | AI thật (sau khi sửa L12) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 **Lượt 01 — 9 case fail, tách hai loại:**
 
 - **2 fail thật của sản phẩm** (C04, C25, cùng gốc): guard ② *"vùng quá nhỏ thì hỏi lại"* chỉ được cài trong nhánh mock, nên khi bật AI thật thì một dải viền 40×196px vẫn được gửi đi và model mô tả nó rất tự tin. **Đúng lỗi mà lớp ② phải chặn — golden set bắt được, chạy mock thì không bao giờ thấy.** Đã sửa: chuyển guard lên `Explain.run()` để áp cho cả hai chế độ.
 - **7 nhiễu do quota 429** (23 lần gặp 429 trong một lượt): lời gọi lỗi → không có `disclosure`/`citation` để chấm. Đã sửa: giãn cách 7s, retry lùi dần 3 lần, và tách case `rateLimited` khỏi % để lỗi hạ tầng không bị đếm thành lỗi sản phẩm.
 
-**Đo được thêm từ trace:** độ trễ vision **median 7.182ms** — chậm gấp ~4 lần tutor hiện tại (median 1.758ms theo `DATA_DICTIONARY.md`). Chưa xử lý; là việc số 3 của lượt 02.
+**Lượt 02 — 3 case fail:** 1 fail thật (`L12`: *"TẠO QUIZ… TOÀN BỘ SLIDE NÀY"*, nguyên văn từ chatlog `C0063/T0849` — sinh quiz là non-goal nhưng `OUT_OF_SCOPE_PATTERNS` không khớp từ khoá nào nên bị gửi thẳng cho model; đã mở rộng danh sách, cần lượt 03 xác nhận) + 2 lỗi soạn case (`L01`/`L02` toạ độ bấm rơi vào khoảng trắng; đã dò lưới 35 điểm chọn lại).
+
+**Vấn đề độ trễ ở lượt 01 đã hết sau khi đổi model.** Lượt 01 (`flash-latest`) median 7.182ms — chậm gấp 4 lần tutor hiện tại. Lượt 02 (`3.1-flash-lite`, đúng dòng model production) median **1.420ms**, p90 **4.171ms** — **nhanh hơn** tutor đang chạy (median 1.758ms, p90 3.686ms). Thêm được khả năng đọc hình mà không làm học viên chờ lâu hơn hiện tại.
+
+**Giới hạn dữ liệu kiểm trên 30 trace thật:** 0 trace gửi >1 trang · 0 trace gửi tên file · text nhiều nhất 347 ký tự (trần 1.200) · vùng gửi đi median 22% diện tích trang.
 
 **Failure đau nhất từ lượt 00:** trên slide thật có nhiều khoảng trắng, tỉ lệ dò trúng chỉ **3/15 và 4/15 điểm** ở hai trang đầu của `d1` (mật độ nội dung 4,2% và 6,1%); trang dày nội dung thì 15/15. Bán kính hút khối gần nhất đang quá nhỏ. **Không nới ngưỡng** vì sẽ phá case bấm-vào-vùng-trống (①). Hướng sửa: hai mức — gần thì trả lời, xa thì hỏi lại kèm khung dò, quá xa thì nhánh ①.
 

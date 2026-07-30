@@ -215,10 +215,25 @@ const MOCK_SLIDES = [
   },
 ];
 
-// Từ khoá nhận diện yêu cầu ngoài phạm vi (lớp ③)
+// Từ khoá nhận diện yêu cầu ngoài phạm vi (lớp ③).
+//
+// Danh sách này lớn dần theo dữ liệu thật, không theo trí tưởng tượng.
+// Lượt chạy 02 để lọt case `L12` — câu nguyên văn từ chatlog `C0063/T0849`:
+// "TẠO QUIZ ĐỂ TÔI HIỂU RÕ VÀ ÔN LẠI TOÀN BỘ SLIDE NÀY". Sinh quiz là
+// non-goal số 4 và đọc cả slide vượt giới hạn 1 trang/câu hỏi, nhưng không
+// từ khoá nào khớp nên nó được gửi thẳng cho model. Bộ case tự nghĩ không
+// bắt được lỗi này vì không ai nghĩ ra câu viết hoa kiểu đó.
 const OUT_OF_SCOPE_PATTERNS = [
+  // làm hộ bài / đòi đáp án
   "làm hộ", "làm giúp", "giải hộ", "giải giúp", "đáp án", "code hộ",
-  "làm bài tập", "nộp bài", "điểm của", "deadline", "bao giờ thi",
+  "làm bài tập", "làm bài lab", "nộp bài",
+  // logistics
+  "điểm của", "deadline", "bao giờ thi", "khi nào thi", "lịch học",
+  // non-goal: sinh quiz / ra đề
+  "tạo quiz", "làm quiz", "sinh quiz", "tạo câu hỏi", "ra đề", "tạo đề",
+  // vượt giới hạn 1 trang/câu hỏi: đòi đọc cả tài liệu
+  "toàn bộ slide", "toàn bộ tài liệu", "cả tài liệu", "cả bài giảng",
+  "tất cả các trang", "toàn bộ bài",
 ];
 
 const REPLIES = {
