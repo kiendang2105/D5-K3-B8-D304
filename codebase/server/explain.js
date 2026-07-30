@@ -66,7 +66,7 @@ const Explain = {
   // Nhận: { page, region (toạ độ TRANG), question }
   // Trả:  { image, text, disclosure } — disclosure là bảng để hiện cho
   //        học viên biết chính xác cái gì đã rời máy.
-  buildPayload({ page, region, mode }) {
+  buildPayload({ page, region, mode, history }) {
     // (a) Ảnh: CHỈ vùng đã cắt, không phải cả trang
     const image = ContentDetector.cropPage(page, region);
 
@@ -87,7 +87,14 @@ const Explain = {
         .slice(0, CONFIG.MAX_TEXT_CHARS);
     }
 
-    // (c) Bảng công khai — học viên tự kiểm cái gì đã gửi đi
+    // (c) Lịch sử — chỉ CHỮ, chỉ của đúng trang này. Chặn cứng ở đây thay vì
+    // tin vào chỗ gọi: nếu lẫn lượt của trang khác thì loại bỏ.
+    const hist = (history || []).filter((h) => h && h.question)
+      .slice(-CONFIG.HISTORY_MAX_TURNS);
+    const histChars = hist.reduce(
+      (n, h) => n + (h.question || "").length + (h.answer || "").length, 0);
+
+    // (d) Bảng công khai — học viên tự kiểm cái gì đã gửi đi
     const disclosure = {
       pages: 1, // trần cứng CONFIG.MAX_PAGES_PER_REQUEST
       pageNum: page.num,
@@ -96,12 +103,14 @@ const Explain = {
       regionPctOfPage: Math.round((region.w * region.h * 100) / (page.width * page.height)),
       textChars: text.length,
       textItems: itemCount,
+      historyTurns: hist.length,
+      historyChars: histChars,
       sentFileName: false,
       sentOtherPages: false,
       wholePage: !!region.wholePage,
     };
 
-    return { image, text, disclosure };
+    return { image, text, history: hist, disclosure };
   },
 
   // --- Điểm vào duy nhất ---
@@ -135,7 +144,7 @@ const Explain = {
 
   // --- Quyết định 4: lời gọi vision thật (CP3) ---
   // Key lấy từ localStorage (nút "API key" trên header), KHÔNG commit.
-  async callGemini({ question, image, text, page, mode, disclosure }) {
+  async callGemini({ question, image, text, page, mode, disclosure, history }) {
     const key = localStorage.getItem("GEMINI_API_KEY");
     if (!key) {
       return {
@@ -153,7 +162,7 @@ const Explain = {
 
     let prompt;
     try {
-      prompt = await this.buildPrompt({ question, text, page, mode });
+      prompt = await this.buildPrompt({ question, text, page, mode, history });
     } catch (err) {
       return {
         text: `Không đọc được file prompt \`server/prompts/explain-region.md\` (${err.message}).\n\n` +
@@ -226,7 +235,7 @@ const Explain = {
 
   // Prompt là file riêng (server/prompts/explain-region.md) để sửa được
   // mà không đụng code, và để trình bày ở CP5 khi bị hỏi về prompt.
-  async buildPrompt({ question, text, page, mode }) {
+  async buildPrompt({ question, text, page, mode, history }) {
     if (!this._promptTemplate) {
       const res = await fetch(CONFIG.PROMPT_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status} khi tải ${CONFIG.PROMPT_URL}`);
@@ -241,8 +250,19 @@ const Explain = {
           "lớp text (slide ảnh hoặc bản scan) nên không có text kèm theo — hãy đọc trực tiếp " +
           "từ ảnh. Ngoài vùng này bạn không có thông tin gì khác về tài liệu.";
 
+    // Lịch sử để câu hỏi tiếp ("chi tiết hơn nữa", "còn cái kia thì sao")
+    // có nghĩa. Vẫn bám đúng vùng ảnh đang gửi, không nới phạm vi.
+    const hist = (history || []).length
+      ? "HỘI THOẠI TRƯỚC ĐÓ về đúng vùng này (dùng để hiểu học viên đang hỏi tiếp gì; " +
+        "vẫn chỉ được căn cứ vào ảnh/text ở trên):\n" +
+        history.map((h, i) =>
+          `[${i + 1}] Học viên: ${h.question}\n    Bạn đã trả lời: ${h.answer}`).join("\n") +
+        "\n"
+      : "";
+
     return this._promptTemplate
       .replace("{{GROUNDING}}", grounding)
+      .replace("{{HISTORY}}", hist)
       .replace("{{QUESTION}}", question || "Giải thích phần này giúp mình.");
   },
 };

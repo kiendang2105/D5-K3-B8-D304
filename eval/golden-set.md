@@ -14,10 +14,13 @@
 | Case hiếm | 2–4 | 3 (C20–C22) |
 | Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
 | **Từ chatlog thật** (L01–L14) | ≥10 | **14** ✅ |
+| Hỏi tiếp / ký ức hội thoại (F01–F03) | — | 3 |
 | Trên PDF thật (`d1-slide-hackathon.pdf`) | — | 4 (P01–P04) |
-| **Tổng** | ≥20 | **46** |
+| **Tổng** | ≥20 | **49** |
 
-Phủ 4 lớp chỗ khó sau khi thêm L01–L14: ① 5 · ② 5 · ③ 6 · ④ 4 — mỗi lớp ≥4, vượt yêu cầu ≥2.
+Phủ 4 lớp chỗ khó: ① 5 · ② 7 · ③ 6 · ④ 4 — mỗi lớp ≥4, vượt yêu cầu ≥2.
+
+**F01–F03 đến từ việc tự dùng thử prototype**, không phải từ chatlog: sau khi được trả lời về ô ① slide 24, gõ *"tôi muốn chi tiết hơn nữa"* thì hệ thống hỏi lại *"bạn đang hỏi slide nào?"* — bắt học viên nhắc lại thứ vừa nói. Đây là nguồn hợp lệ thứ tư trong form CP3 (*"tình huống nhóm gặp khi tự dùng thử sản phẩm"*). `F03` là chốt chặn: lịch sử **không được** kéo nội dung trang khác vào.
 
 **14 case từ chatlog thật** giữ nguyên **câu hỏi nguyên văn** của học viên, kèm mã hội thoại/turn để kiểm lại. Vì sao cần: câu thử tự nghĩ luôn quá *sạch* — đủ dấu, đủ chủ ngữ, không trộn tiếng Anh. Tin nhắn thật thì cụt lủn (*"là gì"*, *"giai thich"*), sai dấu, và có cả tin không phải câu hỏi (*"hi bro"*, *"fdfds"*). Đo trên bộ sạch ra điểm cao rồi vỡ khi gặp người thật.
 

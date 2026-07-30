@@ -136,6 +136,7 @@ AI Tutor **không được đọc hay chuyển đi cả tài liệu**. Mỗi câ
 | 4 | Không gửi tên file, tổng số trang, nội dung trang khác | `Explain.buildPayload()` |
 | 5 | Câu ngoài phạm vi bị chặn **trước** khi đóng gói → không có gì rời máy | `Explain.run()` |
 | 6 | Mỗi câu trả lời kèm bảng **🔒 Đã gửi đi những gì** | `ExplainPanel.addDisclosure()` |
+| 7 | Lịch sử hội thoại chỉ gửi **chữ**, chỉ của **đúng trang đang bàn**, tối đa 3 lượt | `App.historyFor()` + chặn lại ở `Explain.buildPayload()` |
 
 `Explain.buildPayload()` là **chỗ duy nhất** dữ liệu rời khỏi máy học viên — soát một hàm đó là soát được toàn bộ đường dữ liệu đi ra. Đây cũng là câu trả lời cho lớp chỗ khó ③ ở mức dữ liệu, không chỉ mức nội dung.
 
@@ -166,6 +167,7 @@ AI Tutor **không được đọc hay chuyển đi cả tài liệu**. Mỗi câ
 | **G9** — Sửa dễ dàng | **Kéo chuột khoanh tay** khi máy dò không đúng ý · nút *"Không phải trang này?"* (nhập lại số trang → đọc lại) · nút *"Giải thích đơn giản hơn"* |
 | **G15** — Mời feedback chi tiết | 👎 kèm ô *"Sai chỗ nào?"*, không chỉ thumbs down trống |
 | **G17** — Quyền kiểm soát tổng | Bảng **🔒 Đã gửi đi những gì** dưới mỗi câu trả lời · hỏi về slide khác **không tự chuyển màn hình**, học viên tự bấm *"↪ Đi tới slide N"* |
+| **G12** — Nhớ tương tác gần | Câu hỏi tiếp (*"chi tiết hơn nữa"*) bám đúng vùng vừa hỏi thay vì hỏi lại *"slide nào"*; lịch sử chỉ gửi **chữ**, chỉ của **đúng trang đang bàn**, tối đa 3 lượt |
 
 *Vị trí code cụ thể: [codebase/README.md](codebase/README.md).*
 
@@ -223,6 +225,7 @@ Hai mức. **Mức nội dung:** bấm vào đề bài rồi bảo "làm hộ"; 
 | **Bị đòi ngoài phạm vi (③)** | Guardrail chặn trước `buildPayload()` → từ chối + chỉ sang TA/Discord, và nói rõ **không có dữ liệu nào được gửi ra ngoài** |
 | **Case đặc thù domain (④)** | Trang không có text layer → **quét ảnh vùng đã chọn** thay vì trả lời chay; badge `👁` + thumbnail trang đã đọc |
 | **Kiểm soát dữ liệu (G17)** | Bảng **🔒 Đã gửi đi những gì** dưới mỗi câu trả lời · hỏi slide khác không tự chuyển màn hình |
+| **Hỏi tiếp (G12)** | *"chi tiết hơn nữa"* → nối đúng vùng vừa hỏi + dòng *"Hiểu là bạn hỏi tiếp về vùng vừa rồi ở trang N"*. Chưa hỏi gì trước đó thì vẫn hỏi lại (②) |
 
 ---
 

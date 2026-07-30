@@ -303,6 +303,40 @@ const GOLDEN_CASES = [
     auto: { maxPages: 1 },
   },
 
+  // ---------- Câu hỏi TIẾP (nối ký ức hội thoại) ----------
+  // Lỗi thật quan sát khi tự dùng thử: sau khi được trả lời về slide 24, gõ
+  // "tôi muốn chi tiết hơn nữa" thì hệ thống hỏi lại "bạn đang hỏi slide nào?"
+  // — bắt học viên nhắc lại thứ vừa nói xong. Đã sửa; các case dưới chốt lại.
+  {
+    id: "F01", cls: "②", src: "mock", page: 24,
+    click: [0.260, 0.370],
+    followUps: ["tôi muốn chi tiết hơn nữa"],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Nối tiếp đúng vùng ô ① trang 24, KHÔNG hỏi lại 'slide nào'; nói rõ đang hỏi tiếp vùng vừa rồi",
+    auto: { maxPages: 1, notWholePage: true, hasHistory: true },
+  },
+  {
+    id: "F02", cls: "②", src: "mock", page: 12,
+    click: [0.750, 0.472],
+    followUps: ["cho ví dụ đi", "còn nhánh kia thì sao"],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Hai lượt hỏi tiếp liên tiếp vẫn bám đúng sơ đồ trang 12, lịch sử tối đa 3 lượt",
+    auto: { maxPages: 1, hasHistory: true },
+  },
+  {
+    // Chốt chặn: lịch sử KHÔNG được kéo nội dung trang khác vào
+    id: "F03", cls: "dữ liệu", src: "mock", page: 12,
+    click: [0.750, 0.472],
+    switchPageThenFollowUp: 24,
+    followUps: ["chi tiết hơn"],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Hỏi tiếp sau khi đã hỏi trang khác → lịch sử chỉ gồm lượt của ĐÚNG trang đang bàn, không trộn trang 12 với 24",
+    auto: { maxPages: 1, historyOnlySamePage: true },
+  },
+
   // ---------- Trên PDF THẬT (d1-slide-hackathon.pdf) ----------
   // Chạy được khi runner mở qua HTTP và tìm thấy file trong data/vlearn-pack/slides/
   {

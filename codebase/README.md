@@ -10,13 +10,32 @@ codebase/web/index.html      ← mở thẳng bằng trình duyệt: chạy ngay
 
 Đủ để demo toàn bộ 4 đường đi trải nghiệm + nhánh quét ảnh. **Mở PDF thật** và **gọi AI thật** cần chạy qua server tĩnh (Worker của pdf.js không tạo được từ `file://`; prompt nạp bằng fetch):
 
+Mở terminal, **`cd` về gốc repo** rồi chạy đúng lệnh này:
+
 ```bash
-npx serve .            # hoặc: python -m http.server 8765   (chạy từ GỐC REPO)
-# app:    http://localhost:PORT/codebase/web/index.html
-# runner: http://localhost:PORT/eval/runner.html
+cd d:/K3-D304-AI-Product-Hackathon-B8      # đổi theo máy bạn — phải là GỐC REPO
+python -m http.server 8765
 ```
 
-*(Serve từ gốc repo vì app và runner đều đọc `data/vlearn-pack/slides/*.pdf`.)*
+Terminal in `Serving HTTP on :: port 8765` thì để nguyên đó (đóng terminal là tắt server), mở trình duyệt vào:
+
+- **App:** <http://localhost:8765/codebase/web/index.html>
+- **Runner:** <http://localhost:8765/eval/runner.html>
+
+Dừng server: `Ctrl+C`.
+
+<details>
+<summary>Chạy không được?</summary>
+
+| Báo lỗi | Nguyên nhân | Cách xử lý |
+|---|---|---|
+| `npx: command not found` / `'npx' is not recognized` | Máy chưa cài Node.js. **Dùng lệnh `python` ở trên, không cần Node.** | — |
+| `Python was not found` | Alias Microsoft Store chặn | Thử `py -m http.server 8765` |
+| `OSError: [Errno 98/10048] Address already in use` | Cổng 8765 đang bận | Đổi số: `python -m http.server 8790`, rồi đổi luôn số trong URL |
+| Trang trắng / `404` mọi thứ | Đang chạy server từ `codebase/` hoặc `codebase/web/` | `cd` về **gốc repo** rồi chạy lại — app và runner đều đọc `data/vlearn-pack/slides/*.pdf` nên gốc phải là repo |
+| Mở `http://localhost:PORT/...` → không vào được | `PORT` là chỗ điền số, không phải chữ | Gõ đúng số cổng: `8765` |
+
+</details>
 
 **Slide deck có sẵn:** header có nút **Slide buổi 1** / **Slide buổi 2** — bấm là mở luôn deck trong data pack, không phải tự chọn file. Nút **Mở PDF khác…** dành cho file ngoài. Data pack không được commit (`.gitignore`) nên máy mới clone sẽ chưa có hai deck đó; nút sẽ báo rõ thay vì lỗi im lặng.
 
@@ -101,6 +120,27 @@ Kéo chuột khoanh tay vẫn giữ, làm đường sửa khi máy dò không đ
 Gõ *"giải thích slide 24"* khi đang xem slide 12: hệ thống **không** kéo học viên sang slide 24. Trang 24 chỉ được nạp ngầm để đọc; câu trả lời kèm thumbnail trang 24 làm bằng chứng và nút **"↪ Đi tới slide 24"** để họ tự quyết định có chuyển hay không.
 
 Lý do: học viên đang đọc dở một slide, bị nhảy đi là mất chỗ. Và bằng chứng thumbnail đã đủ để họ kiểm tra hệ thống đọc đúng trang.
+
+## Câu hỏi tiếp — nối được ký ức hội thoại
+
+**Lỗi quan sát khi tự dùng thử:** sau khi được trả lời về ô ① của slide 24, gõ *"tôi muốn chi tiết hơn nữa"* thì hệ thống đáp *"Bạn đang hỏi về slide nào vậy?"* — bắt học viên nhắc lại thứ vừa nói xong.
+
+Nguyên nhân: sau mỗi lượt, `ask()` xoá vùng chọn. Câu tiếp theo không có số slide, không có vùng đang chọn → rơi thẳng vào nhánh ② *hỏi lại*.
+
+Cách xử lý (HAX **G12** — nhớ tương tác gần):
+
+| Tình huống | Hành vi |
+|---|---|
+| Có lượt trước, câu mới không nêu slide | **Nối tiếp đúng vùng vừa hỏi**, kèm dòng *"Hiểu là bạn hỏi tiếp về vùng vừa rồi ở trang N"* |
+| **Chưa** hỏi gì trước đó | Vẫn hỏi lại *"bạn đang hỏi slide nào"* — nhánh ② giữ nguyên, đây mới thật là mơ hồ |
+| Lượt trước bị **từ chối** hoặc **hỏi lại** | Không được ghi thành "vùng đang bàn". Nếu ghi thì một câu vô thưởng vô phạt sau đó lại kéo vùng cũ ra trả lời |
+
+**Lịch sử gửi đi bị siết chặt** để không phá giới hạn dữ liệu:
+
+- Chỉ gửi **chữ** — câu học viên đã gõ + câu model đã trả lời. **Không** ảnh, **không** text mới nào của tài liệu.
+- Chỉ gửi lượt của **đúng trang đang bàn** (`historyFor()` lọc theo `page.num`, `buildPayload()` chặn lại lần nữa). Trộn lượt của trang khác vào là gián tiếp gửi nội dung nhiều trang trong một request.
+- Tối đa **3 lượt**, mỗi câu trả lời cũ cắt ở **700 ký tự** (`HISTORY_MAX_TURNS` / `HISTORY_MAX_CHARS`).
+- Bảng 🔒 công khai thêm một dòng: *"Hội thoại trước: N lượt (M ký tự) — chỉ chữ, chỉ của đúng trang này"*.
 
 ## Giới hạn dữ liệu — AI Tutor không đọc cả tài liệu
 

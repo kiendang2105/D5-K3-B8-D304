@@ -132,6 +132,10 @@ const ExplainPanel = {
     const ul = el("ul");
     const rows = [
       `Trang gửi đi: <b>duy nhất trang ${d.pageNum}</b> (trần cứng: 1 trang/câu hỏi)`,
+      d.historyTurns
+        ? `Hội thoại trước: <b>${d.historyTurns} lượt</b> (${d.historyChars} ký tự) — chỉ chữ, ` +
+          "chỉ của đúng trang này; không có ảnh hay nội dung tài liệu mới nào"
+        : null,
       d.wholePage
         ? `Ảnh: <b>cả phần có nội dung của trang</b> — ${d.imageW}×${d.imageH}px. ` +
           "Vì bạn hỏi cả slide; muốn gửi ít hơn thì bấm vào đúng phần cần hỏi."
@@ -142,6 +146,7 @@ const ExplainPanel = {
       "Tên file, tổng số trang, nội dung các trang khác: <b>không gửi</b>",
     ];
     for (const r of rows) {
+      if (!r) continue; // dòng lịch sử chỉ hiện khi thực sự có gửi
       const li = el("li");
       li.innerHTML = r;
       ul.appendChild(li);

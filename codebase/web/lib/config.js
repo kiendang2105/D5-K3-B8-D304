@@ -43,6 +43,10 @@ const CONFIG = {
   TEXT_MARGIN_PX: 24,         // chỉ lấy text nằm trong vùng chọn + lề này
   MAX_TEXT_CHARS: 1200,       // trần ký tự text gửi kèm
 
+  // --- Ký ức hội thoại (chỉ dùng cho câu hỏi tiếp về ĐÚNG vùng đó) ---
+  HISTORY_MAX_TURNS: 3,       // gửi kèm tối đa 3 lượt gần nhất CỦA CÙNG TRANG
+  HISTORY_MAX_CHARS: 700,     // trần ký tự mỗi câu trả lời cũ
+
   // --- Render ---
   // Chiều rộng tối đa khi render trang để gửi cho vision.
   // Cao hơn = chữ rõ hơn nhưng tốn token ảnh và chậm hơn.
@@ -119,6 +123,11 @@ const PAGE_IN_QUESTION = /(?:slide|trang|page)\s*(?:số\s*)?(\d{1,3})/i;
 //   4. Không gửi tên file, không gửi tổng số trang, không gửi nội dung
 //      của bất kỳ trang nào khác.
 //   5. Mỗi câu trả lời kèm bảng "Đã gửi đi những gì" để học viên tự kiểm.
+//   6. Câu hỏi TIẾP được gửi kèm lịch sử, nhưng chỉ là CHỮ của các lượt
+//      trước (câu học viên đã gõ + câu model đã trả lời) và chỉ của ĐÚNG
+//      trang đang bàn. Không lượt nào của trang khác được trộn vào — làm
+//      vậy là gián tiếp gửi nội dung nhiều trang trong một request.
+//      Bảng công khai ghi rõ số lượt và số ký tự lịch sử đã gửi.
 //
 // Kiểm lại: Explain.buildPayload() là chỗ duy nhất đóng gói dữ liệu ra
 // ngoài — soát hàm đó là soát được toàn bộ đường dữ liệu rời máy.

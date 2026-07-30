@@ -18,7 +18,8 @@ const App = {
   source: null,
   currentPage: null,
   busy: false,
-  lastAsk: null, // để hỏi lại khi user báo quét nhầm trang
+  lastAsk: null, // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
+  turns: [],     // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
 
   async init() {
     SlideViewer.init();
@@ -206,8 +207,21 @@ const App = {
 
     const m = question.match(PAGE_IN_QUESTION);
 
-    // ② Mơ hồ: không nêu slide nào và cũng không chọn vùng -> hỏi lại
+    // Không nêu slide, không có vùng đang chọn -> ĐÂY CÓ THỂ LÀ CÂU HỎI TIẾP.
+    // Trước đây rơi thẳng vào nhánh ② "bạn đang hỏi slide nào?" — sai, vì học
+    // viên vừa được trả lời về một vùng cụ thể xong; hỏi lại là bắt họ nhắc
+    // lại thứ mình vừa nói. Nối tiếp đúng vùng vừa hỏi (HAX G12).
     if (!m && !RegionSelector.regionPage) {
+      if (this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
+        return this.ask({
+          question,
+          region: this.lastAsk.region,
+          page: this.lastAsk.page,
+          offScreen: this.lastAsk.page !== this.currentPage,
+          followUp: true,
+        });
+      }
+      // Chưa hỏi gì trước đó thì mới thật là mơ hồ (②)
       ExplainPanel.addUser({ question });
       const { bubble } = ExplainPanel.addBot();
       await ExplainPanel.stream(bubble, REPLIES.noPageInQuestion);
@@ -257,12 +271,12 @@ const App = {
   // ---------- lõi: một lượt hỏi ----------
 
   // region: toạ độ TRANG · page: trang được hỏi (có thể khác trang đang xem)
-  async ask({ question, region, page, offScreen, redo }) {
+  // followUp: câu hỏi tiếp về đúng vùng của lượt trước
+  async ask({ question, region, page, offScreen, redo, followUp }) {
     if (this.busy || !region) return;
     page = page || this.currentPage;
     this.busy = true;
     RegionSelector.locked = true;
-    this.lastAsk = { question };
 
     const mode = Explain.readMode(page);
     // Ảnh hiện trong bong bóng chat CHÍNH LÀ ảnh sẽ gửi đi — không có
@@ -283,7 +297,13 @@ const App = {
       ExplainPanel.addSystemNote(
         "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
     } else {
-      if (offScreen) {
+      // Nói rõ đang nối tiếp vùng nào, để học viên không tưởng máy đoán bừa
+      if (followUp) {
+        ExplainPanel.addSystemNote(
+          `Hiểu là bạn hỏi tiếp về **vùng vừa rồi ở trang ${page.num}** — ` +
+          "muốn hỏi phần khác thì bấm vào đúng phần đó trên slide.");
+      }
+      if (offScreen && !followUp) {
         ExplainPanel.addSystemNote(
           `Đang đọc **trang ${page.num}** (bạn vẫn ở trang ${this.currentPage.num}) — ` +
           "chỉ nạp đúng trang đó, không mở cả tài liệu.");
@@ -296,7 +316,13 @@ const App = {
 
     RegionSelector.clear();
 
-    const reply = await Explain.run({ question, page, region, mode });
+    // Lịch sử chỉ gửi khi hỏi tiếp về ĐÚNG vùng đó, và chỉ gửi CHỮ của các
+    // lượt trước (câu hỏi của học viên + câu trả lời của model) — không có
+    // ảnh hay text mới nào của tài liệu rời máy vì thế.
+    const reply = await Explain.run({
+      question, page, region, mode,
+      history: followUp ? this.historyFor(page.num, region) : null,
+    });
 
     const { div, bubble } = ExplainPanel.addBot();
     bubble.innerHTML = '<span class="cursor-blink">▌</span>';
@@ -327,8 +353,31 @@ const App = {
     ExplainPanel.addActions(div, reply.zone || null);
     ExplainPanel.scroll();
 
+    // Ghi lượt này lại để câu hỏi tiếp nối được đúng vùng.
+    // Chỉ ghi khi thực sự đã đọc nội dung — câu bị từ chối hoặc hỏi lại
+    // không được thành "vùng đang bàn", nếu không thì học viên gõ tiếp một
+    // câu vô thưởng vô phạt lại kéo cả vùng cũ ra trả lời.
+    if (reply.grounded !== false) {
+      this.turns.push({ page: page.num, question: question || "(giải thích vùng này)", answer: reply.text });
+      if (this.turns.length > CONFIG.HISTORY_MAX_TURNS) this.turns.shift();
+      this.lastAsk = { question, region, page };
+    }
+
     this.busy = false;
     RegionSelector.locked = false;
+  },
+
+  // Lịch sử hội thoại cho câu hỏi tiếp — CHỈ các lượt về đúng trang này.
+  // Không trộn lượt của trang khác vào: làm vậy là gián tiếp gửi nội dung
+  // nhiều trang trong một request, phá giới hạn 1 trang/câu hỏi.
+  historyFor(pageNum) {
+    return this.turns
+      .filter((t) => t.page === pageNum)
+      .slice(-CONFIG.HISTORY_MAX_TURNS)
+      .map((t) => ({
+        question: t.question.slice(0, 300),
+        answer: t.answer.slice(0, CONFIG.HISTORY_MAX_CHARS),
+      }));
   },
 
   // ---------- API key (CP3) ----------
