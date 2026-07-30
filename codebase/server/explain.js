@@ -391,7 +391,13 @@ const Explain = {
     return this._promptTemplate
       .replace("{{GROUNDING}}", grounding)
       .replace("{{HISTORY}}", hist)
-      .replace("{{QUESTION}}", question || "Giải thích phần này giúp mình.");
+      // Bấm chọn một vùng rồi gửi mà không gõ gì là chuyện thường (popover ghi
+      // rõ "bỏ trống = giải thích"). Câu thay thế phải RA LỆNH RÕ, nếu không
+      // model đọc "giải thích phần này giúp mình" như một lời mở đầu xã giao
+      // và đáp lại bằng "Xin chào, mình có thể giúp gì cho bạn" — đã gặp thật.
+      .replace("{{QUESTION}}",
+        question || "Giải thích nội dung trong vùng ảnh được gửi kèm. " +
+                    "Đi thẳng vào nội dung, không chào hỏi, không hỏi lại.");
   },
 };
 

@@ -19,37 +19,49 @@ const ExplainPanel = {
   // Trước đây mỗi lần mở một PDF lại NỐI THÊM một dòng thông báo, đổi qua
   // lại bốn lần là bốn dòng chồng nhau; mà hội thoại về tài liệu cũ cũng
   // chẳng còn nghĩa gì khi đã sang tài liệu khác.
-  resetFor(source, page) {
+  // Trạng thái mở đầu = tutor chào một câu, kèm vài câu hỏi bấm được.
+  //
+  // Bản trước là một khối thông tin khô: tên file, số trang, ba gạch đầu dòng
+  // hướng dẫn — mà hướng dẫn đó đã có nguyên một dòng ngay trên slide rồi.
+  // Một màn hình nói cùng một việc hai lần.
+  //
+  // Lời chào này là của GIAO DIỆN, không phải model sinh ra: không tốn lời gọi
+  // AI, không gửi gì ra ngoài, và hiện ra tức thì. Prompt vẫn cấm model chào
+  // trong câu trả lời — bấm vào sơ đồ mà bị chào lại là phiền.
+  resetFor(source, page, suggestions, onPick) {
     this.body.innerHTML = "";
-    const wrap = el("div", "empty-chat");
 
-    const h = el("div", "ec-title");
-    h.textContent = source ? source.name : "Chưa mở tài liệu";
-    wrap.appendChild(h);
+    const div = el("div", "msg bot greet");
+    const bubble = el("div", "bubble");
+    bubble.innerHTML = mdBold(
+      "Xin chào! Mình là **VLearn Tutor** 👋\n" +
+      "Mình có thể giúp gì cho bạn về slide này?");
+    div.appendChild(bubble);
 
-    const sub = el("div", "ec-sub");
-    sub.textContent = source
-      ? `${source.pageCount} trang · đang ở ${page ? "trang " + page.num : "trang đầu"}`
-      : "";
-    wrap.appendChild(sub);
-
-    const ul = el("ul", "ec-tips");
-    for (const t of [
-      "<b>Bấm vào</b> sơ đồ, biểu đồ hay đoạn chữ trên slide để hỏi riêng phần đó",
-      "Hoặc gõ thẳng câu hỏi ở ô dưới",
-      "Muốn hỏi trang khác thì ghi kèm số trang, ví dụ <i>giải thích trang 3</i>",
-    ]) {
-      const li = el("li");
-      li.innerHTML = t;
-      ul.appendChild(li);
+    if (source) {
+      const meta = el("div", "greet-doc");
+      meta.textContent = `${source.name} · ${source.pageCount} trang` +
+        (page ? ` · đang ở trang ${page.num}` : "");
+      div.appendChild(meta);
     }
-    wrap.appendChild(ul);
-    this.body.appendChild(wrap);
+
+    if (suggestions && suggestions.length) {
+      this.addSuggestions(div, suggestions, onPick);
+    }
+
+    this.body.appendChild(div);
+    this.scroll();
   },
 
+  // Hội thoại bắt đầu thì bỏ chip gợi ý mở đầu, nhưng GIỮ lời chào lại —
+  // như mọi khung chat, câu chào là tin nhắn đầu tiên chứ không phải một
+  // trạng thái rỗng bị thay thế. Chip thì đã dùng xong, để lại là gợi ý cũ
+  // nằm lẫn giữa dòng hội thoại.
   clearEmpty() {
-    const el = this.body.querySelector(".empty-chat");
-    if (el) el.remove();
+    const old = this.body.querySelector(".empty-chat");
+    if (old) old.remove();
+    const chips = this.body.querySelector(".msg.bot.greet .suggestions");
+    if (chips) chips.remove();
   },
 
   scroll() {

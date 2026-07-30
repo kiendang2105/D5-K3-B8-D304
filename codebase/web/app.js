@@ -132,7 +132,40 @@ const App = {
     this.lastAsk = null;
     this.chitchatTurn = 0;
     RegionSelector.clear();
-    ExplainPanel.resetFor(this.source, this.currentPage);
+    this.renderGreeting();
+  },
+
+  renderGreeting() {
+    ExplainPanel.resetFor(this.source, this.currentPage,
+      this.suggestFor(this.currentPage),
+      (q) => { document.getElementById("chat-q").value = q; this.askFromChat(); });
+  },
+
+  // Câu hỏi gợi ý mở đầu, suy ra TẠI CHỖ từ nội dung trang đang xem.
+  // Không gọi AI: hiện tức thì, không tốn quota, không gửi gì ra ngoài.
+  suggestFor(page) {
+    if (!page) return [];
+
+    // Trang không đọc được text thì chỉ gợi ý chung được
+    if (page.textLen < CONFIG.MIN_TEXT_CHARS) {
+      return ["Trang này có gì?", "Giải thích hình trên trang"];
+    }
+
+    const out = [];
+
+    // Slide mock có sẵn tên vùng — gợi ý thẳng theo tên đó
+    if (page.zones && page.zones.length) {
+      for (const z of page.zones.slice(0, 2)) out.push(`Giải thích ${z.label.toLowerCase()}`);
+    } else {
+      // PDF thật: lấy dòng chữ TO NHẤT ở nửa trên làm tiêu đề
+      const items = (page.textItems || []).filter((t) => t.y < page.height * 0.5);
+      const title = items.sort((a, b) => b.h - a.h)[0];
+      const s = title ? title.str.trim() : "";
+      if (s.length >= 4 && s.length <= 60) out.push(`"${s}" nghĩa là gì?`);
+    }
+
+    out.push("Trang này nói về gì?");
+    return out.slice(0, 3);
   },
 
   // Mở PDF do user tự chọn
@@ -255,6 +288,9 @@ const App = {
       b.classList && b.classList.toggle("active", Number(b.dataset.page) === num));
     this.renderPageMeta(page);
     this.renderPager();
+    // Chưa hỏi gì mà lật trang thì gợi ý phải theo trang mới, không đứng yên
+    // ở trang cũ. Đã có hội thoại rồi thì để nguyên, không phá dòng chat.
+    if (!this.turns.length) this.renderGreeting();
     return page;
   },
 
