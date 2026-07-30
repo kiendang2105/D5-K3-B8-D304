@@ -10,16 +10,13 @@ Khi gặp sơ đồ, biểu đồ hoặc hình minh hoạ trong slide, học vi�
 
 ## Thành viên & phân công
 
-> ⚠️ **Điền trước khi nộp** — R7 cho 1 điểm cho việc phân công có tên người cho từng phần. Mỗi người phải giải thích được phần mang tên mình (vibe-coding rule, kiểm tại CP5).
-
-| Mã HV | Tên | Phụ trách | File chịu trách nhiệm |
-|---|---|---|---|
-| | | Evidence & mining | `docs/survey-log.md` · `spec.md` §1-§2 |
-| | | Spec & thiết kế | `spec.md` §3-§6 |
-| | | Prompt & golden set | `codebase/server/prompts/` · `eval/` |
-| | | Frontend (slide viewer, khoanh vùng) | `codebase/web/components/` |
-| | | AI call & trace | `codebase/server/explain.js` · `codebase/server/traces/` |
-| | | Demo & validation | `demo-slides.pdf` · `validation/` |
+> ⚠️ **Điền tên thật trước khi nộp** — R7 cho 1 điểm cho việc phân công có tên người cho từng phần. Mỗi người phải hiểu rõ phần mình phụ trách và có thể giải thích được khi được hỏi ở CP5.
+| Mã HV | Tên thành viên | Vai trò | Phụ trách chính | 
+|---|---|---|---|---|
+| 2A202601887 | Đặng Trung Kiên | Trưởng nhóm / Lead toàn diện | Chịu trách nhiệm chính cho toàn bộ tiến trình dự án: định hướng sản phẩm, viết spec, điều phối nhóm, phối hợp giữa research, frontend, backend và demo | 
+| 2A202601905 | Hán Vũ Long | Research & evidence | Thu thập bằng chứng từ khảo sát, mining chatlog, hỗ trợ viết pain point, user need và các nội dung nền tảng cho spec |
+| 2A202601777 | Trần Duy Hoành | Frontend & UX | Xây dựng giao diện slide viewer, vùng chọn vùng ảnh, tương tác người dùng và hỗ trợ trải nghiệm demo | 
+| 2A202601767 | Lê Quang Đức | Backend / Agent build | Làm phần build agent, tích hợp gọi AI, xử lý response, lưu trace, chuẩn bị validation và demo |
 
 ## Chạy prototype
 
