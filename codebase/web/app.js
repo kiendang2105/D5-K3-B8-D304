@@ -242,6 +242,19 @@ const App = {
     const question = input.value.trim();
     if (!question || this.busy) return;
     input.value = "";
+    try {
+      await this.routeChat(question);
+    } catch (err) {
+      // Lỗi ngoài ask() (phân loại, tra trang, dò vùng) cũng phải hiện ra.
+      // Im lặng nuốt lỗi ở đây là học viên gõ mãi mà màn hình không đổi gì.
+      console.error("[askFromChat] lỗi:", err);
+      ExplainPanel.addUser({ question });
+      ExplainPanel.addSystemNote(
+        `Có lỗi khi xử lý tin nhắn: **${err && err.message ? err.message : err}**.`);
+    }
+  },
+
+  async routeChat(question) {
 
     // Thứ tự ưu tiên khi tìm CĂN CỨ cho câu hỏi — từ cụ thể nhất tới rộng nhất.
     // Không còn nhánh nào bỏ mặc học viên: gõ câu gì cũng được trả lời.
@@ -385,11 +398,30 @@ const App = {
 
   // region: toạ độ TRANG · page: trang được hỏi (có thể khác trang đang xem)
   // followUp: câu hỏi tiếp về đúng vùng của lượt trước
-  async ask({ question, region, page, offScreen, redo, followUp }) {
-    if (this.busy || !region) return;
-    page = page || this.currentPage;
+  async ask(req) {
+    if (this.busy || !req || !req.region) return;
     this.busy = true;
     RegionSelector.locked = true;
+    try {
+      await this.askInner(req);
+    } catch (err) {
+      // Trước đây không có try/finally: bất kỳ lỗi nào giữa chừng là `busy`
+      // kẹt ở true vĩnh viễn, và vì askFromChat mở đầu bằng
+      // `if (!question || this.busy) return;` nên MỌI tin nhắn sau đó im lặng
+      // thoát, không hiện gì. Chat chết mà không báo một chữ.
+      console.error("[ask] lỗi:", err);
+      ExplainPanel.addSystemNote(
+        `Có lỗi khi xử lý câu hỏi: **${err && err.message ? err.message : err}**. ` +
+        "Bạn thử lại; nếu lặp lại thì mở Console (F12) xem chi tiết.");
+    } finally {
+      this.busy = false;
+      RegionSelector.locked = false;
+      ExplainPanel.scroll();
+    }
+  },
+
+  async askInner({ question, region, page, offScreen, redo, followUp }) {
+    page = page || this.currentPage;
 
     const mode = Explain.readMode(page);
     // Ảnh hiện trong bong bóng chat CHÍNH LÀ ảnh sẽ gửi đi — không có
@@ -496,9 +528,7 @@ const App = {
       if (this.turns.length > CONFIG.HISTORY_MAX_TURNS) this.turns.shift();
       this.lastAsk = { question, region, page };
     }
-
-    this.busy = false;
-    RegionSelector.locked = false;
+    // busy và locked được nhả trong `finally` của ask()
   },
 
   // Lịch sử hội thoại cho câu hỏi tiếp — CHỈ các lượt về đúng trang này.
