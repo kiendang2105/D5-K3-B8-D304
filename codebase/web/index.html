@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VLearn — AI Tutor giải thích vùng slide (CP2 Mock)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="logo">VLearn</span>
+    <!-- HAX G1: nói rõ hệ thống làm được gì ngay câu đầu tiên -->
+    <span class="scope-note">Khoanh vùng trên slide, mình giải thích phần đó theo tài liệu buổi học — ngoài tài liệu mình sẽ nói rõ.</span>
+    <span class="badge-mock">CP2 · MOCK — chưa gọi AI thật</span>
+  </header>
+
+  <main>
+    <section class="slide-area">
+      <div class="slide-tabs" id="slide-tabs"></div>
+      <p class="hint"><b>Kéo chuột</b> để khoanh vùng sơ đồ / biểu đồ / đoạn chữ muốn AI Tutor giải thích.</p>
+
+      <div class="slide-wrap" id="slide-wrap">
+        <canvas id="slide" width="960" height="540"></canvas>
+        <canvas id="overlay" width="960" height="540"></canvas>
+
+        <div class="popover" id="popover">
+          <input id="question" type="text"
+            placeholder="Hỏi gì về vùng này? (bỏ trống = giải thích)" />
+          <div class="row">
+            <button class="ask" id="btn-ask">Hỏi AI Tutor</button>
+            <button class="cancel" id="btn-cancel">Huỷ</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="demo-script">
+        <summary>Kịch bản demo CP2 — 4 đường đi trải nghiệm</summary>
+        <ol>
+          <li><b>Happy path:</b> khoanh trọn sơ đồ bên phải Slide 12 → giải thích + trích dẫn trang.</li>
+          <li><b>Low-confidence (②):</b> khoanh một vùng thật nhỏ (vài chục pixel) → AI hỏi lại thay vì đoán.</li>
+          <li><b>Không căn cứ (①):</b> khoanh vùng trống ở giữa slide → AI nói không nhận diện được, không bịa.</li>
+          <li><b>Ngoài phạm vi (③):</b> khoanh vùng bất kỳ + gõ "làm hộ bài tập này" → từ chối nhưng chỉ đường tiếp.</li>
+          <li><b>Correction (G9):</b> sau câu trả lời, bấm "Giải thích đơn giản hơn" hoặc 👎 "Sai chỗ nào?".</li>
+        </ol>
+      </details>
+    </section>
+
+    <aside class="chat-panel">
+      <div class="chat-head">
+        <div class="title">AI Tutor</div>
+        <div class="sub">Giải thích vùng bạn chọn · luôn kèm nguồn khi có căn cứ</div>
+      </div>
+      <div class="chat-body" id="chat-body">
+        <div class="empty-chat">
+          Chưa có hội thoại.<br />
+          Khoanh một vùng trên slide để bắt đầu 👈
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="mock-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
