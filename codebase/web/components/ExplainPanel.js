@@ -25,19 +25,48 @@ const ExplainPanel = {
   },
 
   // ---- tin nhắn của học viên ----
-  addUser({ cropImage, question }) {
+  // `excerpt` là đoạn text nằm trong vùng đã chọn. Tutor thật của VLearn gửi
+  // kèm đúng thứ này: 99,3% câu hỏi trong chatlog mang tiền tố
+  // `(Trang N, đoạn được chọn: "...")`. Hiện lại nó để học viên thấy chính xác
+  // phần nào đang được hỏi, thay vì chỉ thấy một ảnh cắt.
+  addUser({ cropImage, question, excerpt, pageNum }) {
     this.clearEmpty();
     const div = el("div", "msg user");
+
     if (cropImage) {
       const img = el("img", "crop");
       img.src = cropImage;
       div.appendChild(img);
     }
+
+    if (excerpt) {
+      const q = el("div", "excerpt");
+      const cap = el("span", "cap");
+      cap.textContent = pageNum ? `Trang ${pageNum} · đoạn đã chọn` : "Đoạn đã chọn";
+      q.appendChild(cap);
+      const t = el("span", "txt");
+      t.textContent = excerpt.length > 160 ? excerpt.slice(0, 160) + "…" : excerpt;
+      q.appendChild(t);
+      div.appendChild(q);
+    }
+
     const bubble = el("div", "bubble");
     bubble.textContent = question || "Giải thích vùng này giúp mình";
     div.appendChild(bubble);
     this.body.appendChild(div);
     this.scroll();
+  },
+
+  // Chấm gõ trong lúc chờ model. Con trỏ nhấp nháy trước đây trông như
+  // ô nhập bị treo chứ không như ai đó đang soạn câu trả lời.
+  addTyping() {
+    const div = el("div", "msg bot typing");
+    const b = el("div", "bubble");
+    b.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    div.appendChild(b);
+    this.body.appendChild(div);
+    this.scroll();
+    return div;
   },
 
   // ---- tin nhắn của tutor ----

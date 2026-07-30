@@ -156,7 +156,23 @@
     </div>
 
     <!-- Thanh trang THẬT (app.js đổ nút từng trang vào đây) -->
-    <div class="pager"><div class="page-tabs" id="page-tabs"></div></div>
+    <!-- Thanh trang: điều hướng kiểu trình đọc tài liệu. Bản trước đổ mỗi
+         trang thành một nút, PDF 29 trang thì ra 12 nút + "và 17 trang nữa" -->
+    <div class="pager">
+      <button class="pg-nav" id="pg-first" title="Trang đầu">«</button>
+      <button class="pg-nav" id="pg-prev" title="Trang trước">‹</button>
+
+      <div class="pg-jump" id="pg-jump">
+        <input id="pg-input" type="text" inputmode="numeric" aria-label="Số trang" />
+        <span class="pg-total">/ <b id="pg-total">–</b></span>
+      </div>
+
+      <button class="pg-nav" id="pg-next" title="Trang sau">›</button>
+      <button class="pg-nav" id="pg-last" title="Trang cuối">»</button>
+
+      <!-- Slide mẫu có tên riêng nên vẫn để chip; PDF thì ẩn đi -->
+      <div class="page-tabs" id="page-tabs"></div>
+    </div>
   </section>
 
   <!-- ---------- Panel VLearn Tutor ---------- -->

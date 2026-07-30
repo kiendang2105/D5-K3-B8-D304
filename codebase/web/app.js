@@ -52,6 +52,16 @@ const App = {
     if (theme) theme.onclick = () => this.toggleTheme();
     this.restoreTheme();
 
+    document.getElementById("pg-first").onclick = () => this.step(-Infinity);
+    document.getElementById("pg-prev").onclick = () => this.step(-1);
+    document.getElementById("pg-next").onclick = () => this.step(1);
+    document.getElementById("pg-last").onclick = () => this.step(Infinity);
+    const pgInput = document.getElementById("pg-input");
+    pgInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") this.jumpToTyped();
+    });
+    pgInput.addEventListener("blur", () => this.renderPager());
+
     this.buildDeckButtons();
     this.restoreKey();
     await this.useMock();
@@ -145,24 +155,79 @@ const App = {
     }
   },
 
+  // Chip tên trang chỉ có nghĩa khi tài liệu ít trang và trang có tên riêng
+  // (slide mẫu: "Slide 12 · Automation"). Với PDF 29 trang thì đổ 12 nút rồi
+  // ghi "và 17 trang nữa" không phải là trình đọc tài liệu — dùng thanh
+  // ‹ số trang › như mọi trình đọc.
   async buildTabs() {
     const tabs = document.getElementById("page-tabs");
     tabs.innerHTML = "";
     const labels = this.source.pageLabels();
-    // PDF dài thì chỉ hiện 12 trang đầu cho gọn — vẫn hỏi được trang khác qua chat
-    for (const p of labels.slice(0, 12)) {
-      const b = document.createElement("button");
-      b.textContent = p.label;
-      b.dataset.page = p.index;
-      b.onclick = () => this.goToPage(p.index);
-      tabs.appendChild(b);
+    const dungChip = this.source.kind === "mock" && labels.length <= 6;
+
+    tabs.hidden = !dungChip;
+    if (dungChip) {
+      for (const p of labels) {
+        const b = document.createElement("button");
+        b.textContent = p.label;
+        b.dataset.page = p.index;
+        b.onclick = () => this.goToPage(p.index);
+        tabs.appendChild(b);
+      }
     }
-    if (labels.length > 12) {
-      const more = document.createElement("span");
-      more.className = "tabs-more";
-      more.textContent = `… và ${labels.length - 12} trang nữa — hỏi qua chat`;
-      tabs.appendChild(more);
+
+    // Ô nhảy trang chỉ có nghĩa với tài liệu đánh số LIÊN TỤC 1..N. Slide mẫu
+    // đánh số 12/18/24 (cố ý, để mô phỏng bẫy số trang lệch) nên hiện
+    // "12 / 3" là vô nghĩa — với nguồn đó thì chip tên slide đã đủ.
+    const lienTuc = this.source.kind === "pdf";
+    document.getElementById("pg-jump").hidden = !lienTuc;
+    if (lienTuc) document.getElementById("pg-total").textContent = labels.length;
+    this.renderPager();
+  },
+
+  // ---------- thanh trang ----------
+
+  pageList() {
+    return this.source ? this.source.pageLabels().map((p) => p.index) : [];
+  },
+
+  renderPager() {
+    const list = this.pageList();
+    const cur = this.currentPage ? this.currentPage.num : null;
+    const i = list.indexOf(cur);
+    const input = document.getElementById("pg-input");
+    if (input && document.activeElement !== input) input.value = cur == null ? "" : cur;
+
+    for (const [id, off] of [["pg-first", -Infinity], ["pg-prev", -1],
+                             ["pg-next", 1], ["pg-last", Infinity]]) {
+      const b = document.getElementById(id);
+      if (!b) continue;
+      b.disabled = i < 0 || (off < 0 ? i === 0 : i === list.length - 1);
     }
+  },
+
+  async step(delta) {
+    const list = this.pageList();
+    const i = list.indexOf(this.currentPage ? this.currentPage.num : -1);
+    if (i < 0) return;
+    const j = delta === -Infinity ? 0
+      : delta === Infinity ? list.length - 1
+      : Math.max(0, Math.min(list.length - 1, i + delta));
+    if (list[j] !== list[i]) await this.goToPage(list[j]);
+  },
+
+  async jumpToTyped() {
+    const input = document.getElementById("pg-input");
+    const n = parseInt((input.value || "").replace(/\D/g, ""), 10);
+    if (!n || !this.source.hasPage(n)) {
+      // Gõ số không có thì trả input về trang hiện tại, không im lặng nuốt
+      ExplainPanel.addSystemNote(
+        `Không có trang ${input.value || "(trống)"} — tài liệu này có ${this.source.rangeText()}.`);
+      this.renderPager();
+      return;
+    }
+    await this.goToPage(n);
+    input.blur();
   },
 
   async goToPage(num) {
@@ -174,6 +239,7 @@ const App = {
     [...document.getElementById("page-tabs").children].forEach((b) =>
       b.classList && b.classList.toggle("active", Number(b.dataset.page) === num));
     this.renderPageMeta(page);
+    this.renderPager();
     return page;
   },
 
@@ -428,8 +494,18 @@ const App = {
     // ảnh nào khác rời máy. Học viên nhìn bong bóng là biết đã gửi gì.
     const cropImage = ContentDetector.cropPage(page, region);
 
+    // Đoạn text nằm trong vùng chọn — đúng thứ tutor thật gửi kèm câu hỏi.
+    // Lấy qua buildPayload để hiện đúng cái sẽ gửi, không tự tính lại một kiểu
+    // khác rồi lệch với bảng công khai.
+    let excerpt = "";
+    if (mode === "text") {
+      try {
+        excerpt = (Explain.buildPayload({ page, region, mode }).text || "").trim();
+      } catch (e) { /* chỉ để hiển thị, hỏng thì bỏ qua */ }
+    }
+
     ExplainPanel.addUser({
-      cropImage,
+      cropImage, excerpt, pageNum: page.num,
       question: redo ? `(đọc lại) ${question || "Giải thích phần này"}` : question,
     });
 
@@ -465,13 +541,14 @@ const App = {
     // Lịch sử chỉ gửi khi hỏi tiếp về ĐÚNG vùng đó, và chỉ gửi CHỮ của các
     // lượt trước (câu hỏi của học viên + câu trả lời của model) — không có
     // ảnh hay text mới nào của tài liệu rời máy vì thế.
+    const typing = blocked ? null : ExplainPanel.addTyping();
     const reply = await Explain.run({
       question, page, region, mode,
       history: followUp ? this.historyFor(page.num, region) : null,
     });
+    if (typing) typing.remove();
 
     const { div, bubble } = ExplainPanel.addBot();
-    bubble.innerHTML = '<span class="cursor-blink">▌</span>';
     if (reply.text) {
       await ExplainPanel.stream(bubble, reply.text);
     } else {
