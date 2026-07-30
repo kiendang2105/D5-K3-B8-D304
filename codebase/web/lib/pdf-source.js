@@ -72,8 +72,23 @@ class MockSource {
     if (!slide) return null;
 
     const canvas = await svgToCanvas(slide.svg, CONFIG.SCAN_MAX_WIDTH);
-    // Mock text layer: slide "scan" cố tình trả về rỗng
-    const text = slide.hasText ? slide.label + " — nội dung text giả lập" : "";
+
+    // Zone khai trong mock-data theo hệ 960x540 -> đổi sang toạ độ trang
+    const k = canvas.width / CONFIG.SLIDE_W;
+    const zones = slide.zones.map((z) => ({
+      ...z,
+      rect: [z.rect[0] * k, z.rect[1] * k, z.rect[2] * k, z.rect[3] * k],
+    }));
+
+    // Mock text layer: slide "scan" cố tình không có text.
+    // Text được gắn vào từng zone để lọc theo vùng chọn giống PDF thật.
+    const textItems = slide.hasText
+      ? zones.map((z) => ({
+          str: z.label, x: z.rect[0], y: z.rect[1], w: z.rect[2], h: z.rect[3],
+        }))
+      : [];
+    const text = textItems.map((t) => t.str).join(" ");
+
     const page = {
       num: slide.num,
       label: slide.label,
@@ -83,7 +98,8 @@ class MockSource {
       hasText: slide.hasText,
       text,
       textLen: text.length,
-      zones: slide.zones,
+      textItems,
+      zones,
     };
     this.cache.set(num, page);
     return page;
@@ -135,6 +151,7 @@ class PdfSource {
     if (this.cache.has(num)) return this.cache.get(num);
     if (!this.hasPage(num)) return null;
 
+    // CHỈ nạp đúng trang được hỏi — không có bước đọc cả tài liệu.
     const p = await this.pdf.getPage(num);
 
     // (1) Thử rút text — đây là phép đo quyết định chế độ đọc
@@ -151,6 +168,21 @@ class PdfSource {
     canvas.height = Math.round(viewport.height);
     await p.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
 
+    // (3) Ghi vị trí từng đoạn text trong toạ độ trang, để sau này chỉ
+    // gửi đi phần text NẰM TRONG vùng học viên chọn (xem GIỚI HẠN DỮ LIỆU).
+    const textItems = [];
+    for (const it of tc.items) {
+      if (!it.str || !it.str.trim()) continue;
+      const [x, y] = viewport.convertToViewportPoint(it.transform[4], it.transform[5]);
+      const h = Math.abs(it.height || it.transform[3] || 10) * scale;
+      textItems.push({
+        str: it.str,
+        x, y: y - h, // convertToViewportPoint trả về đường chân chữ
+        w: (it.width || 0) * scale,
+        h,
+      });
+    }
+
     const page = {
       num,
       label: "Trang " + num,
@@ -160,6 +192,7 @@ class PdfSource {
       hasText,
       text,
       textLen: text.length,
+      textItems,
       zones: null, // PDF thật không có zone khai sẵn -> mock trả lời chung
     };
     this.cache.set(num, page);

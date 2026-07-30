@@ -231,12 +231,31 @@ main { flex: 1; display: flex; min-height: 0; }
   display: block; width: 100%; max-width: 240px;
   border: 1px solid var(--border); border-radius: 6px; background: #fff;
 }
+.scan-evidence .ev-actions { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
 .scan-evidence .fix-page {
-  margin-top: 7px; border: 1px solid var(--border); background: #fff;
+  border: 1px solid var(--border); background: #fff;
   border-radius: 999px; padding: 4px 11px; font-size: 11.5px;
   cursor: pointer; color: var(--muted);
 }
 .scan-evidence .fix-page:hover { border-color: var(--indigo); color: var(--indigo); }
+
+/* Công khai dữ liệu đã gửi đi */
+.disclosure {
+  margin-top: 8px;
+  border: 1px solid #d1fae5;
+  background: #f0fdf4;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+}
+.disclosure summary {
+  cursor: pointer; color: #166534; font-weight: 700; list-style: none;
+}
+.disclosure summary::-webkit-details-marker { display: none; }
+.disclosure summary::before { content: "▸ "; }
+.disclosure[open] summary::before { content: "▾ "; }
+.disclosure ul { margin: 7px 0 2px 16px; color: #14532d; line-height: 1.7; }
+.disclosure b { color: #065f46; }
 
 .citation {
   display: inline-block; margin-top: 8px; margin-left: 6px;

@@ -88,17 +88,39 @@ Loại: **[x] Tối ưu tính năng có sẵn**  [ ] Tính năng mới
 
 ### Lát cắt MỘT CÂU
 
-> **Học viên** chọn **một vùng hình ảnh trên một slide** · **AI nhận diện và giải thích riêng vùng đó** theo ngữ cảnh bài học · trả về **lời giải thích kèm trích dẫn trang**.
+> **Học viên** **bấm vào một vùng hình ảnh trên một slide** · **AI tự nhận diện ranh giới vùng đó và giải thích riêng nó** theo ngữ cảnh bài học · trả về **lời giải thích kèm trích dẫn trang**.
 
-Hỏi qua chat *"giải thích slide 24"* được cài đặt là **khoanh trọn trang** — cùng một đường code, không phải lát cắt thứ hai.
+Ba đường vào đều quy về "một vùng trên một trang", nên vẫn là một lát cắt:
+
+| Đường vào | Cách cài đặt |
+|---|---|
+| **Click** (đường chính) | `ContentDetector` dò khối nội dung tại chỗ bấm — đúng chữ "AI tự nhận diện" |
+| **Kéo khoanh tay** | Đường sửa khi máy dò không đúng ý (G9) |
+| **Hỏi qua chat** *"giải thích slide 24"* | Lấy phần có nội dung của trang đó — **không chuyển màn hình** |
 
 ### Non-goals (KHÔNG build)
 
 1. **Không** làm bài tập hộ / đưa đáp án — chỉ giải thích nội dung slide.
 2. **Không** trả lời câu hỏi logistics (deadline, điểm, link nộp bài) — chuyển TA.
-3. **Không** tóm tắt cả slide / cả bài giảng — chỉ đúng vùng được khoanh.
+3. **Không** tóm tắt cả bài giảng, không trả lời câu hỏi cần đọc nhiều trang.
 4. **Không** sinh quiz, không chấm bài, không theo dõi tiến độ học.
 5. **Không** deploy, không đăng nhập, không lưu lịch sử hội thoại.
+6. **Không** upload file PDF đi đâu — file nằm nguyên trong trình duyệt.
+
+### Giới hạn dữ liệu (ràng buộc cứng của tính năng)
+
+AI Tutor **không được đọc hay chuyển đi cả tài liệu**. Mỗi câu hỏi chỉ mang đi đúng phần đang được hỏi:
+
+| # | Giới hạn | Thực thi ở đâu |
+|---|---|---|
+| 1 | Tối đa **1 trang** cho một câu hỏi | `MAX_PAGES_PER_REQUEST` · `PdfSource.getPage()` chỉ nạp trang được hỏi |
+| 2 | Ảnh gửi đi là **ảnh vùng đã cắt**, không phải ảnh cả trang | `Explain.buildPayload()` |
+| 3 | Text chỉ lấy đoạn **nằm trong vùng chọn + lề 24px**, trần 1.200 ký tự | `Explain.buildPayload()` |
+| 4 | Không gửi tên file, tổng số trang, nội dung trang khác | `Explain.buildPayload()` |
+| 5 | Câu ngoài phạm vi bị chặn **trước** khi đóng gói → không có gì rời máy | `Explain.run()` |
+| 6 | Mỗi câu trả lời kèm bảng **🔒 Đã gửi đi những gì** | `ExplainPanel.addDisclosure()` |
+
+`Explain.buildPayload()` là **chỗ duy nhất** dữ liệu rời khỏi máy học viên — soát một hàm đó là soát được toàn bộ đường dữ liệu đi ra. Đây cũng là câu trả lời cho lớp chỗ khó ③ ở mức dữ liệu, không chỉ mức nội dung.
 
 ### Mức prototype: **[ ] Sketch  [x] Mock  [ ] Working**
 
@@ -120,11 +142,12 @@ Hỏi qua chat *"giải thích slide 24"* được cài đặt là **khoanh tr�
 | Nguyên tắc | Áp cụ thể vào đâu trong prototype |
 |---|---|
 | **G1** — Làm rõ hệ thống làm được gì | Dòng scope ngay header, là câu đầu tiên user thấy: *"Khoanh vùng trên slide, mình giải thích phần đó theo tài liệu buổi học — ngoài tài liệu mình sẽ nói rõ."* |
-| **G2** — Làm rõ nó làm tốt đến đâu | Băng trạng thái trên slide hiện **trước khi** user hỏi: `📄 Trang này đọc được text (N ký tự)` hoặc `👁 Trang này không có lớp text — sẽ quét ảnh`. Mỗi câu trả lời kèm badge chế độ đọc. |
-| **G10** — Thu hẹp phạm vi khi nghi ngờ | Vùng chọn < 2500px² → hỏi lại thay vì đoán · hỏi qua chat không nêu số slide → hỏi lại là slide nào · vùng chọn không trúng nội dung nào → nói không nhận diện được |
-| **G11** — Giải thích vì sao | Chip trích dẫn trang cạnh câu trả lời · với chế độ quét: **thumbnail trang đã đọc** để user tự kiểm mình đang đọc đúng trang không |
-| **G9** — Sửa dễ dàng | Nút *"Không phải trang này?"* (nhập lại số trang → đọc lại) · nút *"Giải thích đơn giản hơn"* ngay trên output |
+| **G2** — Làm rõ nó làm tốt đến đâu | Băng trạng thái trên slide hiện **trước khi** user hỏi: `📄 Trang này đọc được text (N ký tự)` hoặc `👁 Trang này không có lớp text — sẽ quét ảnh vùng bạn chọn`. Mỗi câu trả lời kèm badge chế độ đọc. |
+| **G10** — Thu hẹp phạm vi khi nghi ngờ | Bấm vào chỗ trống hẳn → nói không nhận diện được, không đoán · máy dò ra dải mảnh (<1% diện tích trang) → hỏi lại · hỏi qua chat không nêu số slide → hỏi lại là slide nào |
+| **G11** — Giải thích vì sao | **Khung dò hiện ngay trên slide** — học viên thấy máy hiểu vùng nào trước khi đọc câu trả lời · chip trích dẫn trang · thumbnail trang đã đọc |
+| **G9** — Sửa dễ dàng | **Kéo chuột khoanh tay** khi máy dò không đúng ý · nút *"Không phải trang này?"* (nhập lại số trang → đọc lại) · nút *"Giải thích đơn giản hơn"* |
 | **G15** — Mời feedback chi tiết | 👎 kèm ô *"Sai chỗ nào?"*, không chỉ thumbs down trống |
+| **G17** — Quyền kiểm soát tổng | Bảng **🔒 Đã gửi đi những gì** dưới mỗi câu trả lời · hỏi về slide khác **không tự chuyển màn hình**, học viên tự bấm *"↪ Đi tới slide N"* |
 
 *Vị trí code cụ thể: [codebase/README.md](codebase/README.md).*
 
@@ -142,29 +165,32 @@ Vùng khoanh quá nhỏ, khoanh cắt ngang một sơ đồ, hoặc hỏi "cái 
 
 ### ③ Ngoài phạm vi — user đòi gì mà không được phép làm
 
-Khoanh vào đề bài rồi bảo "làm hộ"; hỏi deadline; hỏi điểm.
+Hai mức. **Mức nội dung:** bấm vào đề bài rồi bảo "làm hộ"; hỏi deadline; hỏi điểm. **Mức dữ liệu:** câu hỏi kiểu *"đọc hết tài liệu rồi tóm tắt"* hoặc *"trang 5 nói gì, trang 9 nói gì"* — tính năng không được phép đọc nhiều trang, phải từ chối và yêu cầu hỏi từng trang.
 
 ### ④ Đặc thù domain — sai cái gì thì học viên học sai ngay
 
 Đọc sai số liệu trên biểu đồ; đảo chiều logic của sơ đồ (nhánh Có ↔ Không); trộn lẫn hai khái niệm cạnh nhau trong bảng.
 
-### Bảng kịch bản (10)
+### Bảng kịch bản (14)
 
 | # | Tình huống cụ thể | Lớp | Hành vi mong muốn (nói gì · hiện gì · cho user làm gì tiếp) | Nguyên tắc |
 |---|---|---|---|---|
-| 1 | Khoanh vùng trống / lề slide | ① | Nói *"không nhận diện được nội dung nào"*, **không đoán**; gợi ý chọn lại vào sơ đồ/biểu đồ/đoạn chữ | G10 |
+| 1 | Bấm vào vùng trống hẳn / lề slide | ① | Nói *"không nhận diện được nội dung nào"*, **không đoán**; gợi ý bấm vào sơ đồ/biểu đồ/đoạn chữ | G10 |
 | 2 | Trang là ảnh scan, chữ nhỏ nhất không đọc rõ | ① | Giải thích phần đọc được, **nói thẳng chỗ không đọc rõ**; nhắc đối chiếu slide gốc | G2, G10 |
 | 3 | Hỏi "số liệu này lấy từ đâu" mà slide không ghi nguồn | ① | Nói slide không ghi nguồn, không suy diễn ra một nguồn nghe hợp lý | G10, G11 |
-| 4 | Vùng chọn ~30×20px | ② | Hỏi lại: *"vùng hơi nhỏ, bạn kéo rộng ra một chút"* — không đoán | G10 |
-| 5 | Gõ "giải thích cái sơ đồ đó" không nêu slide | ② | Hỏi lại đang nói slide nào, gợi ý cách chỉ định (số slide hoặc khoanh vùng) | G10 |
-| 6 | Khoanh cắt ngang sơ đồ, mất một nhánh | ② | Giải thích phần thấy được **+ báo rõ vùng chọn đang cắt mất một nhánh** | G2, G11 |
-| 7 | Khoanh đề bài + "làm hộ bài tập này" | ③ | Từ chối, nêu lý do, chỉ hướng: giải thích vùng đang kẹt, hoặc hỏi TA. **Không quét trang** (tiết kiệm token) | G1 |
+| 4 | Bấm vào khe hẹp giữa hai hộp — máy dò ra một dải viền mảnh | ② | Dò được nhưng dưới 1% diện tích trang → **hỏi lại**, không đoán từ một dải viền | G10 |
+| 5 | Gõ "giải thích cái sơ đồ đó" không nêu slide | ② | Hỏi lại đang nói slide nào, gợi ý cách chỉ định (số slide hoặc bấm vào vùng) | G10 |
+| 6 | Máy dò khoanh thiếu một nhánh của sơ đồ | ② | Học viên **thấy khung dò trên slide trước khi hỏi** → kéo khoanh tay lại được | G9, G11 |
+| 7 | Bấm vào đề bài + "làm hộ bài tập này" | ③ | Từ chối, nêu lý do, chỉ hướng. **Chặn trước khi đóng gói → không có dữ liệu nào rời máy**, và nói rõ điều đó | G1, G17 |
 | 8 | Hỏi "deadline nộp bài là bao giờ" | ③ | Từ chối trả lời logistics, chuyển Discord/TA — **tuyệt đối không đoán deadline** | G1 |
-| 9 | Hỏi cột "46,2%" trên biểu đồ | ④ | Đọc **đúng con số**; sai số liệu = học sai ngay | G11 |
-| 10 | Hỏi nhánh "Không" của sơ đồ điều kiện | ④ | Không đảo chiều logic Có/Không | G11 |
-| 11 | Học viên gõ "slide 12" nhưng trong file PDF đó là trang 13 | ①④ | Trả lời **kèm thumbnail trang đã đọc** để user tự phát hiện lệch + nút *"Không phải trang này?"* | G9, G11 |
+| 9 | "Đọc hết tài liệu rồi tóm tắt giúp mình" | ③ | Từ chối: tính năng chỉ đọc **1 trang/câu hỏi**; hướng dẫn hỏi từng trang | G1, G17 |
+| 10 | Hỏi cột "46,2%" trên biểu đồ | ④ | Đọc **đúng con số**; sai số liệu = học sai ngay | G11 |
+| 11 | Hỏi nhánh "Không" của sơ đồ điều kiện | ④ | Không đảo chiều logic Có/Không | G11 |
+| 12 | Học viên gõ "slide 12" nhưng trong file PDF đó là trang 13 | ①④ | Trả lời **kèm thumbnail trang đã đọc** để user tự phát hiện lệch + nút *"Không phải trang này?"* | G9, G11 |
+| 13 | Đang đọc slide 12, hỏi "giải thích slide 24" | ② | **Không kéo học viên rời slide 12**; trả lời về 24 kèm thumbnail + nút *"↪ Đi tới slide 24"* | G8, G17 |
+| 14 | Học viên hỏi "mày gửi cái gì của tao đi rồi?" | ③ | Bảng **🔒 Đã gửi đi những gì** có sẵn dưới mọi câu trả lời: 1 trang, 1 ảnh vùng, N ký tự text trong vùng | G17 |
 
-*Kịch bản nhóm sợ nhất khi demo: **#11** — quét nhầm trang, câu trả lời sai hoàn toàn nhưng nghe hoàn toàn trơn tru. Đây là lý do thumbnail trang đã quét là bắt buộc, không phải trang trí.*
+*Kịch bản nhóm sợ nhất khi demo: **#12** — đọc nhầm trang, câu trả lời sai hoàn toàn nhưng nghe hoàn toàn trơn tru. Đây là lý do thumbnail trang đã đọc là bắt buộc, không phải trang trí.*
 
 ---
 
@@ -172,12 +198,13 @@ Khoanh vào đề bài rồi bảo "làm hộ"; hỏi deadline; hỏi điểm.
 
 | Đường đi | Trong prototype |
 |---|---|
-| **Happy path** | Slide 12 → khoanh trọn sơ đồ → giải thích + chip trích dẫn `Trang 12 · [T02-118]` |
-| **Low-confidence (②)** | Vùng chọn quá nhỏ → hỏi lại · hỏi qua chat không nêu slide → hỏi lại. Không kèm badge "đã đọc" vì thực chất chưa đọc |
-| **Failure / không căn cứ (①)** | Vùng trống → *"không nhận diện được nội dung nào... mình sẽ không đoán bừa"* |
-| **Correction (user sửa)** | Nút *"Không phải trang này?"* → nhập trang khác → đọc lại giữ nguyên câu hỏi cũ · nút *"Giải thích đơn giản hơn"* · 👎 *"Sai chỗ nào?"* |
-| **Bị đòi ngoài phạm vi (③)** | Guardrail chặn trước khi render → từ chối + chỉ sang TA/Discord |
-| **Case đặc thù domain (④)** | Trang không có text layer → **quét ảnh trang** thay vì trả lời chay; badge `👁` + thumbnail trang đã quét |
+| **Happy path** | Slide 12 → **bấm một phát** vào sơ đồ → máy khoanh trọn sơ đồ (đo được: 500×338 vs kích thước thật 495×335) → giải thích + chip trích dẫn `Trang 12 · [T02-118]` |
+| **Low-confidence (②)** | Dò ra dải viền mảnh → hỏi lại · hỏi qua chat không nêu slide → hỏi lại. Không kèm badge "đã đọc" vì thực chất chưa đọc |
+| **Failure / không căn cứ (①)** | Bấm vào vùng trống → *"không nhận diện được nội dung nào... mình sẽ không đoán bừa"* |
+| **Correction (user sửa)** | **Kéo chuột khoanh tay** khi máy dò không đúng ý · *"Không phải trang này?"* → nhập trang khác → đọc lại giữ câu hỏi cũ · *"Giải thích đơn giản hơn"* · 👎 *"Sai chỗ nào?"* |
+| **Bị đòi ngoài phạm vi (③)** | Guardrail chặn trước `buildPayload()` → từ chối + chỉ sang TA/Discord, và nói rõ **không có dữ liệu nào được gửi ra ngoài** |
+| **Case đặc thù domain (④)** | Trang không có text layer → **quét ảnh vùng đã chọn** thay vì trả lời chay; badge `👁` + thumbnail trang đã đọc |
+| **Kiểm soát dữ liệu (G17)** | Bảng **🔒 Đã gửi đi những gì** dưới mỗi câu trả lời · hỏi slide khác không tự chuyển màn hình |
 
 ---
 

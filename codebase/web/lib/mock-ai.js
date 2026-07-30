@@ -16,7 +16,8 @@ const MockAI = {
     // (③ ngoài phạm vi đã bị chặn ở Explain.run trước khi tới đây)
 
     // ② Mơ hồ: vùng chọn quá nhỏ, không chắc user hỏi gì
-    if (region && region.w * region.h < CONFIG.MIN_SEL_AREA) {
+    const ratio = (region.w * region.h) / (page.width * page.height);
+    if (ratio < CONFIG.MIN_SEL_RATIO) {
       return { text: MOCK_REPLIES.tooSmall, mode, grounded: false };
     }
 

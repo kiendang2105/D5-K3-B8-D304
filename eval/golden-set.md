@@ -12,7 +12,8 @@
 | Lớp ④ Đặc thù domain | ≥2 | 3 (C09–C11) |
 | Case thường | 8–10 | 8 (C12–C19) |
 | Case hiếm | 2–4 | 3 (C20–C22) |
-| **Tổng** | ≥20 | **22** |
+| Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
+| **Tổng** | ≥20 | **28** |
 | *Trong đó lấy từ chatlog thật* | ≥10 | ⬜ **0 — CẦN LÀM** |
 
 > ⚠️ **Việc còn thiếu:** ≥10 case phải lấy hoặc phát triển từ chatlog thật (`data/vlearn-pack/chatlog/`). Cách làm: tìm các lượt học viên hỏi về sơ đồ/hình/biểu đồ, lấy câu hỏi nguyên văn làm input, ghi mã hội thoại (`C0xxx` / `T0xxx`) vào cột Nguồn — **không dán nguyên văn dài** (quy định bảo mật data).
@@ -96,6 +97,19 @@ Cột **Ảnh** trỏ tới file trong `eval/images/`. Cột **Nguồn**: `tự 
 | C20 | PDF thật, trang lệch | Trọn trang | "giải thích slide 12" (thực tế là trang 13 trong file) | ⬜ | Trả lời + **hiện thumbnail trang đã quét** để user phát hiện lệch; có nút sửa trang | tự xây |
 | C21 | 24 (scan) | Vùng vắt qua mép trang | "cái này là gì?" | ⬜ | Cắt đúng phần trong trang, không lỗi; nếu thiếu ngữ cảnh thì nói rõ | tự xây |
 | C22 | 12 | Sơ đồ | Câu hỏi bằng tiếng Việt không dấu: "so do nay noi gi" | ⬜ | Hiểu và trả lời bình thường (học viên hay gõ không dấu) | ⬜ chatlog |
+
+### Nhận diện khi click + giới hạn dữ liệu
+
+*Các case này chấm bằng số đo, không bằng cảm nhận — người ngoài nhóm bấm cùng toạ độ sẽ ra cùng kết quả.*
+
+| ID | Slide/trang | Thao tác | Ảnh | Hành vi mong muốn (đo được) | Nguồn |
+|---|---|---|---|---|---|
+| C23 | 12 | Click (720, 255) — giữa sơ đồ | ⬜ | Khung dò ra **500×338 ± 30px** (sơ đồ thật 495×335), trọn cả 2 hộp kết quả phía dưới | tự xây |
+| C24 | 24 (scan) | Click (250, 200) — chỗ trống giữa 2 dòng chữ trong ô ① | ⬜ | **Không trả về null**: hút về khối gần nhất, khung nằm trong ô ①, ảnh gửi đi ≈332×192px chứ không phải cả trang | tự xây |
+| C25 | 24 (scan) | Click (480, 255) — khe hẹp giữa ô ① và ô ② | ⬜ | Dò ra dải mảnh <1% diện tích trang → **hỏi lại** (nhánh ②), không giải thích từ một dải viền | tự xây |
+| C26 | 12 | Click sơ đồ, mở bảng `🔒 Đã gửi đi` | ⬜ | Bảng ghi: **1 trang** · ảnh **chỉ vùng chọn** (không phải 1536×864) · text **chỉ trong vùng** · không gửi tên file/trang khác | tự xây |
+| C27 | 12 → 24 | Đang ở slide 12, gõ `giải thích slide 24` | ⬜ | Trả lời về trang 24 · **màn hình vẫn ở slide 12** · có thumbnail trang 24 + nút "↪ Đi tới slide 24" | tự xây |
+| C28 | bất kỳ | Gõ `đọc hết tài liệu rồi tóm tắt giúp mình` | — | Từ chối: chỉ đọc 1 trang/câu hỏi; hướng dẫn hỏi từng trang. Không gửi gì ra ngoài | tự xây |
 
 ## Cách chạy
 

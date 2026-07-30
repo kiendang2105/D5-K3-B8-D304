@@ -187,7 +187,7 @@ const MOCK_SLIDES = [
         rect: [45, 115, 875, 350],
         citation: "Trang 24 (quét ảnh) · [T02-402]",
         answer:
-          "Trang này trong tài liệu là **ảnh chụp/scan, không có lớp text** — mình đã đọc bằng cách quét ảnh trang.\n\n" +
+          "Trang này trong tài liệu là **ảnh chụp/scan, không có lớp text** — mình đã đọc bằng cách quét ảnh vùng bạn chọn.\n\n" +
           "Bảng bạn chọn chia rủi ro của một tính năng AI thành **4 lớp chỗ khó**:\n\n" +
           "**① Nguồn sự thật** — chỗ nào AI bịa được, và khi không có căn cứ thì xử lý ra sao.\n" +
           "**② Mơ hồ / thiếu thông tin** — input không đủ chắc: hỏi lại, đoán nhưng báo rõ, hay từ chối.\n" +
@@ -203,7 +203,7 @@ const MOCK_SLIDES = [
         rect: [55, 120, 410, 165],
         citation: "Trang 24 (quét ảnh) · [T02-404]",
         answer:
-          "Ô bạn chọn là **lớp ① — Nguồn sự thật**. (Trang này không có text layer, mình đọc bằng quét ảnh.)\n\n" +
+          "Ô bạn chọn là **lớp ① — Nguồn sự thật**. (Trang này không có text layer, mình đọc bằng quét ảnh vùng bạn chọn.)\n\n" +
           "Hai câu hỏi trong ô là bài kiểm tra bắt buộc cho mọi tính năng AI:\n" +
           "• *Chỗ nào AI bịa được?* — liệt kê những chỗ model có thể sinh ra thông tin không có trong tài liệu.\n" +
           "• *Không có căn cứ thì làm gì?* — phải quyết trước hành vi: nói không biết, hay chuyển người.\n\n" +
@@ -241,7 +241,7 @@ const MOCK_REPLIES = {
       mode === "scan" ? "QUÉT ẢNH" : "đọc text"
     }**.\n\n${
       mode === "scan"
-        ? "Trang này **không có lớp text** (slide ảnh hoặc bản scan), nên đường đọc text thông thường sẽ trả về rỗng. Thay vì trả lời chay, hệ thống render trang thành ảnh và gửi cho model nhìn — ảnh gửi đi chính là ảnh bạn thấy ở trên."
-        : "Trang này có lớp text đọc được, nên hệ thống dùng đường text (rẻ và nhanh hơn) và chỉ gửi ảnh vùng bạn khoanh kèm theo."
+        ? "Trang này **không có lớp text** (slide ảnh hoặc bản scan), nên đường đọc text thông thường sẽ trả về rỗng. Thay vì trả lời chay, hệ thống cắt đúng vùng bạn chọn thành ảnh rồi gửi cho model nhìn — ảnh gửi đi chính là ảnh bạn thấy ở trên."
+        : "Trang này có lớp text đọc được, nên hệ thống gửi ảnh vùng bạn chọn kèm phần text nằm trong vùng đó — không gửi text cả trang."
     }\n\nỞ **CP3**, chỗ này sẽ là lời gọi Gemini vision thật với đúng ảnh đó. Toàn bộ phần nhận diện chế độ, cắt vùng và trích dẫn trang bạn đang thấy là **thật**, chỉ riêng đoạn văn giải thích là mock.`,
 };

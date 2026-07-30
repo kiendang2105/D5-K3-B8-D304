@@ -1,12 +1,17 @@
 // ============================================================
 // APP — nối các phần lại.
 //
-// Hai đường vào cùng một quyết định AI:
-//   (A) Khoanh vùng trên slide  -> hỏi về vùng đó
-//   (B) Gõ "giải thích slide N" -> nhảy tới trang N, khoanh trọn trang
+// Ba đường vào cùng một quyết định AI:
+//   (A) CLICK vào slide          -> ContentDetector tự dò khối nội dung
+//   (B) KÉO khoanh tay            -> khi máy dò không đúng ý (G9)
+//   (C) Gõ "giải thích slide N"   -> đọc trang N mà KHÔNG rời slide đang xem
 //
-// (B) chính là (A) với vùng chọn = cả trang, nên lát cắt
-// "chọn một vùng · giải thích vùng đó" vẫn giữ nguyên.
+// Cả ba đều quy về "một vùng trên một trang", nên lát cắt
+// "chọn một vùng · giải thích vùng đó" giữ nguyên.
+//
+// (C) cố ý KHÔNG chuyển màn hình: học viên đang đọc slide 12 mà bị kéo
+// sang slide 24 là mất chỗ đang đọc. Trang được hỏi chỉ nạp ngầm để đọc,
+// kèm thumbnail làm bằng chứng và nút "Đi tới slide N" nếu họ muốn.
 // ============================================================
 
 const App = {
@@ -20,7 +25,8 @@ const App = {
     RegionSelector.init();
     ExplainPanel.init();
 
-    RegionSelector.onSelected = (rect, e) => this.showPopover(e);
+    RegionSelector.onSelected = (e) => this.showPopover(e);
+    RegionSelector.onEmptyClick = () => this.onEmptyClick();
     ExplainPanel.onFixPage = (n) => this.rescanPage(n);
 
     document.getElementById("btn-ask").onclick = () => this.askFromPopover();
@@ -112,7 +118,7 @@ const App = {
     meta.innerHTML = mode === "text"
       ? `<b>📄 Trang này đọc được text</b> (${page.textLen} ký tự) — mình trả lời dựa trên nội dung tài liệu.`
       : `<b>👁 Trang này không có lớp text</b> (${page.textLen} ký tự) — slide dạng ảnh/scan. ` +
-        `Mình sẽ <b>quét ảnh trang</b> để đọc thay vì trả lời chay.`;
+        `Mình sẽ <b>quét ảnh vùng bạn chọn</b> để đọc thay vì trả lời chay.`;
   },
 
   // ---------- popover ----------
@@ -140,18 +146,29 @@ const App = {
     this.hidePopover();
   },
 
-  // ---------- hai đường vào ----------
+  // ---------- ba đường vào ----------
 
-  // (A) hỏi về vùng vừa khoanh
+  // (A) CLICK vào slide -> ContentDetector đã dò xong vùng, chỉ hỏi thêm
   askFromPopover() {
-    if (!RegionSelector.selection) return;
+    if (!RegionSelector.regionPage) return;
     const question = document.getElementById("question").value.trim();
-    const region = { ...RegionSelector.selection };
+    const region = { ...RegionSelector.regionPage };
     this.hidePopover();
-    this.ask({ question, region });
+    this.ask({ question, region, page: this.currentPage });
   },
 
-  // (B) hỏi bằng chat, có thể nhắc tới slide khác
+  // Bấm vào chỗ trống -> không đoán (lớp ①)
+  async onEmptyClick() {
+    if (this.busy) return;
+    this.hidePopover();
+    ExplainPanel.addUser({ question: "(bấm vào một chỗ trên slide)" });
+    const { bubble } = ExplainPanel.addBot();
+    await ExplainPanel.stream(bubble, MOCK_REPLIES.noContent);
+  },
+
+  // (B) hỏi bằng chat, có thể nhắc tới slide KHÁC slide đang xem.
+  // KHÔNG kéo học viên rời khỏi slide họ đang đọc: trang được hỏi chỉ
+  // được nạp ngầm để đọc, kèm nút "Đi tới slide N" nếu họ muốn chuyển.
   async askFromChat() {
     const input = document.getElementById("chat-q");
     const question = input.value.trim();
@@ -160,8 +177,8 @@ const App = {
 
     const m = question.match(PAGE_IN_QUESTION);
 
-    // ② Mơ hồ: không nêu slide nào và cũng không khoanh vùng -> hỏi lại
-    if (!m && !RegionSelector.selection) {
+    // ② Mơ hồ: không nêu slide nào và cũng không chọn vùng -> hỏi lại
+    if (!m && !RegionSelector.regionPage) {
       ExplainPanel.addUser({ question });
       const { bubble } = ExplainPanel.addBot();
       await ExplainPanel.stream(bubble, MOCK_REPLIES.noPageInQuestion);
@@ -177,69 +194,80 @@ const App = {
           MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
         return;
       }
-      await this.goToPage(n);
-      // hỏi về cả trang = khoanh trọn trang
-      const region = RegionSelector.selectWholePage();
-      return this.ask({ question, region, wholePage: true });
+      return this.askAboutPage(n, question);
     }
 
-    // có vùng đang khoanh sẵn -> hỏi về vùng đó
-    this.ask({ question, region: { ...RegionSelector.selection } });
+    // có vùng đang chọn sẵn trên slide đang xem -> hỏi về vùng đó
+    this.ask({ question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
   },
 
-  // Khi user báo "không phải trang này" -> quét lại trang khác, giữ câu hỏi cũ
+  // Hỏi về một trang bất kỳ mà KHÔNG chuyển màn hình.
+  // Trang được nạp ngầm (chỉ đúng trang đó), lấy phần có nội dung, gửi đi.
+  async askAboutPage(n, question, redo) {
+    const page = await this.source.getPage(n);
+    if (!page) return;
+
+    const offScreen = page !== this.currentPage;
+    const region = offScreen
+      ? { ...ContentDetector.contentBounds(page), wholePage: true }
+      : RegionSelector.selectWholePage();
+
+    this.ask({ question, region, page, offScreen, redo });
+  },
+
+  // Khi user báo "không phải trang này" -> đọc lại trang khác, giữ câu hỏi cũ
   async rescanPage(n) {
     if (!this.source.hasPage(n)) {
       const { bubble } = ExplainPanel.addBot();
       await ExplainPanel.stream(bubble, MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
       return;
     }
-    await this.goToPage(n);
-    const region = RegionSelector.selectWholePage();
-    this.ask({
-      question: this.lastAsk?.question || "",
-      region,
-      wholePage: true,
-      redo: true,
-    });
+    this.askAboutPage(n, this.lastAsk?.question || "", true);
   },
 
   // ---------- lõi: một lượt hỏi ----------
 
-  async ask({ question, region, wholePage, redo }) {
+  // region: toạ độ TRANG · page: trang được hỏi (có thể khác trang đang xem)
+  async ask({ question, region, page, offScreen, redo }) {
     if (this.busy || !region) return;
+    page = page || this.currentPage;
     this.busy = true;
     RegionSelector.locked = true;
-    this.lastAsk = { question, wholePage };
+    this.lastAsk = { question };
 
-    const page = this.currentPage;
     const mode = Explain.readMode(page);
-    const cropImage = RegionSelector.crop(region);
+    // Ảnh hiện trong bong bóng chat CHÍNH LÀ ảnh sẽ gửi đi — không có
+    // ảnh nào khác rời máy. Học viên nhìn bong bóng là biết đã gửi gì.
+    const cropImage = ContentDetector.cropPage(page, region);
 
     ExplainPanel.addUser({
       cropImage,
-      question: redo ? `(đọc lại) ${question || "Giải thích trang này"}` : question,
+      question: redo ? `(đọc lại) ${question || "Giải thích phần này"}` : question,
     });
 
-    // Câu ngoài phạm vi bị chặn trước -> không quét trang, không tốn token ảnh
     const blocked = Explain.isOutOfScope(question);
 
     // Nói cho user biết hệ thống đang làm gì TRƯỚC khi trả lời (G1/G11)
-    if (mode === "scan" && !blocked) {
+    if (blocked) {
+      // Ảnh vẫn hiện trong bong bóng vì đó là vùng học viên đã chọn, nhưng
+      // nói rõ là chưa có gì rời khỏi máy — tránh hiểu nhầm đã gửi đi.
       ExplainPanel.addSystemNote(
-        `Trang ${page.num} không có lớp text → **đang quét ảnh trang** ở ${page.width}px để đọc…`);
+        "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
+    } else {
+      if (offScreen) {
+        ExplainPanel.addSystemNote(
+          `Đang đọc **trang ${page.num}** (bạn vẫn ở trang ${this.currentPage.num}) — ` +
+          "chỉ nạp đúng trang đó, không mở cả tài liệu.");
+      }
+      if (mode === "scan") {
+        ExplainPanel.addSystemNote(
+          `Trang ${page.num} không có lớp text → **đọc bằng quét ảnh vùng đã chọn**…`);
+      }
     }
 
     RegionSelector.clear();
 
-    const reply = await Explain.run({
-      question,
-      cropImage,
-      pageImage: mode === "scan" && !blocked ? SlideViewer.pageImage() : null,
-      page,
-      region,
-      mode,
-    });
+    const reply = await Explain.run({ question, page, region, mode });
 
     const { div, bubble } = ExplainPanel.addBot();
     bubble.innerHTML = '<span class="cursor-blink">▌</span>';
@@ -250,16 +278,20 @@ const App = {
     if (reply.grounded !== false) {
       ExplainPanel.addModeBadge(div, reply.mode || mode);
 
-      // Chế độ quét: bắt buộc cho user thấy đã quét trang nào + đường sửa.
-      // Đây là chốt chặn cho bẫy "số trang trên slide ≠ trang trong file".
-      if ((reply.mode || mode) === "scan") {
+      // Bằng chứng đọc đúng trang nào + đường sửa. Bắt buộc khi quét ảnh
+      // (bẫy số trang lệch) và khi đọc trang đang không hiển thị.
+      if ((reply.mode || mode) === "scan" || offScreen) {
         ExplainPanel.addScanEvidence(div, {
-          thumb: SlideViewer.pageThumb(),
+          thumb: SlideViewer.thumbOf(page),
           pageNum: page.num,
-          // Chỉ PDF mới có đánh số trang liên tục để hiện "x / y"
           pageCount: this.source.kind === "pdf" ? this.source.pageCount : null,
+          offScreen,
+          onGoTo: offScreen ? () => this.goToPage(page.num) : null,
         });
       }
+
+      // Công khai chính xác cái gì đã rời khỏi máy học viên
+      if (reply.disclosure) ExplainPanel.addDisclosure(div, reply.disclosure);
     }
 
     if (reply.citation) ExplainPanel.addCitation(div, reply.citation);

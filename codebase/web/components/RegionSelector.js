@@ -1,20 +1,28 @@
 // ============================================================
-// RegionSelector — kéo-thả chọn vùng trên slide, cắt ra base64.
+// RegionSelector — hai cách chọn vùng trên slide:
 //
-// Toạ độ vùng chọn dùng hệ hiển thị 960x540 (khớp với `zones` khai
-// trong mock-data.js). Nhưng khi CẮT thì cắt từ canvas gốc của trang
-// qua SlideViewer.fit — ảnh gửi model vì thế nét hơn nhiều so với
-// cắt từ ảnh đã thu nhỏ để hiển thị.
+//   CLICK  → ContentDetector tự dò ranh giới khối nội dung tại chỗ bấm
+//   KÉO    → học viên tự khoanh khung khi muốn chọn khác ý máy
+//
+// Click là đường chính (đúng chữ "AI tự nhận diện" trong lát cắt); kéo
+// giữ lại làm đường sửa khi máy dò không đúng ý (HAX G9).
+//
+// Toạ độ:
+//   - Chuột và khung vẽ dùng hệ HIỂN THỊ 960x540
+//   - Vùng trả về cho tầng AI dùng toạ độ TRANG (theo page.canvas)
+//   SlideViewer.fit là phép đổi giữa hai hệ.
 // ============================================================
 
 const RegionSelector = {
   overlay: null,
   ctx: null,
-  selection: null,   // { x, y, w, h } theo hệ 960x540
+  selection: null,   // { x, y, w, h } — toạ độ HIỂN THỊ, để vẽ
+  regionPage: null,  // { x, y, w, h } — toạ độ TRANG, để gửi đi
   dragging: false,
   dragStart: null,
-  locked: false,     // khoá khi AI đang trả lời
-  onSelected: null,  // callback(rect, mouseEvent)
+  locked: false,
+  onSelected: null,  // callback(mouseEvent) khi đã có vùng chọn
+  onEmptyClick: null, // callback(mouseEvent) khi bấm vào chỗ trống
 
   init() {
     this.overlay = document.getElementById("overlay");
@@ -24,9 +32,9 @@ const RegionSelector = {
     window.addEventListener("mouseup", (e) => this.onUp(e));
   },
 
-  // ---- kéo chuột ----
+  // ---- đổi hệ toạ độ ----
 
-  toSlideCoords(e) {
+  toDisplay(e) {
     const r = this.overlay.getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(CONFIG.SLIDE_W, ((e.clientX - r.left) * CONFIG.SLIDE_W) / r.width)),
@@ -34,17 +42,46 @@ const RegionSelector = {
     };
   },
 
+  displayToPage(pt) {
+    const f = SlideViewer.fit;
+    if (!f) return null;
+    return { x: (pt.x - f.ox) / f.scale, y: (pt.y - f.oy) / f.scale };
+  },
+
+  pageRectToDisplay(rect) {
+    const f = SlideViewer.fit;
+    if (!f) return null;
+    return {
+      x: f.ox + rect.x * f.scale, y: f.oy + rect.y * f.scale,
+      w: rect.w * f.scale, h: rect.h * f.scale,
+    };
+  },
+
+  displayRectToPage(rect) {
+    const f = SlideViewer.fit;
+    const page = SlideViewer.page;
+    if (!f || !page) return null;
+    let x = Math.max(0, (rect.x - f.ox) / f.scale);
+    let y = Math.max(0, (rect.y - f.oy) / f.scale);
+    const w = Math.min(rect.w / f.scale, page.width - x);
+    const h = Math.min(rect.h / f.scale, page.height - y);
+    return { x, y, w, h };
+  },
+
+  // ---- chuột ----
+
   onDown(e) {
     if (this.locked) return;
     this.dragging = true;
-    this.dragStart = this.toSlideCoords(e);
+    this.dragStart = this.toDisplay(e);
     this.selection = null;
+    this.regionPage = null;
     this.draw();
   },
 
   onMove(e) {
     if (!this.dragging) return;
-    const p = this.toSlideCoords(e);
+    const p = this.toDisplay(e);
     const a = this.dragStart;
     this.selection = {
       x: Math.min(a.x, p.x), y: Math.min(a.y, p.y),
@@ -56,11 +93,41 @@ const RegionSelector = {
   onUp(e) {
     if (!this.dragging) return;
     this.dragging = false;
-    if (this.selection && this.selection.w > 6 && this.selection.h > 6) {
-      if (this.onSelected) this.onSelected(this.selection, e);
-    } else {
-      this.clear();
+
+    const moved = this.selection
+      ? Math.max(this.selection.w, this.selection.h)
+      : 0;
+
+    if (moved < CONFIG.CLICK_SLOP_PX) {
+      // --- CLICK: để máy tự dò khối nội dung ---
+      this.selection = null;
+      const pt = this.displayToPage(this.dragStart);
+      const page = SlideViewer.page;
+      if (!pt || !page) return this.clear();
+
+      const rect = ContentDetector.detectAt(page, pt.x, pt.y);
+      if (!rect) {
+        // Bấm vào chỗ trống -> KHÔNG đoán, đi nhánh ①
+        this.clear();
+        if (this.onEmptyClick) this.onEmptyClick(e);
+        return;
+      }
+      this.setPageRegion(rect);
+      if (this.onSelected) this.onSelected(e);
+      return;
     }
+
+    // --- KÉO: dùng đúng khung học viên khoanh ---
+    this.regionPage = this.displayRectToPage(this.selection);
+    this.draw();
+    if (this.onSelected) this.onSelected(e);
+  },
+
+  // Đặt vùng chọn bằng toạ độ TRANG (dùng cho click-dò và chọn cả trang)
+  setPageRegion(rect) {
+    this.regionPage = rect;
+    this.selection = this.pageRectToDisplay(rect);
+    this.draw();
   },
 
   // ---- vẽ ----
@@ -82,46 +149,18 @@ const RegionSelector = {
 
   clear() {
     this.selection = null;
+    this.regionPage = null;
     if (this.ctx) this.ctx.clearRect(0, 0, CONFIG.SLIDE_W, CONFIG.SLIDE_H);
   },
 
-  // Chọn trọn trang — dùng khi user hỏi "giải thích slide N" qua chat.
-  // Khoanh cả trang chỉ là một trường hợp của khoanh vùng, nên lát cắt
-  // "chọn một vùng · giải thích vùng đó" vẫn giữ nguyên.
+  // Chọn trọn phần CÓ NỘI DUNG của trang (bỏ lề trống) — dùng khi học
+  // viên hỏi cả một slide. Bỏ lề để không gửi đi phần trắng vô ích.
   selectWholePage() {
-    const f = SlideViewer.fit;
-    if (!f) return null;
-    this.selection = { x: f.ox, y: f.oy, w: f.w, h: f.h };
-    this.draw();
-    return this.selection;
-  },
-
-  // ---- cắt ảnh ----
-
-  // Cắt vùng chọn từ canvas GỐC của trang, trả về dataURL PNG.
-  crop(sel) {
     const page = SlideViewer.page;
-    const f = SlideViewer.fit;
-    if (!page || !f) return null;
-
-    // hiển thị -> toạ độ trang
-    let sx = (sel.x - f.ox) / f.scale;
-    let sy = (sel.y - f.oy) / f.scale;
-    let sw = sel.w / f.scale;
-    let sh = sel.h / f.scale;
-
-    // cắt bỏ phần lem ra ngoài trang (vùng letterbox)
-    sx = Math.max(0, sx); sy = Math.max(0, sy);
-    sw = Math.min(sw, page.width - sx);
-    sh = Math.min(sh, page.height - sy);
-    if (sw <= 1 || sh <= 1) return null;
-
-    const c = document.createElement("canvas");
-    c.width = Math.round(sw);
-    c.height = Math.round(sh);
-    c.getContext("2d").drawImage(
-      page.canvas, Math.round(sx), Math.round(sy), Math.round(sw), Math.round(sh),
-      0, 0, Math.round(sw), Math.round(sh));
-    return c.toDataURL("image/png");
+    if (!page) return null;
+    const rect = ContentDetector.contentBounds(page);
+    rect.wholePage = true;
+    this.setPageRegion(rect);
+    return rect;
   },
 };

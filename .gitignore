@@ -1,3 +1,9 @@
 .DS_Store
 node_modules/
 *.env
+.env
+
+# Slide deck goc cua khoa — khong commit data pack vao repo nop bai
+# (README muc "Bao mat du lieu duoc cung cap", quy dinh so 3).
+# Van dung duoc tai cho qua nut "Mo PDF..." trong prototype.
+data/vlearn-pack/slides/

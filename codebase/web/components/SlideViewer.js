@@ -39,19 +39,17 @@ const SlideViewer = {
     this.ctx.drawImage(canvas, this.fit.ox, this.fit.oy, w, h);
   },
 
-  // Ảnh thu nhỏ của TRỌN trang — bằng chứng "mình đã quét trang nào"
-  pageThumb(maxW = 240) {
-    if (!this.page) return null;
-    const s = Math.min(maxW / this.page.width, 1);
+  // Ảnh thu nhỏ của một trang — bằng chứng "mình đã đọc trang nào".
+  // Nhận page làm tham số để dùng được cả với trang đang KHÔNG hiển thị.
+  // Đây chỉ là ảnh xem tại chỗ, không gửi đi đâu.
+  thumbOf(page, maxW = 240) {
+    page = page || this.page;
+    if (!page) return null;
+    const s = Math.min(maxW / page.width, 1);
     const c = document.createElement("canvas");
-    c.width = Math.round(this.page.width * s);
-    c.height = Math.round(this.page.height * s);
-    c.getContext("2d").drawImage(this.page.canvas, 0, 0, c.width, c.height);
+    c.width = Math.round(page.width * s);
+    c.height = Math.round(page.height * s);
+    c.getContext("2d").drawImage(page.canvas, 0, 0, c.width, c.height);
     return c.toDataURL("image/png");
-  },
-
-  // Ảnh trọn trang ở độ phân giải gốc — payload gửi vision khi quét
-  pageImage() {
-    return this.page ? this.page.canvas.toDataURL("image/png") : null;
   },
 };

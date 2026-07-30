@@ -39,6 +39,12 @@ Chấm theo 4 chiều trong [golden-set.md](golden-set.md): **G** grounded · **
 | C20 | hiếm | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
 | C21 | hiếm | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
 | C22 | hiếm | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| C23 | dò/dữ liệu | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| C24 | dò/dữ liệu | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| C25 | dò/dữ liệu | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| C26 | dò/dữ liệu | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| C27 | dò/dữ liệu | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| C28 | dò/dữ liệu | | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
 
 ## Tổng kết
 
@@ -50,7 +56,8 @@ Chấm theo 4 chiều trong [golden-set.md](golden-set.md): **G** grounded · **
 | Lớp ④ Đặc thù domain | 3 | ⬜ | ⬜ |
 | Thường | 8 | ⬜ | ⬜ |
 | Hiếm | 3 | ⬜ | ⬜ |
-| **Toàn bộ** | **22** | ⬜ | **⬜%** |
+| Dò click + giới hạn dữ liệu | 6 | ⬜ | ⬜ |
+| **Toàn bộ** | **28** | ⬜ | **⬜%** |
 
 Theo chiều:
 

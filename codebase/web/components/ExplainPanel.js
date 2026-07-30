@@ -75,22 +75,33 @@ const ExplainPanel = {
   // Badge chế độ đọc — cho học viên biết câu trả lời đến từ đâu (G2)
   addModeBadge(div, mode) {
     const b = el("span", "mode-badge " + (mode === "scan" ? "scan" : "text"));
-    b.textContent = mode === "scan" ? "👁 Đọc bằng quét ảnh trang" : "📄 Đọc từ text tài liệu";
+    b.textContent = mode === "scan" ? "👁 Đọc bằng quét ảnh vùng" : "📄 Đọc từ text trong vùng";
     div.appendChild(b);
   },
 
-  // Bằng chứng "mình đã quét đúng trang nào" + đường sửa nếu sai (G9/G11)
-  addScanEvidence(div, { thumb, pageNum, pageCount }) {
+  // Bằng chứng "mình đã đọc đúng trang nào" + đường sửa nếu sai (G9/G11)
+  addScanEvidence(div, { thumb, pageNum, pageCount, offScreen, onGoTo }) {
     const box = el("div", "scan-evidence");
 
     const cap = el("div", "cap");
-    cap.textContent = `Trang đã quét: ${pageNum}${pageCount ? " / " + pageCount : ""}`;
+    cap.textContent = `Trang đã đọc: ${pageNum}${pageCount ? " / " + pageCount : ""}`;
     box.appendChild(cap);
 
     if (thumb) {
       const img = el("img", "thumb");
       img.src = thumb;
       box.appendChild(img);
+    }
+
+    const row = el("div", "ev-actions");
+
+    // Trang được đọc không phải trang đang xem -> để học viên tự quyết
+    // có chuyển sang hay không, thay vì kéo họ đi
+    if (offScreen && onGoTo) {
+      const go = el("button", "fix-page");
+      go.textContent = `↪ Đi tới slide ${pageNum}`;
+      go.onclick = () => onGoTo();
+      row.appendChild(go);
     }
 
     const fix = el("button", "fix-page");
@@ -103,8 +114,39 @@ const ExplainPanel = {
       const n = parseInt(v, 10);
       if (n && this.onFixPage) this.onFixPage(n);
     };
-    box.appendChild(fix);
+    row.appendChild(fix);
 
+    box.appendChild(row);
+    div.appendChild(box);
+  },
+
+  // Công khai chính xác cái gì đã rời khỏi máy học viên.
+  // Ràng buộc của tính năng: AI Tutor không được đọc/chuyển đi cả tài liệu.
+  addDisclosure(div, d) {
+    const box = el("details", "disclosure");
+    const sum = el("summary");
+    sum.textContent = `🔒 Đã gửi đi: 1 ảnh vùng ${d.imageW}×${d.imageH}px` +
+      (d.textChars ? ` + ${d.textChars} ký tự text` : "");
+    box.appendChild(sum);
+
+    const ul = el("ul");
+    const rows = [
+      `Trang gửi đi: <b>duy nhất trang ${d.pageNum}</b> (trần cứng: 1 trang/câu hỏi)`,
+      d.wholePage
+        ? `Ảnh: <b>cả phần có nội dung của trang</b> — ${d.imageW}×${d.imageH}px. ` +
+          "Vì bạn hỏi cả slide; muốn gửi ít hơn thì bấm vào đúng phần cần hỏi."
+        : `Ảnh: <b>chỉ vùng đã chọn</b> — ${d.imageW}×${d.imageH}px, ≈${d.regionPctOfPage}% diện tích trang`,
+      d.textChars
+        ? `Text: <b>${d.textChars} ký tự</b> từ ${d.textItems} đoạn nằm trong vùng chọn`
+        : "Text: <b>không gửi</b> (trang không có lớp text)",
+      "Tên file, tổng số trang, nội dung các trang khác: <b>không gửi</b>",
+    ];
+    for (const r of rows) {
+      const li = el("li");
+      li.innerHTML = r;
+      ul.appendChild(li);
+    }
+    box.appendChild(ul);
     div.appendChild(box);
   },
 
