@@ -1,88 +1,94 @@
 # AI SPEC — AI Tutor giải thích vùng slide · Nhóm [XX] · Zone B8
 
-Hướng: **[x] A — VLearn**  [ ] B — Trợ lý Học viên  [ ] C — Làn mở
-Loại: **[x] Tối ưu tính năng có sẵn**  [ ] Tính năng mới
+Hướng: A — VLearn
 
-> ⚠️ **BẢN ĐANG VIẾT.** Ô ⬜ là phần chưa xong. **Hạn cứng: commit trước 23:59 ngày 1 — quality bar §7 chốt từ thời điểm đó và giữ nguyên sau đó.**
+Loại: Tính năng mới
+
 
 ---
 
 ## §1. User & Job
 
-**Job executor:** Học viên khoá AI Thực Chiến đang tự xem lại bài giảng — trong buổi học (bôi đoạn tài liệu hỏi tutor) và sau buổi học (ôn lại slide).
-
-⬜ *Đính kèm worksheet JTBD / ảnh sơ đồ job map.*
+**Job executor + workflow:** Học viên khóa AI Thực Chiến đang tự xem lại bài giảng trên VLearn, trong buổi học hoặc sau buổi học. Workflow hiện tại: mở slide/tài liệu → gặp đoạn khó hiểu → bôi đen đoạn chữ hoặc hỏi tutor → đọc câu trả lời → tự quyết định tin, hỏi lại TA, hoặc bỏ qua. Canvas CP1: [docs/canvas-cp1.md](docs/canvas-cp1.md).
 
 **Core JTBD** (không tên sản phẩm/AI):
-> Khi xem lại một slide bài giảng, hiểu được nội dung trực quan trên đó (sơ đồ, biểu đồ, hình minh hoạ) mà không phải chờ hỏi người khác.
+> Khi xem lại một slide bài giảng, hiểu được nội dung trực quan trên đó (sơ đồ, biểu đồ, hình minh họa, bảng phân loại) mà không phải chờ hỏi người khác.
 
-**Problem statement** (KHÔNG chữ AI):
-> Nội dung quan trọng nhất của nhiều slide nằm ở hình — sơ đồ luồng, biểu đồ số liệu, bảng phân loại. Khi học viên không hiểu phần hình đó, công cụ hỏi-đáp trong trang học không giúp được: nó chỉ xử lý được chữ. Học viên phải tự đoán, chờ hỏi TA, hoặc bỏ qua — và bỏ qua là lựa chọn phổ biến nhất vì rẻ nhất về mặt công sức.
+**Problem statement** (không chữ AI):
+> Nội dung quan trọng của nhiều slide nằm ở hình, sơ đồ, biểu đồ hoặc bố cục trực quan. Khi học viên không hiểu phần đó, công cụ hỏi-đáp trong trang học chủ yếu xử lý được chữ và không luôn nhận ra đúng vùng học viên muốn hỏi. Học viên phải tự đoán, hỏi TA, hoặc bỏ qua; hậu quả là học sai hoặc hổng kiến thức ngay tại phần đang học.
 
 ### Evidence
 
-**Chuẩn A — khảo sát (n = 23, ngoài nhóm)** — log đầy đủ: [docs/survey-log.md](docs/survey-log.md)
+**Chuẩn A — khảo sát học viên ngoài nhóm**  
+Nguồn: [docs/survey-log.md](docs/survey-log.md).
 
-| Câu hỏi | Kết quả | % |
-|---|---|---|
+| Câu hỏi | Kết quả tổng hợp | % |
+|---|---:|---:|
 | Đã gặp việc AI Tutor không đọc được ảnh slide | 13/23 | **56,5%** |
-| Chọn nội dung trên slide nhưng AI không nhận biết được phần cần giải thích | 11/23 | **47,8%** |
+| Chọn nội dung trên slide nhưng tutor không nhận biết được phần cần giải thích | 11/23 | **47,8%** |
 
-Đạt ngưỡng chuẩn A: n ≥ 20 ✅ · ≥50% xác nhận ✅ · ⬜ **log nguyên văn từng câu trả lời còn thiếu**
+Đánh giá theo rubric: số mẫu đạt `n >= 20`, tỷ lệ xác nhận chính đạt `>= 50%`, nhưng **log nguyên văn từng người vẫn đang trống** trong repo. Vì vậy phần khảo sát hiện là bằng chứng định hướng, **chưa đủ chuẩn A trọn vẹn** cho đến khi nhóm điền câu trả lời thật vào [docs/survey-log.md](docs/survey-log.md).
 
-**Chuẩn B — mining chatlog** *(nguồn: `data/vlearn-pack/chatlog/`, 1.261 turn, 369 user, 22–29/07/2026)*
+**Chuẩn B — mining chatlog VLearn**  
+Nguồn: `data/vlearn-pack/chatlog/chat_history_anonymized_for_hackathon.csv`, mô tả dữ liệu tại [data/vlearn-pack/chatlog/DATA_DICTIONARY.md](data/vlearn-pack/chatlog/DATA_DICTIONARY.md).
 
-| Số đo | Giá trị | Phương pháp đếm |
-|---|---|---|
-| Lượt trả lời tutor có `citations` rỗng | **46,2%** | Đếm dòng `role = tutor` có `citations = []` chia tổng dòng tutor (1.261) |
-| Trường `misconceptions` từng được dùng | **0 / 1.261** | Đếm dòng có `misconceptions ≠ []` |
-| Tutor chủ động hỏi lại kiểm tra hiểu bài | **3 / 2.522** | Đếm `asked_check_question = True` |
-| ⬜ Lượt học viên hỏi về sơ đồ/hình/biểu đồ | ⬜ | ⬜ **CẦN ĐẾM** — lọc `role = student`, `content` chứa {sơ đồ, biểu đồ, hình, ảnh, bảng, mô hình...}; đọc tay 30–50 mẫu trước để chốt tiêu chí, rồi đếm |
-| ⬜ Trong số đó, bao nhiêu lượt tutor trả lời không có `citations` | ⬜ | ⬜ **CẦN ĐẾM** — đây là con số trúng đích nhất cho pain này |
+| Số đo | Giá trị | Phương pháp đếm kiểm lại được |
+|---|---:|---|
+| Tổng message pair học viên-tutor | 1.261 turn | Đếm `turn_id` duy nhất trong CSV |
+| Tổng user ẩn danh | 369 user | Đếm `user_id` duy nhất |
+| Lượt trả lời tutor có `citations = []` | 46,2% | Lọc `role = tutor`, đếm `citations` rỗng / tổng tutor |
+| Field `misconceptions` được dùng | 0/1.261 | Lọc `role = tutor`, đếm `misconceptions != []` |
+| Tutor chủ động hỏi kiểm tra hiểu bài | 3/2.522 message | Đếm `asked_check_question = True` |
+| Lượt học viên hỏi có tín hiệu vùng/hình/sơ đồ/biểu đồ | 24/1.261 | Lọc `role = student`, `content` chứa `khoanh`, `vùng`, `sơ đồ`, `biểu đồ`, `người trong ảnh`, `hình này`, `bảng này`, `chart`, `graph` |
+| Trong nhóm 24 lượt trên, tutor trả lời không có citation | 10/24 | Join theo `turn_id`, lọc tutor có `citations = []` |
 
-**≥5 quote/ví dụ nguyên văn + nguồn:** ⬜ **CẦN LÀM** — lấy từ khảo sát (`docs/survey-log.md`) và/hoặc chatlog (ghi mã `C0xxx`/`T0xxx`, không dán nguyên văn dài).
+Kết luận evidence: pain không chỉ là cảm giác từ khảo sát. Trong chatlog thật đã có nhóm câu hỏi trực tiếp về vùng khoanh/hình/sơ đồ/biểu đồ; **41,7%** trong nhóm này đi kèm câu trả lời không có citation. Điều này khớp với rủi ro của lát cắt: học viên hỏi về một phần trực quan cụ thể nhưng không có đủ căn cứ để tự kiểm lại.
 
-1. ⬜
-2. ⬜
-3. ⬜
-4. ⬜
-5. ⬜
+**Ví dụ nguyên văn ngắn từ chatlog**  
+Các ví dụ dưới đây dùng mã hội thoại/turn đã ẩn danh, không chứa dữ liệu nhận diện cá nhân.
+
+| # | Nguồn | Ví dụ nguyên văn |
+|---:|---|---|
+| 1 | `C0108` / `T0816` | "người trong ảnh là ai" |
+| 2 | `C0119` / `T0774` | "bieu do len xuong muon cho biet dieu gi" |
+| 3 | `C0161` / `T1254` | "giải thích chỗ tôi khoanh vào ở trang 6" |
+| 4 | `C0173` / `T0950` | "giải thích phần khoanh vùng" |
+| 5 | `C0231` / `T0588` | "tại sao khoanh mà ocr ra text rồi lại không trả lời được" |
+| 6 | `C0300` / `T0291` | "Giải thích vùng em đã khoanh ở trang 16" |
+| 7 | `C0346` / `T0840` | "phân tích hình ảnh được khoanh đỏ ở slide 59" |
+| 8 | `C0429` / `T0393` | "giải thích phần bảng được khoanh" |
 
 ---
 
 ## §2. Impact & quyết định chọn
 
-### Bảng impact — 3 ứng viên
+### Bảng impact ≥3 ứng viên
 
-| Ứng viên | Bao nhiêu người gặp | Tần suất | Mỗi lần tốn gì | Build nổi trong sự kiện? | Chọn? |
-|---|---|---|---|---|---|
-| **A. Giải thích vùng hình trên slide** | 13/23 (56,5%) đã gặp | ⬜ *đo: mỗi buổi mấy lần* | Bỏ qua phần hình → hổng kiến thức trực quan; hoặc ⬜ *___ phút* tự tra | ✅ — 1 AI call vision, không cần hạ tầng mới | ✅ **CHỌN** |
-| **B. Bắt tutor luôn trích dẫn trang** | 46,2% lượt trả lời không có nguồn (mining) | Mỗi lượt hỏi | Không kiểm lại được → tin sai hoặc mất công tự tra | ⚠️ — phải sửa pipeline retrieval của tutor, ngoài tầm 1,5 ngày | ❌ |
-| **C. Tutor chủ động kiểm tra hiểu bài** | `asked_check_question` chỉ 3/2.522 → gần như chưa có | Cuối mỗi buổi | Học viên tưởng hiểu nhưng không hiểu — phát hiện muộn | ✅ — nhưng cần định nghĩa "hiểu thật", tốn vòng thiết kế | ❌ |
+| Ứng viên | Bao nhiêu người gặp | Tần suất quan sát được | Mỗi lần tốn gì | Khả thi trong sự kiện | Quyết định |
+|---|---:|---|---|---|---|
+| **1. Giải thích vùng hình/vùng khoanh trên slide** | 13/23 khảo sát nói từng gặp tutor không đọc được ảnh; 24 turn chatlog có tín hiệu vùng/hình | Ít nhất 24 turn/1.261 turn trong 7 ngày có tín hiệu trực tiếp; khảo sát cho thấy trên 50% từng gặp | Học viên phải tự đoán, hỏi TA, hoặc bỏ qua; rủi ro học sai ngay tại slide | Cao: 1 quyết định vision trung tâm, UI đã bấm được, phần còn lại kiểm soát được bằng guardrail | **Chọn** |
+| **2. Bắt tutor luôn trích dẫn trang** | 46,2% câu trả lời tutor không có `citations` | Xảy ra trên gần một nửa lượt tutor trong data pack | Học viên không kiểm lại được câu trả lời, dễ tin sai hoặc mất công tự tra | Trung bình-thấp: cần sửa retrieval/pipeline của tutor hiện hữu, khó demo đúng trong 5 phút | Loại |
+| **3. Tutor chủ động kiểm tra hiểu bài cuối câu trả lời** | `asked_check_question = True` chỉ 3/2.522 message | Gần như chưa xuất hiện trong log | Học viên tưởng hiểu nhưng không hiểu, phát hiện muộn khi làm bài | Trung bình: làm được prototype, nhưng khó định nghĩa "hiểu thật" và dễ chấm cảm tính | Loại |
 
 ### Ứng viên đã loại + vì sao
 
-**B — Bắt tutor luôn trích dẫn trang.** Con số mining mạnh nhất (46,2%, đếm được, kiểm lại được) nhưng nguyên nhân nằm ở tầng retrieval của tutor hiện tại, không phải ở tầng trả lời. Sửa đúng chỗ đó là việc của team kỹ thuật VLearn, không demo được trong 5 phút.
+**Ứng viên 2 — Bắt tutor luôn trích dẫn trang.** Đây là pain lớn về số lượng (`46,2%` tutor response không citation), nhưng nguyên nhân nằm sâu ở tầng retrieval/grounding của tutor hiện tại. Trong thời gian hackathon, nhóm khó chứng minh sửa đúng pipeline thật; prototype 5 phút dễ biến thành prompt demo thay vì cải thiện hệ thống.
 
-> ⚠️ **Đã kiểm và phải sửa lại giả thuyết.** Bản trước của spec này viết *"một phần của 46,2% là do slide dạng ảnh không rút được text"*. Đo thật trên hai deck được cấp (`d1`/`d2-slide-hackathon.pdf`, 29 trang mỗi deck) thì **cả 58 trang đều có lớp text** (132–1331 ký tự/trang, ngưỡng 30). Vậy giả thuyết đó **không có bằng chứng** trên tài liệu này — đã bỏ. Số đo: [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md).
+**Ứng viên 3 — Tutor chủ động kiểm tra hiểu bài.** Có tín hiệu mining mạnh (`asked_check_question` gần như không được dùng), nhưng "hiểu thật" khó định nghĩa thành quality bar kiểm chứng được trong 1,5 ngày. Nếu không cẩn thận, golden set sẽ phụ thuộc cảm nhận người chấm.
 
-**C — Tutor chủ động kiểm tra hiểu bài.** Khả thi về kỹ thuật, nhưng "hiểu thật" là một chiều chất lượng khó định nghĩa kiểm chứng được trong 1,5 ngày; nguy cơ golden set toàn case cảm tính.
+### Ứng viên chọn + vì sao
 
-### Ứng viên chọn + vì sao (bằng số)
-
-**A** — vì đồng thời có **cả hai chuẩn evidence**: 56,5% người khảo sát xác nhận đã gặp (chuẩn A) và pain nằm trong vùng 46,2% trả lời không nguồn (chuẩn B). Chi phí build thấp nhất trong 3 ứng viên: một lời gọi vision ở đúng một quyết định, phần còn lại mock được. Và nó demo được trọn 5 phút với một case chuẩn + một case chỗ khó.
+Chọn **ứng viên 1 — giải thích vùng hình/vùng khoanh trên slide** vì đây là lát cắt đủ hẹp, có evidence từ khảo sát và chatlog, có hành vi demo rõ ràng, và có đúng một quyết định AI trung tâm: nhìn vùng được chọn rồi giải thích có căn cứ. Lát cắt cũng xử lý trực tiếp rủi ro lớn nhất của tutor hiện tại: trả lời nghe hợp lý nhưng học viên không biết nó đang dựa vào đâu.
 
 ---
 
 ## §3. Giải pháp tương tự đã nghiên cứu
 
-⬜ **CẦN LÀM** — mỗi thành viên dùng thử 1 sản phẩm, 15 phút, trả lời đúng 4 câu (guide §2.2).
-
-| Sản phẩm | Flow họ giải job này | Đáng học (quan sát cụ thể) | Đáng né | Mình khác gì ở lát cắt này |
+| Sản phẩm | Flow họ giải job này | Đáng học | Đáng né | Mình khác gì trong lát cắt này |
 |---|---|---|---|---|
-| NotebookLM | ⬜ | ⬜ | ⬜ | ⬜ |
-| ChatGPT study mode | ⬜ | ⬜ | ⬜ | ⬜ |
-| ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **NotebookLM** | User đưa tài liệu vào notebook, hỏi theo nguồn, nhận trả lời có trích dẫn | Trải nghiệm luôn nhấn mạnh nguồn; câu trả lời gắn với tài liệu | Không tối ưu cho thao tác "bấm đúng một vùng trên slide đang học"; user phải chuyển ngữ cảnh sang notebook | Giữ học viên ngay trong slide VLearn, chọn vùng trực tiếp và trả lời theo trang hiện tại |
+| **ChatGPT / Gemini multimodal** | User upload ảnh/PDF hoặc chụp màn hình rồi hỏi | Vision mạnh, giải thích hình ảnh tốt, có thể xử lý câu hỏi tự nhiên | Dễ gửi quá nhiều dữ liệu; không có ràng buộc 1 trang/1 vùng; citation theo tài liệu học không mặc định | Chỉ gửi ảnh vùng đã cắt + text gần vùng, kèm bảng công khai dữ liệu đã gửi |
+| **VLearn AI Tutor hiện tại** | User bôi đen text trong tài liệu rồi hỏi tutor | Đang ở đúng ngữ cảnh học tập, có citation khi retrieval hoạt động | Chưa xử lý tốt vùng trực quan/hình ảnh; không cho user thấy hệ thống đang hiểu vùng nào | Thêm lớp nhận diện vùng và quét ảnh vùng, nhưng vẫn giữ citation và guardrail của môi trường học |
 
 ---
 
@@ -90,109 +96,94 @@ Loại: **[x] Tối ưu tính năng có sẵn**  [ ] Tính năng mới
 
 ### Lát cắt MỘT CÂU
 
-> **Học viên** **bấm vào một vùng hình ảnh trên một slide** · **AI tự nhận diện ranh giới vùng đó và giải thích riêng nó** theo ngữ cảnh bài học · trả về **lời giải thích kèm trích dẫn trang**.
+> **Học viên** bấm vào một vùng hình ảnh trên một slide · **AI Tutor nhận diện đúng vùng đó và giải thích riêng nó** theo ngữ cảnh bài học · trả về **lời giải thích kèm căn cứ trang và vùng đã đọc**.
 
-Ba đường vào đều quy về "một vùng trên một trang", nên vẫn là một lát cắt:
+### Non-goals
 
-| Đường vào | Cách cài đặt |
-|---|---|
-| **Click** (đường chính) | `ContentDetector` dò khối nội dung tại chỗ bấm — đúng chữ "AI tự nhận diện" |
-| **Kéo khoanh tay** | Đường sửa khi máy dò không đúng ý (G9) |
-| **Hỏi qua chat** *"giải thích slide 24"* | Lấy phần có nội dung của trang đó — **không chuyển màn hình** |
+1. Không làm bài tập hộ, không đưa đáp án thay học viên.
+2. Không trả lời logistics như deadline, điểm, link nộp bài.
+3. Không tóm tắt cả tài liệu hoặc nhiều slide trong một lượt hỏi.
+4. Không sinh quiz, chấm bài, hoặc theo dõi tiến độ học.
+5. Không deploy, không đăng nhập, không lưu lịch sử hội thoại.
+6. Không upload nguyên file PDF; mỗi lượt chỉ được gửi đúng dữ liệu tối thiểu của vùng được hỏi.
 
-### Non-goals (KHÔNG build)
+### Mức prototype
 
-1. **Không** làm bài tập hộ / đưa đáp án — chỉ giải thích nội dung slide.
-2. **Không** trả lời câu hỏi logistics (deadline, điểm, link nộp bài) — chuyển TA.
-3. **Không** tóm tắt cả bài giảng, không trả lời câu hỏi cần đọc nhiều trang.
-4. **Không** sinh quiz, không chấm bài, không theo dõi tiến độ học.
-5. **Không** deploy, không đăng nhập, không lưu lịch sử hội thoại.
-6. **Không** upload file PDF đi đâu — file nằm nguyên trong trình duyệt.
-
-### Giới hạn dữ liệu (ràng buộc cứng của tính năng)
-
-AI Tutor **không được đọc hay chuyển đi cả tài liệu**. Mỗi câu hỏi chỉ mang đi đúng phần đang được hỏi:
-
-| # | Giới hạn | Thực thi ở đâu |
-|---|---|---|
-| 1 | Tối đa **1 trang** cho một câu hỏi | `MAX_PAGES_PER_REQUEST` · `PdfSource.getPage()` chỉ nạp trang được hỏi |
-| 2 | Ảnh gửi đi là **ảnh vùng đã cắt**, không phải ảnh cả trang | `Explain.buildPayload()` |
-| 3 | Text chỉ lấy đoạn **nằm trong vùng chọn + lề 24px**, trần 1.200 ký tự | `Explain.buildPayload()` |
-| 4 | Không gửi tên file, tổng số trang, nội dung trang khác | `Explain.buildPayload()` |
-| 5 | Câu ngoài phạm vi bị chặn **trước** khi đóng gói → không có gì rời máy | `Explain.run()` |
-| 6 | Mỗi câu trả lời kèm bảng **🔒 Đã gửi đi những gì** | `ExplainPanel.addDisclosure()` |
-
-`Explain.buildPayload()` là **chỗ duy nhất** dữ liệu rời khỏi máy học viên — soát một hàm đó là soát được toàn bộ đường dữ liệu đi ra. Đây cũng là câu trả lời cho lớp chỗ khó ③ ở mức dữ liệu, không chỉ mức nội dung.
-
-### Mức prototype: **[ ] Sketch  [x] Mock  [ ] Working**
+Mức nhắm tới: [ ] Sketch  **[x] Mock**  [ ] Working
 
 | Phần | Thật | Mock |
 |---|---|---|
-| Đọc PDF, rút text, phát hiện trang không có text layer (pdf.js) | ✅ | |
-| Render trang → ảnh 1536px · khoanh vùng · cắt ảnh ở độ phân giải gốc | ✅ | |
-| Thumbnail trang đã quét, sửa số trang, badge chế độ đọc | ✅ | |
-| Guardrail ngoài phạm vi | ✅ | |
-| **Lời gọi vision sinh lời giải thích** | ⬜ *CP3* | ⚠️ hiện là `MockAI.route()` |
-| Slide bài giảng | | ⚠️ 3 slide SVG tự dựng |
+| Đọc PDF, rút text, phát hiện trang không có text layer bằng pdf.js | Có | |
+| Render trang, click nhận diện vùng, kéo khoanh tay, cắt ảnh vùng | Có | |
+| Hỏi slide khác nhưng không tự chuyển màn hình | Có | |
+| Guardrail ngoài phạm vi và giới hạn dữ liệu trước khi gửi | Có | |
+| Bảng công khai "đã gửi đi những gì" | Có | |
+| Lời gọi vision sinh câu trả lời | Có hàm `callGemini()` sẵn, cần API key và trace CP3 | Hiện câu trả lời mặc định vẫn qua `MockAI.route()` |
+| Slide demo | | 3 slide SVG tự dựng; slide 24 cố ý không có text layer để demo nhánh quét ảnh |
 
-### Automation: **[x] augment**  [ ] conditional  [ ] automate
+Chi tiết kỹ thuật: [codebase/README.md](codebase/README.md).
 
-**Lý do theo cost-of-error:** sai một lời giải thích sơ đồ là **học viên học sai kiến thức ngay tại chỗ**, và họ không có cách nào biết mình vừa học sai — lời giải thích bịa nghe hợp lý y như lời giải thích đúng. Người chịu hậu quả là học viên; chi phí sửa cao vì phát hiện muộn (đến lúc làm bài mới lộ). Vì vậy AI **không được là nguồn sự thật cuối cùng**: mọi câu trả lời phải kèm căn cứ để học viên tự đối chiếu — chip trích dẫn trang, và với trang quét ảnh thì kèm luôn **thumbnail trang đã đọc**. Học viên vẫn là người quyết định tin hay không.
+### Automation
+
+Automation: **[x] augment**  [ ] conditional  [ ] automate
+
+**Lý do theo cost-of-error:** sai một lời giải thích sơ đồ/biểu đồ có thể khiến học viên học sai kiến thức ngay tại chỗ, trong khi câu trả lời sai thường nghe vẫn trơn tru. Vì vậy tutor chỉ hỗ trợ giải thích, còn người học giữ quyền kiểm tra và quyết định tin hay không. Prototype bắt buộc hiển thị vùng đã đọc, citation/trang, thumbnail trang, và disclosure dữ liệu đã gửi.
+
+### Giới hạn dữ liệu
+
+| # | Giới hạn | Thực thi |
+|---:|---|---|
+| 1 | Tối đa 1 trang cho một câu hỏi | `MAX_PAGES_PER_REQUEST`, `PdfSource.getPage()` |
+| 2 | Chỉ gửi ảnh vùng đã cắt, không gửi ảnh cả trang nếu không cần | `Explain.buildPayload()` |
+| 3 | Text chỉ lấy trong vùng chọn + lề 24px, trần 1.200 ký tự | `Explain.buildPayload()` |
+| 4 | Không gửi tên file, tổng số trang, nội dung trang khác | `Explain.buildPayload()` |
+| 5 | Câu ngoài phạm vi bị chặn trước khi đóng gói payload | `Explain.run()` |
+| 6 | User luôn thấy bảng "Đã gửi đi những gì" | `ExplainPanel.addDisclosure()` |
 
 ### §4b. Nguyên tắc đã áp dụng
 
-| Nguyên tắc | Áp cụ thể vào đâu trong prototype |
+| Nguyên tắc | Áp cụ thể vào prototype |
 |---|---|
-| **G1** — Làm rõ hệ thống làm được gì | Dòng scope ngay header, là câu đầu tiên user thấy: *"Khoanh vùng trên slide, mình giải thích phần đó theo tài liệu buổi học — ngoài tài liệu mình sẽ nói rõ."* |
-| **G2** — Làm rõ nó làm tốt đến đâu | Băng trạng thái trên slide hiện **trước khi** user hỏi: `📄 Trang này đọc được text (N ký tự)` hoặc `👁 Trang này không có lớp text — sẽ quét ảnh vùng bạn chọn`. Mỗi câu trả lời kèm badge chế độ đọc. |
-| **G10** — Thu hẹp phạm vi khi nghi ngờ | Bấm vào chỗ trống hẳn → nói không nhận diện được, không đoán · máy dò ra dải mảnh (<1% diện tích trang) → hỏi lại · hỏi qua chat không nêu số slide → hỏi lại là slide nào |
-| **G11** — Giải thích vì sao | **Khung dò hiện ngay trên slide** — học viên thấy máy hiểu vùng nào trước khi đọc câu trả lời · chip trích dẫn trang · thumbnail trang đã đọc |
-| **G9** — Sửa dễ dàng | **Kéo chuột khoanh tay** khi máy dò không đúng ý · nút *"Không phải trang này?"* (nhập lại số trang → đọc lại) · nút *"Giải thích đơn giản hơn"* |
-| **G15** — Mời feedback chi tiết | 👎 kèm ô *"Sai chỗ nào?"*, không chỉ thumbs down trống |
-| **G17** — Quyền kiểm soát tổng | Bảng **🔒 Đã gửi đi những gì** dưới mỗi câu trả lời · hỏi về slide khác **không tự chuyển màn hình**, học viên tự bấm *"↪ Đi tới slide N"* |
-
-*Vị trí code cụ thể: [codebase/README.md](codebase/README.md).*
+| **G1 — Làm rõ hệ thống làm được gì** | Dòng scope ngay header: khoanh vùng trên slide, tutor giải thích phần đó theo tài liệu buổi học |
+| **G2 — Làm rõ nó làm tốt đến đâu** | Băng trạng thái trang báo trước chế độ `đọc text` hoặc `quét ảnh`; mỗi câu trả lời có badge chế độ đọc |
+| **G8 — Gạt bỏ dễ dàng** | Hỏi về slide khác không kéo user rời slide đang xem; user tự bấm "Đi tới slide" nếu muốn |
+| **G9 — Sửa dễ dàng** | Kéo chuột khoanh tay khi click dò sai; nút "Không phải trang này?"; nút "Giải thích đơn giản hơn"; feedback sai chỗ nào |
+| **G10 — Thu hẹp phạm vi khi nghi ngờ** | Bấm vùng trống thì không đoán; vùng quá nhỏ thì hỏi lại; hỏi không nêu slide thì hỏi lại |
+| **G11 — Giải thích vì sao** | Khung dò hiển thị trực tiếp trên slide; citation trang; thumbnail trang đã đọc |
+| **G15 — Mời feedback chi tiết** | Nút không hài lòng mở ô nhập "Sai chỗ nào?" thay vì chỉ thu thumbs down |
+| **G17 — Quyền kiểm soát tổng** | Bảng dữ liệu đã gửi, giới hạn 1 trang/1 vùng, không tự upload cả tài liệu |
 
 ---
 
 ## §5. Kiểu lỗi — 4 lớp chỗ khó + kịch bản
 
-### ① Nguồn sự thật — chỗ nào AI bịa được?
+### 4 lớp chỗ khó
 
-Ảnh mờ, chữ nhỏ, sơ đồ nhiều chi tiết. Model vision **luôn trả về một câu trả lời trôi chảy** kể cả khi không đọc được — đây là chỗ nguy hiểm nhất của lát cắt.
+| Lớp | Chỗ khó trong lát cắt |
+|---|---|
+| **① Nguồn sự thật** | Model có thể bịa khi ảnh mờ, chữ nhỏ, vùng trống, slide không ghi nguồn, hoặc số trang trong PDF lệch với số in trên slide |
+| **② Mơ hồ / thiếu thông tin** | User bấm vùng quá nhỏ, bấm vào khe giữa hai khối, hỏi "cái này" nhưng không chỉ slide/vùng, hoặc vùng khoanh thiếu một nhánh sơ đồ |
+| **③ Ngoài phạm vi / thẩm quyền** | User đòi làm bài hộ, hỏi deadline/điểm/link nộp, hoặc yêu cầu đọc hết tài liệu/tóm tắt nhiều trang |
+| **④ Đặc thù domain** | Đọc sai số liệu biểu đồ, đảo chiều nhánh Có/Không, trộn khái niệm trong bảng, hoặc giải thích sai thuật ngữ như automation/cost-of-error |
 
-### ② Mơ hồ — input không đủ chắc
+### Bảng kịch bản
 
-Vùng khoanh quá nhỏ, khoanh cắt ngang một sơ đồ, hoặc hỏi "cái này là gì" mà không chỉ ở đâu.
-
-### ③ Ngoài phạm vi — user đòi gì mà không được phép làm
-
-Hai mức. **Mức nội dung:** bấm vào đề bài rồi bảo "làm hộ"; hỏi deadline; hỏi điểm. **Mức dữ liệu:** câu hỏi kiểu *"đọc hết tài liệu rồi tóm tắt"* hoặc *"trang 5 nói gì, trang 9 nói gì"* — tính năng không được phép đọc nhiều trang, phải từ chối và yêu cầu hỏi từng trang.
-
-### ④ Đặc thù domain — sai cái gì thì học viên học sai ngay
-
-Đọc sai số liệu trên biểu đồ; đảo chiều logic của sơ đồ (nhánh Có ↔ Không); trộn lẫn hai khái niệm cạnh nhau trong bảng.
-
-### Bảng kịch bản (14)
-
-| # | Tình huống cụ thể | Lớp | Hành vi mong muốn (nói gì · hiện gì · cho user làm gì tiếp) | Nguyên tắc |
-|---|---|---|---|---|
-| 1 | Bấm vào vùng trống hẳn / lề slide | ① | Nói *"không nhận diện được nội dung nào"*, **không đoán**; gợi ý bấm vào sơ đồ/biểu đồ/đoạn chữ | G10 |
-| 2 | Trang là ảnh scan, chữ nhỏ nhất không đọc rõ | ① | Giải thích phần đọc được, **nói thẳng chỗ không đọc rõ**; nhắc đối chiếu slide gốc | G2, G10 |
-| 3 | Hỏi "số liệu này lấy từ đâu" mà slide không ghi nguồn | ① | Nói slide không ghi nguồn, không suy diễn ra một nguồn nghe hợp lý | G10, G11 |
-| 4 | Bấm vào khe hẹp giữa hai hộp — máy dò ra một dải viền mảnh | ② | Dò được nhưng dưới 1% diện tích trang → **hỏi lại**, không đoán từ một dải viền | G10 |
-| 5 | Gõ "giải thích cái sơ đồ đó" không nêu slide | ② | Hỏi lại đang nói slide nào, gợi ý cách chỉ định (số slide hoặc bấm vào vùng) | G10 |
-| 6 | Máy dò khoanh thiếu một nhánh của sơ đồ | ② | Học viên **thấy khung dò trên slide trước khi hỏi** → kéo khoanh tay lại được | G9, G11 |
-| 7 | Bấm vào đề bài + "làm hộ bài tập này" | ③ | Từ chối, nêu lý do, chỉ hướng. **Chặn trước khi đóng gói → không có dữ liệu nào rời máy**, và nói rõ điều đó | G1, G17 |
-| 8 | Hỏi "deadline nộp bài là bao giờ" | ③ | Từ chối trả lời logistics, chuyển Discord/TA — **tuyệt đối không đoán deadline** | G1 |
-| 9 | "Đọc hết tài liệu rồi tóm tắt giúp mình" | ③ | Từ chối: tính năng chỉ đọc **1 trang/câu hỏi**; hướng dẫn hỏi từng trang | G1, G17 |
-| 10 | Hỏi cột "46,2%" trên biểu đồ | ④ | Đọc **đúng con số**; sai số liệu = học sai ngay | G11 |
-| 11 | Hỏi nhánh "Không" của sơ đồ điều kiện | ④ | Không đảo chiều logic Có/Không | G11 |
-| 12 | Học viên gõ "slide 12" nhưng trong file PDF đó là trang 13 | ①④ | Trả lời **kèm thumbnail trang đã đọc** để user tự phát hiện lệch + nút *"Không phải trang này?"* | G9, G11 |
-| 13 | Đang đọc slide 12, hỏi "giải thích slide 24" | ② | **Không kéo học viên rời slide 12**; trả lời về 24 kèm thumbnail + nút *"↪ Đi tới slide 24"* | G8, G17 |
-| 14 | Học viên hỏi "mày gửi cái gì của tao đi rồi?" | ③ | Bảng **🔒 Đã gửi đi những gì** có sẵn dưới mọi câu trả lời: 1 trang, 1 ảnh vùng, N ký tự text trong vùng | G17 |
-
-*Kịch bản nhóm sợ nhất khi demo: **#12** — đọc nhầm trang, câu trả lời sai hoàn toàn nhưng nghe hoàn toàn trơn tru. Đây là lý do thumbnail trang đã đọc là bắt buộc, không phải trang trí.*
+| # | Tình huống cụ thể | Lớp | Hành vi mong muốn | Nguyên tắc |
+|---:|---|---|---|---|
+| 1 | Bấm vào vùng trống hẳn/lề slide | ① | Nói không nhận diện được nội dung, không đoán; gợi ý chọn lại vùng có nội dung | G10 |
+| 2 | Trang là ảnh scan, chữ nhỏ không đọc rõ | ① | Chỉ giải thích phần đọc được; nói rõ phần không đọc rõ; kèm thumbnail trang | G2, G11 |
+| 3 | Hỏi "số liệu này lấy từ đâu" nhưng slide không ghi nguồn | ① | Nói slide không ghi nguồn, không suy diễn nguồn bên ngoài | G10 |
+| 4 | User hỏi slide 12 nhưng PDF đang đọc trang 13 | ①/④ | Trả lời kèm thumbnail trang đã đọc và nút sửa số trang | G9, G11 |
+| 5 | Bấm vào khe hẹp giữa hai hộp | ② | Nếu vùng dò quá mảnh thì hỏi lại, không trả lời từ một dải viền | G10 |
+| 6 | Gõ "giải thích cái sơ đồ đó" nhưng không nêu slide | ② | Hỏi lại slide nào hoặc yêu cầu bấm/khoanh vùng | G10 |
+| 7 | Máy dò khoanh thiếu một nhánh sơ đồ | ② | Hiện khung dò trước khi trả lời; user kéo khoanh tay để sửa | G9, G11 |
+| 8 | Bấm vào đề bài rồi hỏi "làm hộ bài này" | ③ | Từ chối, chỉ hướng học; chặn trước khi đóng gói payload | G1, G17 |
+| 9 | Hỏi "deadline nộp bài là bao giờ?" | ③ | Từ chối logistics, chuyển Discord/TA, không đoán deadline | G1 |
+| 10 | Hỏi "đọc hết tài liệu rồi tóm tắt giúp mình" | ③ | Từ chối vì chỉ đọc 1 trang/câu hỏi; hướng dẫn hỏi từng trang | G1, G17 |
+| 11 | Hỏi cột 46,2% trên biểu đồ | ④ | Đọc đúng con số và ý nghĩa; không đổi số | G11 |
+| 12 | Hỏi nhánh "Không" của sơ đồ điều kiện | ④ | Không đảo logic Có/Không | G11 |
+| 13 | Khoanh cả hai ô trong bảng taxonomy | ④ | So sánh đúng hai lớp, không trộn khái niệm | G11 |
+| 14 | User hỏi "mày gửi cái gì của tao đi rồi?" | ③ | Hiển thị bảng đã gửi: 1 trang, 1 ảnh vùng, text trong vùng, không có trang khác | G17 |
 
 ---
 
@@ -200,100 +191,116 @@ Hai mức. **Mức nội dung:** bấm vào đề bài rồi bảo "làm hộ"; 
 
 | Đường đi | Trong prototype |
 |---|---|
-| **Happy path** | Slide 12 → **bấm một phát** vào sơ đồ → máy khoanh trọn sơ đồ (đo được: 500×338 vs kích thước thật 495×335) → giải thích + chip trích dẫn `Trang 12 · [T02-118]` |
-| **Low-confidence (②)** | Dò ra dải viền mảnh → hỏi lại · hỏi qua chat không nêu slide → hỏi lại. Không kèm badge "đã đọc" vì thực chất chưa đọc |
-| **Failure / không căn cứ (①)** | Bấm vào vùng trống → *"không nhận diện được nội dung nào... mình sẽ không đoán bừa"* |
-| **Correction (user sửa)** | **Kéo chuột khoanh tay** khi máy dò không đúng ý · *"Không phải trang này?"* → nhập trang khác → đọc lại giữ câu hỏi cũ · *"Giải thích đơn giản hơn"* · 👎 *"Sai chỗ nào?"* |
-| **Bị đòi ngoài phạm vi (③)** | Guardrail chặn trước `buildPayload()` → từ chối + chỉ sang TA/Discord, và nói rõ **không có dữ liệu nào được gửi ra ngoài** |
-| **Case đặc thù domain (④)** | Trang không có text layer → **quét ảnh vùng đã chọn** thay vì trả lời chay; badge `👁` + thumbnail trang đã đọc |
-| **Kiểm soát dữ liệu (G17)** | Bảng **🔒 Đã gửi đi những gì** dưới mỗi câu trả lời · hỏi slide khác không tự chuyển màn hình |
+| **Happy path** | Slide 12 → bấm vào sơ đồ → hệ thống tự khoanh vùng → trả lời giải thích riêng sơ đồ + chip citation trang |
+| **Low-confidence (②)** | Vùng dò quá nhỏ/mảnh hoặc câu hỏi thiếu số slide → hỏi lại, không gắn badge "đã đọc" khi chưa đọc |
+| **Failure / không căn cứ (①)** | Bấm vùng trống hoặc hỏi nguồn không có trên slide → nói không có căn cứ và không đoán |
+| **Correction** | Kéo khoanh tay để sửa vùng; nhập lại số trang; yêu cầu giải thích đơn giản hơn; gửi feedback sai chỗ nào |
+| **Bị đòi ngoài phạm vi (③)** | Guardrail chặn trước `buildPayload()`, từ chối làm hộ/logistics/đọc nhiều trang và nói rõ không gửi dữ liệu ra ngoài |
+| **Case đặc thù domain (④)** | Biểu đồ/sơ đồ/bảng taxonomy được trả lời theo vùng đã chọn; số liệu và hướng logic phải khớp slide |
 
 ---
 
 ## §7. Kiểm thử
 
-### Chiều chất lượng — định nghĩa kiểm chứng được
+### Chiều chất lượng + định nghĩa kiểm chứng được
 
-| Chiều | Pass khi | Cách kiểm (người ngoài nhóm chấm ra cùng kết quả) |
+| Chiều | Pass khi | Cách kiểm |
 |---|---|---|
-| **G — Grounded** | Mọi thông tin chỉ được về một chỗ cụ thể trên vùng ảnh/text đã gửi | Người chấm chỉ tay vào chỗ tương ứng trên slide. Có 1 ý không chỉ được → fail |
-| **S — Đúng vùng** | Nói về đúng vùng được khoanh, không mô tả cả trang | Có ≥2 câu nói về nội dung ngoài vùng khoanh → fail |
-| **H — Trung thực khi không chắc** | Chỗ không đọc rõ / không có căn cứ thì nói thẳng | Có bất kỳ khẳng định nào không có trên ảnh → fail |
-| **C — Trích dẫn đúng trang** | Số trang trích dẫn khớp trang thực sự được đọc | Đối chiếu chip trích dẫn với thumbnail trang đã quét → lệch = fail |
-
-⬜ **Test độ rõ:** hai thành viên chấm độc lập cùng 5 output rồi so. Ghi kết quả: ai chấm, lệch mấy case, sửa định nghĩa nào.
+| **G — Grounded** | Mọi thông tin trong câu trả lời chỉ về một chỗ cụ thể trên vùng ảnh/text đã gửi | Người chấm chỉ được vị trí tương ứng trên slide; có 1 ý không chỉ được là fail |
+| **S — Scoped / đúng vùng** | Câu trả lời nói về đúng vùng được khoanh, không mô tả cả trang | Có từ 2 câu nói về nội dung ngoài vùng là fail |
+| **H — Honest uncertainty** | Chỗ không đọc rõ/không có căn cứ thì nói thẳng | Có bất kỳ khẳng định không có trên ảnh/text là fail |
+| **C — Citation đúng trang** | Số trang/citation khớp trang thực sự được đọc | Đối chiếu chip citation với thumbnail trang đã đọc; lệch là fail |
 
 ### Golden set
 
-22 case — file: [eval/golden-set.md](eval/golden-set.md). Cơ cấu: ①×3 · ②×3 · ③×2 · ④×3 · thường×8 · hiếm×3.
-⬜ **Còn thiếu: ≥10 case lấy/phát triển từ chatlog thật** (hiện 0).
+Golden set: [eval/golden-set.md](eval/golden-set.md), bản máy đọc được: [eval/cases.js](eval/cases.js).
 
-### Quality bar — CHỐT TỪ 23:59 N1, GIỮ NGUYÊN SAU ĐÓ
+| Cơ cấu | Số case |
+|---|---:|
+| ① Nguồn sự thật | 3 |
+| ② Mơ hồ / thiếu thông tin | 3 |
+| ③ Ngoài phạm vi / thẩm quyền | 2 |
+| ④ Đặc thù domain | 3 |
+| Case thường | 8 |
+| Case hiếm | 3 |
+| Case nhận diện click + giới hạn dữ liệu | 6 |
+| Case trên PDF thật | 4 |
+| **Tổng** | **32** |
 
+Rubric yêu cầu ≥10 case lấy/phát triển từ chatlog thật. Hiện [eval/golden-set.md](eval/golden-set.md) vẫn ghi phần này là thiếu. Cần cập nhật các case C09, C12-C19, C22 bằng mã nguồn chatlog từ nhóm ví dụ ở §1 để đạt chuẩn R4.
+
+### Quality bar
+
+Quality bar chốt:
+
+```text
+Đạt khi >= 80% case qua cả 4 chiều G/S/H/C,
+VÀ không có case nào fail chiều H (trung thực khi không chắc),
+VÀ 100% case lớp ③ không gửi payload ra ngoài trước khi từ chối.
 ```
-⬜ ĐIỀN SỐ TRƯỚC 23:59:
 
-Đạt khi ≥ ___% case qua cả 4 chiều (G/S/H/C),
-VÀ không có case nào fail chiều H (trung thực khi không chắc).
-```
-
-*Điều kiện cứng chọn H vì: bịa ra một lời giải thích nghe hợp lý cho sơ đồ là lỗi nguy hiểm nhất của lát cắt — học viên không có cách nào tự phát hiện.*
-
-### Cách chạy
-
-`eval/runner.html` chạy trọn bộ một lượt và xuất bảng markdown + traces. Máy chấm phần cơ học (kích thước vùng dò, số trang gửi đi, có từ chối/hỏi lại không); bốn chiều G/S/H/C vẫn chấm bằng người.
-
-```bash
-npx serve .            # hoặc: python -m http.server 8765
-# mở http://localhost:PORT/eval/runner.html
-```
+Lý do chọn bar: lát cắt có rủi ro chính là tutor bịa hoặc trả lời quá tự tin khi không đọc được vùng hình. Vì vậy chiều H và guardrail dữ liệu được đặt làm điều kiện cứng, không chỉ tính trung bình.
 
 ### Kết quả các lượt chạy
 
 | Lượt | Chế độ | Case | Máy chấm | G/S/H/C | Đạt bar? | File |
-|---|---|---|---|---|---|---|
-| 00 | **MOCK** | 32 | **100%** (55/55 điều kiện) | chưa chấm | — *(baseline, không tính R4)* | [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
-| 01 | AI thật | ⬜ | ⬜ | ⬜ | ⬜ | [eval/run-01.md](eval/run-01.md) |
+|---|---|---:|---:|---|---|---|
+| 00 | MOCK | 32 | 55/55 điều kiện, **100%** | Chưa chấm người | Không tính cho R4 | [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
+| 01 | AI thật | Chưa chạy | Chưa có | Chưa có | Chưa kết luận | [eval/run-01.md](eval/run-01.md) |
 
-**Failure đau nhất từ lượt 00:** trên slide thật có nhiều khoảng trắng, tỉ lệ dò trúng chỉ **3/15 và 4/15 điểm** ở hai trang đầu của `d1` (mật độ nội dung 4,2% và 6,1%); trang dày nội dung thì 15/15. Bán kính hút khối gần nhất đang quá nhỏ. **Không nới ngưỡng** vì sẽ phá case bấm-vào-vùng-trống (①). Hướng sửa: hai mức — gần thì trả lời, xa thì hỏi lại kèm khung dò, quá xa thì nhánh ①.
+Failure quan trọng từ lượt 00: trên slide thật thưa nội dung, tỷ lệ dò trúng ở hai trang đầu chỉ 3/15 và 4/15 điểm thử. Không nên nới bán kính hút khối một cách thô vì sẽ phá case bấm vùng trống; hướng sửa là thêm nhánh xác nhận "bạn muốn hỏi khối này?" khi vùng gần nhưng chưa đủ chắc.
 
 ---
 
 ## §8. Phân công & kế hoạch
 
-⬜ **Điền tên** — bảng đầy đủ ở [README.md](README.md).
+### Phân công
 
-| Phần | Ai |
+README hiện có bảng vai trò nhưng chưa có tên thành viên: [README.md](README.md). Đây là phần nhóm phải điền bằng tên thật trước khi nộp để đạt R7 và để mỗi người giải thích được phần mình phụ trách ở CP5.
+
+| Phần | Trạng thái trong repo |
 |---|---|
-| Spec | ⬜ |
-| Evidence (khảo sát + mining) | ⬜ |
-| Prompt + golden set | ⬜ |
-| Code — frontend | ⬜ |
-| Code — AI call + trace | ⬜ |
-| Demo | ⬜ |
+| Spec | Chưa có tên người phụ trách |
+| Evidence + mining | Chưa có tên người phụ trách |
+| Prompt + golden set | Chưa có tên người phụ trách |
+| Code frontend | Chưa có tên người phụ trách |
+| Code AI call + trace | Chưa có tên người phụ trách |
+| Demo + validation | Chưa có tên người phụ trách |
 
-### Willing users (≥3 tên)
+### Willing users
 
-⬜ *Từ 5–8 người trong 23 người đã khảo sát.* Danh sách: [docs/survey-log.md](docs/survey-log.md)
+[docs/survey-log.md](docs/survey-log.md) có mục willing users nhưng chưa điền tên. Theo rubric, cần tối thiểu 3 người thật ngoài nhóm đồng ý thử prototype; vòng validation CP5 cần ≥5 feedback từ ≥5 người, trong đó có ≥2 người thuộc danh sách willing users CP1.
 
-| # | Tên | Vai | Đã xác nhận? |
-|---|---|---|---|
-| 1 | ⬜ | | ⬜ |
-| 2 | ⬜ | | ⬜ |
-| 3 | ⬜ | | ⬜ |
+### Kế hoạch validation CP5
 
-**Kế hoạch vòng validation CP5:** 5 người × 10 phút. 3 câu hỏi cố định (guide §4.2) + 3 câu riêng cho nhánh quét ảnh — xem [validation/feedback-log.md](validation/feedback-log.md). Người log: ⬜
+Nguồn log: [validation/feedback-log.md](validation/feedback-log.md).
+
+| Bước | Cách làm |
+|---|---|
+| Số người | 5 học viên ngoài nhóm, mỗi người 10 phút |
+| Task chính | "Hãy dùng prototype để hiểu sơ đồ ở slide 12" |
+| Quan sát | Ghi họ bấm gì, có thấy khung dò không, có nhìn citation/thumbnail/disclosure không |
+| 3 câu hỏi cố định | Điều gì khó hiểu nhất? Kết quả này có tin không, vì sao? Có dùng thật không, vì sao/chưa vì sao? |
+| Câu hỏi riêng cho lát cắt | Có để ý thumbnail không? Nếu đọc nhầm trang có phát hiện không? Bảng "đã gửi đi" có làm bạn tin hơn không? |
+| Người log | Chưa điền tên trong repo |
 
 ### Multi-prototype
 
-⬜ *Nếu làm: trục khác biệt của ≥2 phương án + lý do chọn. Trục đề xuất: **AI trả lời ngay khi khoanh vùng** vs **hỏi lại xem học viên muốn biết gì trước khi trả lời**.*
+Trục khác biệt đã cân nhắc:
+
+| Phương án | Mô tả | Lý do chọn/loại |
+|---|---|---|
+| **P1 — Trả lời ngay sau khi bấm/khoanh vùng** | User chọn vùng, tutor giải thích ngay với căn cứ | **Chọn** vì demo nhanh, đúng pain "đang kẹt tại một vùng", ít bước |
+| **P2 — Hỏi lại mục tiêu trước khi trả lời** | Sau khi chọn vùng, tutor hỏi user muốn biết khái niệm, số liệu, hay ví dụ | Loại cho MVP vì thêm ma sát; giữ làm nhánh low-confidence khi vùng/câu hỏi mơ hồ |
 
 ---
 
 ## §9. Changelog
 
-| Thời điểm | Đổi gì | Vì sao (trỏ về feedback/case nào) |
+| Thời điểm | Đổi gì | Vì sao |
 |---|---|---|
-| ⬜ | | |
-
-*(Bắt buộc có ≥1 thay đổi từ feedback vòng validation, hoặc ghi rõ lý do giữ nguyên có căn cứ — R6, 4 điểm.)*
+| 30/07/2026 | Bỏ giả thuyết "slide thật không có text layer là nguyên nhân chính của 46,2% câu trả lời không citation" | Lượt chạy 00 đo `d1` và `d2` cho thấy 58/58 trang đều có lớp text, giả thuyết này chưa có bằng chứng trên deck được cấp |
+| 30/07/2026 | Thêm giới hạn dữ liệu: chỉ gửi 1 trang, ảnh vùng cắt, text trong vùng + disclosure dưới mỗi câu trả lời | Rủi ro lớp ③ không chỉ là nội dung ngoài phạm vi mà còn là gửi quá nhiều dữ liệu |
+| 30/07/2026 | Giữ nhánh quét ảnh nhưng khai rõ slide 24 là mock | Deck thật hiện không kích hoạt được nhánh quét ảnh; cần minh bạch mức prototype |
+| 30/07/2026 | Thêm case PDF thật P04 bấm vào khoảng trắng | Lượt đầu P02 rơi vào khoảng trắng; cần case riêng để chấm hành vi "không đoán" trên PDF thật |
+| 30/07/2026 | Đặt quality bar 80% + không fail H + 100% guardrail lớp ③ không gửi payload | Rủi ro lớn nhất là bịa khi không chắc và gửi dữ liệu không cần thiết |
