@@ -54,10 +54,10 @@ Chi tiết phần nào mock / phần nào thật: [codebase/README.md](codebase/
 |---|---|---|
 | CP1 · Canvas | [docs/canvas-cp1.md](docs/canvas-cp1.md) | ✅ |
 | CP2 · Bấm được | [codebase/](codebase/) | ✅ flow chính bấm hết được |
-| CP3 · AI thật + đo lượt đầu | `codebase/server/traces/` · [eval/run-01.md](eval/run-01.md) | ⬜ chưa bật AI thật |
-| CP4 · Spec chốt | [spec.md](spec.md) | ⬜ đang viết |
-| CP5 · Validation + dry run | [validation/feedback-log.md](validation/feedback-log.md) | ⬜ |
-| CP6 · Demo | `demo-slides.pdf` | ⬜ |
+| CP3 · AI thật + đo lượt đầu | `codebase/server/traces/` · [eval/run-01.md](eval/run-01.md) | ✅ AI thật đã chạy, có trace và kết quả đo |
+| CP4 · Spec chốt | [spec.md](spec.md) | ✅ spec đã chốt qua CP5 |
+| CP5 · Validation + dry run | [validation/feedback-log.md](validation/feedback-log.md) | ✅ đã test với 5 người ngoài nhóm và ghi nhận phản hồi |
+| CP6 · Demo | `demo-slides.pdf` | 🟡 đã có slide PDF, chờ trình bày demo |
 
 ## Bằng chứng đã có
 
