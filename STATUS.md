@@ -68,7 +68,9 @@ Cả hai có watermark, là bản rút gọn từ slide gốc, **một số tran
 1. **Cả 2 file đều CÓ lớp text** (kiểm bằng cách đếm khối vẽ chữ trong PDF: d1 có 645 khối `BT` / 4387 lệnh vẽ chữ, d2 có 971 / 6246). Nghĩa là mở 2 file này lên thì hệ thống chạy **chế độ đọc text**, **nhánh quét ảnh sẽ không tự kích hoạt**. Muốn demo nhánh quét trên PDF thật thì phải có trang không có text layer — hiện demo nhánh này bằng **slide 24 mock** (SVG tự dựng, cố tình không text).
 2. **Footer số trang ≠ chỉ số trang trong file** — đúng cái bẫy đã lường: đọc nhầm trang thì câu trả lời sai hoàn toàn nhưng nghe vẫn trơn tru. Vì vậy mỗi câu trả lời đều kèm thumbnail trang đã đọc + nút *"Không phải trang này?"*.
 
-⚠️ **Không `git add` thư mục `slides/`** — data được cấp thuộc quy định bảo mật, không commit vào repo nộp bài ([01-de-bai.md](01-de-bai.md) mục 3).
+ℹ️ **Cập nhật:** hai file slide này **đã được ban tổ chức commit vào repo đề bài** (commit `976c713`, merge từ `main`) — clone về là có sẵn, không phải tự tải.
+
+⚠️ Quy định *"không commit data pack"* ([01-de-bai.md](01-de-bai.md) mục 3) vẫn áp **nếu nhóm tách repo nộp bài riêng**. Trong repo này thì ban tổ chức đã tự quyết, mình không phải làm gì.
 
 ---
 

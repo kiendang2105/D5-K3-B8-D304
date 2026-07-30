@@ -37,7 +37,9 @@ Dừng server: `Ctrl+C`.
 
 </details>
 
-**Slide deck có sẵn:** header có nút **Slide buổi 1** / **Slide buổi 2** — bấm là mở luôn deck trong data pack, không phải tự chọn file. Nút **Mở PDF khác…** dành cho file ngoài. Data pack không được commit (`.gitignore`) nên máy mới clone sẽ chưa có hai deck đó; nút sẽ báo rõ thay vì lỗi im lặng.
+**Slide deck có sẵn:** header có nút **Slide buổi 1** / **Slide buổi 2** — bấm là mở luôn deck trong data pack, không phải tự chọn file. Nút **Mở PDF khác…** dành cho file ngoài.
+
+Hai deck này **đã được ban tổ chức commit vào repo đề bài**, nên clone về là có sẵn. Nếu vì lý do nào đó thiếu file, nút sẽ báo rõ đường dẫn thay vì lỗi im lặng.
 
 ## Bật AI thật (CP3)
 
