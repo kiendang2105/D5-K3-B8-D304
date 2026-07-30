@@ -1,6 +1,6 @@
 # AI Tutor giải thích vùng slide — Nhóm B8
 
-**Hướng:** A — VLearn · **Loại:** Tính năng mới trên VLearn
+**Hướng:** A — VLearn · **Loại:** Tối ưu tính năng có sẵn (AI tutor)
 
 > **Lát cắt:** Học viên chọn một vùng hình ảnh trên một slide, AI Tutor tự nhận diện và giải thích riêng vùng đó theo ngữ cảnh bài học.
 
