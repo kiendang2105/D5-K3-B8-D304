@@ -315,7 +315,7 @@ Trục khác biệt đã cân nhắc:
 ---
 
 ## §9. Changelog
-
+ 
 | Thời điểm | Đổi gì | Vì sao |
 |---|---|---|
 | 30/07/2026 | Bỏ giả thuyết "slide thật không có text layer là nguyên nhân chính của 46,2% câu trả lời không citation" | Lượt chạy 00 đo `d1` và `d2` cho thấy 58/58 trang đều có lớp text, giả thuyết này chưa có bằng chứng trên deck được cấp |
