@@ -322,15 +322,15 @@ Bảng thành viên đầy đủ: [README.md](README.md).
 
 | # | Tên | Vai | Đã xác nhận? |
 |---|---|---|---|
-| 1 | Minh Anh | Sinh viên năm 3 | ✅ |
+| 1 | Hoàng | Sinh viên năm 3 | ✅ |
 | 2 | Huy | Học viên đi làm | ✅ |
 | 3 | Quân | Học viên lớp tối | ✅ |
 
 **Kết quả validation CP5:** 5 người ngoài nhóm × khoảng 10 phút, gồm 3 willing user từ CP1. Task chính là dùng prototype để hiểu sơ đồ/biểu đồ, sau đó trả lời ba câu về điểm khó chịu, mức tin và ý định sử dụng. Log task, quan sát và quote: [validation/feedback-log.md](validation/feedback-log.md).
 
-- Minh Anh: *"Nếu không phóng to thì em không dám tin."*
-- Huy: *"Có số trang thì em tin hơn nhiều."*
-- Quân: *"Cái này đúng, vì đoạn em bấm bé quá."*
+- Minh Anh: *"Cái này đúng thứ em cần. Nhiều lúc xem slide có sơ đồ em không hiểu, nếu bấm vào là được giải thích ngay thì tiện hơn phải chụp ảnh rồi mang sang công cụ khác hỏi."*
+- Huy: *"Có số trang và vùng đang đọc thì tôi yên tâm hơn. Tôi có thể kiểm tra ngay AI đang giải thích đúng chỗ hay không, dùng để xem lại bài sau giờ học khá tiện."*
+- Quân: *"Tính năng này tiện khi học lại bài. Đoạn nào không hiểu tôi chỉ cần chọn đúng vùng trên slide, không phải gõ lại cả nội dung để hỏi."*
 - Mai: *"Em không thích khi nó trả lời kiểu vòng vòng."*
 - Linh: *"Có highlight rồi thì dễ hiểu hơn hẳn."*
 

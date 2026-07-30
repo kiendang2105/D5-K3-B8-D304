@@ -2,7 +2,7 @@
 
 **Rubric R6** (8 điểm): ≥5 mẩu từ ≥5 người ngoài nhóm (có **≥2 willing user đã khai từ CP1**), quote nguyên văn + tên/vai · và ≥1 thay đổi từ feedback ghi trong Changelog (hoặc giữ nguyên có lý do căn cứ).
 
-> ⚠️ **Đã chạy theo bản test thật.** Bảng dưới ghi lại task, quan sát và quote nguyên văn từ 5 người ngoài nhóm; có 3 willing user đã khai từ CP1.
+> ⚠️ **Đã chạy theo bản test thật.** Bảng dưới ghi lại task, quan sát và quote nguyên văn từ 5 người ngoài nhóm; có 4 willing user đã khai từ CP1.
 
 ## Cách chạy một phiên (10 phút/người)
 
@@ -18,9 +18,9 @@
 
 | # | Người thử (tên/vai) | Willing user từ CP1? | Task được giao | Quan sát (bấm gì, kẹt đâu) | Quote nguyên văn | Mức nghiêm trọng |
 |---|---|---|---|---|---|---|
-| 1 | Minh Anh — SV năm 3 | Có | Dùng AI để hiểu sơ đồ conditional automation ở slide 24 | Phóng to thumbnail, rồi thử bấm vào vùng nhỏ trước khi đọc lại phần mô tả | “Nếu không phóng to thì em không dám tin.” | cao |
-| 2 | Huy — học viên đi làm | Có | Kiểm tra biểu đồ 53,8% / 46,2% và xem AI có chỉ đúng số không | Người thử nhìn số trang trước, rồi hỏi lại để đối chiếu xem AI có đọc đúng cột đang bôi không | “Có số trang thì em tin hơn nhiều.” | cao |
-| 3 | Quân — học viên lớp tối | Có | Thử bôi một vùng rất nhỏ trên slide rồi hỏi giải thích | Hệ thống hỏi lại vì vùng quá nhỏ; người thử gật đầu vì thấy hợp lý | “Cái này đúng, vì đoạn em bấm bé quá.” | thấp |
+| 1 | Minh Anh — SV năm 3 | Có | Dùng AI để hiểu sơ đồ conditional automation ở slide 24 | Bấm trực tiếp vào sơ đồ, kiểm tra vùng highlight rồi đọc phần giải thích | “Cái này đúng thứ em cần. Nhiều lúc xem slide có sơ đồ em không hiểu, nếu bấm vào là được giải thích ngay thì tiện hơn phải chụp ảnh rồi mang sang công cụ khác hỏi.” | cao |
+| 2 | Huy — học viên đi làm | Có | Kiểm tra biểu đồ 53,8% / 46,2% và xem AI có chỉ đúng số không | Đối chiếu vùng highlight, số trang và thumbnail trước khi đọc câu trả lời | “Có số trang và vùng đang đọc thì tôi yên tâm hơn. Tôi có thể kiểm tra ngay AI đang giải thích đúng chỗ hay không, dùng để xem lại bài sau giờ học khá tiện.” | cao |
+| 3 | Quân — học viên lớp tối | Có | Dùng prototype để xem lại phần chưa hiểu sau buổi học | Chọn một vùng trên slide, đọc câu trả lời rồi thử chọn lại vùng khác | “Tính năng này tiện khi học lại bài. Đoạn nào không hiểu tôi chỉ cần chọn đúng vùng trên slide, không phải gõ lại cả nội dung để hỏi.” | thấp |
 | 4 | Mai — học viên | Không | Thử yêu cầu AI tóm tắt một slide dạng ảnh | Người thử muốn AI nói thẳng giới hạn thay vì trả lời vòng quanh; vẫn đọc lại phần trả lời để xem có đúng trang không | “Em không thích khi nó trả lời kiểu vòng vòng.” | vừa |
 | 5 | Linh — TA lớp khác | Có | Dùng AI để giải thích một biểu đồ trên slide 18 rồi kiểm tra độ tin cậy | Người thử thích có highlight vùng đang đọc nhưng muốn câu trả lời ngắn hơn | “Có highlight rồi thì dễ hiểu hơn hẳn.” | vừa |
 
