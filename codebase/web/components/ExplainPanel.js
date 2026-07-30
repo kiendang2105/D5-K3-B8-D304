@@ -183,7 +183,7 @@ const ExplainPanel = {
         up.disabled = true;
         console.log("[MOCK feedback log]", { why });
         const { bubble } = this.addBot();
-        await this.stream(bubble, MOCK_REPLIES.feedbackThanks);
+        await this.stream(bubble, REPLIES.feedbackThanks);
       }
     };
     actions.appendChild(up);

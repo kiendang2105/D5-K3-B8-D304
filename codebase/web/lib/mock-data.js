@@ -221,7 +221,7 @@ const OUT_OF_SCOPE_PATTERNS = [
   "làm bài tập", "nộp bài", "điểm của", "deadline", "bao giờ thi",
 ];
 
-const MOCK_REPLIES = {
+const REPLIES = {
   outOfScope:
     "Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn.\n\nThay vào đó, nếu bạn chỉ vùng nào trên slide đang khiến bạn kẹt, mình giải thích kỹ vùng đó — hoặc bạn nhắn TA trên Discord cho các câu hỏi về bài tập & deadline nhé.",
   tooSmall:

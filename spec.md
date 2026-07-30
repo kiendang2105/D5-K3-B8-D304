@@ -31,22 +31,31 @@ Loại: **[x] Tối ưu tính năng có sẵn**  [ ] Tính năng mới
 Đạt ngưỡng chuẩn A: n ≥ 20 ✅ · ≥50% xác nhận ✅ · ⬜ **log nguyên văn từng câu trả lời còn thiếu**
 
 **Chuẩn B — mining chatlog** *(nguồn: `data/vlearn-pack/chatlog/`, 1.261 turn, 369 user, 22–29/07/2026)*
+Phương pháp đếm + script chạy lại được: [docs/mining-log.md](docs/mining-log.md) · [docs/mining.py](docs/mining.py)
 
 | Số đo | Giá trị | Phương pháp đếm |
 |---|---|---|
-| Lượt trả lời tutor có `citations` rỗng | **46,2%** | Đếm dòng `role = tutor` có `citations = []` chia tổng dòng tutor (1.261) |
-| Trường `misconceptions` từng được dùng | **0 / 1.261** | Đếm dòng có `misconceptions ≠ []` |
-| Tutor chủ động hỏi lại kiểm tra hiểu bài | **3 / 2.522** | Đếm `asked_check_question = True` |
-| ⬜ Lượt học viên hỏi về sơ đồ/hình/biểu đồ | ⬜ | ⬜ **CẦN ĐẾM** — lọc `role = student`, `content` chứa {sơ đồ, biểu đồ, hình, ảnh, bảng, mô hình...}; đọc tay 30–50 mẫu trước để chốt tiêu chí, rồi đếm |
-| ⬜ Trong số đó, bao nhiêu lượt tutor trả lời không có `citations` | ⬜ | ⬜ **CẦN ĐẾM** — đây là con số trúng đích nhất cho pain này |
+| **Câu hỏi mang tiền tố `(Trang N, đoạn được chọn: "...")`** | **1.252 / 1.261 = 99,3%** | regex trên `content` dòng student — xem mining-log §3 |
+| Trong đó đoạn chọn **rỗng** | **0** | nền tảng luôn gửi được text của vùng bôi đen |
+| Lượt trả lời tutor có `citations` rỗng | **582 / 1.261 = 46,2%** | `citations` ∈ {`[]`, rỗng} trên dòng tutor |
+| Đoạn được chọn ≤ 15 ký tự | 293 / 1.252 = 23,4% | dấu hiệu bôi phải nhãn của hình — ⬜ cần đọc tay 30–50 case mới dùng được làm số |
+| Học viên hỏi thẳng về một đối tượng trực quan | **4 / 1.261 = 0,3%** | tiêu chí **chặt**: có danh từ chỉ đối tượng trực quan, loại "slide này" |
+| *(cùng câu hỏi, tiêu chí lỏng)* | *135 / 1.261 = 10,7%* | *lỏng gồm cả "tóm tắt slide này" → thổi số, không dùng* |
+| `misconceptions` từng được dùng | **0 / 1.261** | feature chết |
+| `asked_check_question = True` | **3 / 2.522** | tutor gần như không kiểm tra hiểu bài |
 
-**≥5 quote/ví dụ nguyên văn + nguồn:** ⬜ **CẦN LÀM** — lấy từ khảo sát (`docs/survey-log.md`) và/hoặc chatlog (ghi mã `C0xxx`/`T0xxx`, không dán nguyên văn dài).
+**Bằng chứng mạnh nhất là bằng chứng kiến trúc, không phải tần suất.** 99,3% câu hỏi đã mang sẵn *số trang + text vùng bôi đen* → VLearn **không thiếu** khả năng biết học viên chọn gì. Cái thiếu là **đường truyền hình ảnh**: bôi đen một sơ đồ thì text lấy được chỉ là dòng caption, nội dung nằm ở hình mất hẳn. Prototype thêm đúng đường đó.
 
-1. ⬜
-2. ⬜
-3. ⬜
-4. ⬜
-5. ⬜
+> ⚠️ **Đối mặt với số bất lợi.** Tiêu chí chặt chỉ ra **4/1.261 lượt** hỏi thẳng về hình — mining **KHÔNG chứng minh được tần suất** của pain này. Hai cách đọc chưa phân biệt được: (1) học viên thử một lần thấy không được nên thôi, pain thật nhưng vô hình trong log; (2) pain nhỏ. Khảo sát 56,5% *"đã từng gặp"* nghiêng về (1), nhưng chưa đủ để kết luận. **Cách phân biệt:** hỏi ở vòng validation CP5 đúng câu *"lần gần nhất gặp hình không hiểu, bạn có thử hỏi tutor không? nếu không thì vì sao?"*. Vì vậy cột *tần suất* trong bảng impact §2 **để trống, không bịa**.
+
+**≥5 quote/ví dụ nguyên văn + nguồn** *(mã hội thoại/turn, trích ngắn theo quy định bảo mật)*:
+
+1. `C0346/T0840` trang 59, `citations=[]` — *"phân tích hình ảnh được khoanh đỏ ở slide 59"*. Hỏi thẳng về hình, tutor trả lời **không dẫn nguồn nào**. Ví dụ đắt nhất của pain.
+2. `C0302/T0611` trang 16 — đoạn chọn là *"Mô hình Double Diamond — Don Norman / British Design Council 2005"* + câu hỏi *"giải thích hình ảnh này"*. Đúng cơ chế hỏng: bôi đen sơ đồ thì chỉ lấy được **caption**.
+3. `C0547/T0135` trang 16, `citations=[]` — *"tóm tắt nội dung các giai đoạn được mô tả trên slide các biểu đồ"*.
+4. `C0007/T0020` trang 15, `citations=[]` — đoạn chọn chỉ là *"instruction"*, câu hỏi *"Giải thích đoạn bôi đen ở Trang 15."* Đoạn chọn quá ngắn để trả lời được.
+5. `C0388/T0589` trang 63, `citations=[63]` — đoạn chọn *"Từ language model đến multimodal: token không chỉ là chữ…"*.
+6. ⬜ *thêm 1–2 quote từ khảo sát khi có log* → [docs/survey-log.md](docs/survey-log.md)
 
 ---
 
@@ -56,7 +65,7 @@ Loại: **[x] Tối ưu tính năng có sẵn**  [ ] Tính năng mới
 
 | Ứng viên | Bao nhiêu người gặp | Tần suất | Mỗi lần tốn gì | Build nổi trong sự kiện? | Chọn? |
 |---|---|---|---|---|---|
-| **A. Giải thích vùng hình trên slide** | 13/23 (56,5%) đã gặp | ⬜ *đo: mỗi buổi mấy lần* | Bỏ qua phần hình → hổng kiến thức trực quan; hoặc ⬜ *___ phút* tự tra | ✅ — 1 AI call vision, không cần hạ tầng mới | ✅ **CHỌN** |
+| **A. Giải thích vùng hình trên slide** | 13/23 (56,5%) đã gặp · chatlog: chỉ 4/1.261 lượt hỏi thẳng | ⚠️ **không đo được từ log** — xem cảnh báo §1 | Bỏ qua phần hình → hổng kiến thức trực quan; hoặc ⬜ *___ phút* tự tra | ✅ — 1 AI call vision, không cần hạ tầng mới | ✅ **CHỌN** |
 | **B. Bắt tutor luôn trích dẫn trang** | 46,2% lượt trả lời không có nguồn (mining) | Mỗi lượt hỏi | Không kiểm lại được → tin sai hoặc mất công tự tra | ⚠️ — phải sửa pipeline retrieval của tutor, ngoài tầm 1,5 ngày | ❌ |
 | **C. Tutor chủ động kiểm tra hiểu bài** | `asked_check_question` chỉ 3/2.522 → gần như chưa có | Cuối mỗi buổi | Học viên tưởng hiểu nhưng không hiểu — phát hiện muộn | ✅ — nhưng cần định nghĩa "hiểu thật", tốn vòng thiết kế | ❌ |
 
@@ -70,7 +79,13 @@ Loại: **[x] Tối ưu tính năng có sẵn**  [ ] Tính năng mới
 
 ### Ứng viên chọn + vì sao (bằng số)
 
-**A** — vì đồng thời có **cả hai chuẩn evidence**: 56,5% người khảo sát xác nhận đã gặp (chuẩn A) và pain nằm trong vùng 46,2% trả lời không nguồn (chuẩn B). Chi phí build thấp nhất trong 3 ứng viên: một lời gọi vision ở đúng một quyết định, phần còn lại mock được. Và nó demo được trọn 5 phút với một case chuẩn + một case chỗ khó.
+**A** — ba lý do, xếp theo độ mạnh của bằng chứng:
+
+1. **Bằng chứng kiến trúc (mạnh nhất, đếm được):** 99,3% câu hỏi đã mang sẵn số trang + text vùng bôi đen, đoạn chọn rỗng 0 lượt. Nền tảng đã có mọi thứ *trừ* đường truyền hình ảnh. A thêm đúng mảnh còn thiếu, không trùng lặp thứ đã có.
+2. **Khảo sát (chuẩn A đạt):** 13/23 = 56,5% xác nhận đã gặp việc tutor không đọc được ảnh slide.
+3. **Chi phí build thấp nhất** trong 3 ứng viên: một lời gọi vision ở đúng một quyết định, phần còn lại mock được; demo trọn 5 phút với 1 case chuẩn + 1 case chỗ khó.
+
+⚠️ **Điểm yếu đã biết của lựa chọn này:** mining không chứng minh được **tần suất** (4/1.261 lượt hỏi thẳng về hình). Nếu vòng validation CP5 cho thấy học viên *chưa từng nghĩ đến việc hỏi tutor về hình* thì đây là pain nhỏ, và ứng viên C đáng xem lại. Ghi rõ ở đây để không ai đọc spec mà tưởng evidence chắc hơn thực tế.
 
 ---
 
@@ -132,8 +147,9 @@ AI Tutor **không được đọc hay chuyển đi cả tài liệu**. Mỗi câ
 | Render trang → ảnh 1536px · khoanh vùng · cắt ảnh ở độ phân giải gốc | ✅ | |
 | Thumbnail trang đã quét, sửa số trang, badge chế độ đọc | ✅ | |
 | Guardrail ngoài phạm vi | ✅ | |
-| **Lời gọi vision sinh lời giải thích** | ⬜ *CP3* | ⚠️ hiện là `MockAI.route()` |
-| Slide bài giảng | | ⚠️ 3 slide SVG tự dựng |
+| Nạp slide deck thật từ data pack (nút trên header) | ✅ | |
+| **Lời gọi vision sinh lời giải thích** | ✅ Gemini `2.5-flash` | mock vẫn giữ để đối chiếu |
+| Slide bài giảng | ✅ `d1`/`d2-slide-hackathon.pdf` | 3 slide SVG tự dựng chỉ để demo nhánh quét ảnh |
 
 ### Automation: **[x] augment**  [ ] conditional  [ ] automate
 
@@ -253,7 +269,15 @@ npx serve .            # hoặc: python -m http.server 8765
 | Lượt | Chế độ | Case | Máy chấm | G/S/H/C | Đạt bar? | File |
 |---|---|---|---|---|---|---|
 | 00 | **MOCK** | 32 | **100%** (55/55 điều kiện) | chưa chấm | — *(baseline, không tính R4)* | [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
-| 01 | AI thật | ⬜ | ⬜ | ⬜ | ⬜ | [eval/run-01.md](eval/run-01.md) |
+| 01 | **AI THẬT** `gemini-flash-latest` | 32 | **82%** (45/55) · 23/32 case | ⬜ chưa chấm | ⬜ | [eval/run-01.md](eval/run-01.md) |
+| 02 | AI thật (sau khi sửa) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+
+**Lượt 01 — 9 case fail, tách hai loại:**
+
+- **2 fail thật của sản phẩm** (C04, C25, cùng gốc): guard ② *"vùng quá nhỏ thì hỏi lại"* chỉ được cài trong nhánh mock, nên khi bật AI thật thì một dải viền 40×196px vẫn được gửi đi và model mô tả nó rất tự tin. **Đúng lỗi mà lớp ② phải chặn — golden set bắt được, chạy mock thì không bao giờ thấy.** Đã sửa: chuyển guard lên `Explain.run()` để áp cho cả hai chế độ.
+- **7 nhiễu do quota 429** (23 lần gặp 429 trong một lượt): lời gọi lỗi → không có `disclosure`/`citation` để chấm. Đã sửa: giãn cách 7s, retry lùi dần 3 lần, và tách case `rateLimited` khỏi % để lỗi hạ tầng không bị đếm thành lỗi sản phẩm.
+
+**Đo được thêm từ trace:** độ trễ vision **median 7.182ms** — chậm gấp ~4 lần tutor hiện tại (median 1.758ms theo `DATA_DICTIONARY.md`). Chưa xử lý; là việc số 3 của lượt 02.
 
 **Failure đau nhất từ lượt 00:** trên slide thật có nhiều khoảng trắng, tỉ lệ dò trúng chỉ **3/15 và 4/15 điểm** ở hai trang đầu của `d1` (mật độ nội dung 4,2% và 6,1%); trang dày nội dung thì 15/15. Bán kính hút khối gần nhất đang quá nhỏ. **Không nới ngưỡng** vì sẽ phá case bấm-vào-vùng-trống (①). Hướng sửa: hai mức — gần thì trả lời, xa thì hỏi lại kèm khung dò, quá xa thì nhánh ①.
 

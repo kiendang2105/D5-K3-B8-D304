@@ -46,11 +46,23 @@ const App = {
     document.getElementById("btn-mock").onclick = () => this.useMock();
     document.getElementById("btn-key").onclick = () => this.configKey();
 
+    this.buildDeckButtons();
     this.restoreKey();
     await this.useMock();
   },
 
   // ---------- nguồn tài liệu ----------
+
+  // Slide deck trong data pack thành nút bấm sẵn, đặt cạnh "Slide mẫu"
+  buildDeckButtons() {
+    const host = document.getElementById("deck-buttons");
+    for (const deck of CONFIG.BUILTIN_DECKS) {
+      const b = document.createElement("button");
+      b.textContent = "📄 " + deck.label;
+      b.onclick = () => this.openBuiltinDeck(deck);
+      host.appendChild(b);
+    }
+  },
 
   async useMock() {
     this.source = new MockSource();
@@ -59,22 +71,38 @@ const App = {
     await this.goToPage(MOCK_SLIDES[0].num);
   },
 
+  // Mở PDF do user tự chọn
   async openPdf(file) {
-    const note = ExplainPanel.addSystemNote(`Đang mở **${file.name}**…`);
+    return this.useSource(
+      () => PdfSource.open(file), file.name);
+  },
+
+  // Mở slide deck có sẵn trong data pack — bấm một nút là xong
+  async openBuiltinDeck(deck) {
+    return this.useSource(() => PdfSource.openUrl(deck.url), deck.label);
+  },
+
+  async useSource(open, label) {
+    const note = ExplainPanel.addSystemNote(`Đang mở **${label}**…`);
     try {
-      this.source = await PdfSource.open(file);
+      this.source = await open();
       document.getElementById("doc-name").textContent =
-        `${file.name} · ${this.source.pageCount} trang`;
+        `${this.source.name} · ${this.source.pageCount} trang`;
       await this.buildTabs();
       await this.goToPage(1);
       note.innerHTML = mdBold(
-        `Đã mở **${file.name}** (${this.source.pageCount} trang). ` +
-        `Khoanh vùng để hỏi, hoặc gõ *"giải thích trang 3"*.`);
+        `Đã mở **${this.source.name}** (${this.source.pageCount} trang). ` +
+        `Bấm vào một phần trên slide để hỏi, hoặc gõ *"giải thích trang 3"*.`);
     } catch (err) {
+      const fileProto = location.protocol === "file:";
       note.innerHTML = mdBold(
-        `Không mở được PDF: ${err.message}\n\n` +
-        `Nếu bạn mở file bằng \`file://\`, hãy chạy qua server tĩnh ` +
-        `(\`npx serve codebase/web\`) rồi thử lại — pdf.js cần tải được worker.`);
+        `**Không mở được ${label}:** ${err.message}\n\n` +
+        (fileProto
+          ? "Đang mở bằng `file://` nên trình duyệt chặn đọc file. Chạy qua server tĩnh: " +
+            "`python -m http.server 8765` từ gốc repo, rồi mở " +
+            "`http://localhost:8765/codebase/web/index.html`."
+          : "Kiểm lại file có trong `data/vlearn-pack/slides/` chưa — data pack " +
+            "không được commit vào repo nên máy mới clone sẽ chưa có."));
     }
   },
 
@@ -164,7 +192,7 @@ const App = {
     this.hidePopover();
     ExplainPanel.addUser({ question: "(bấm vào một chỗ trên slide)" });
     const { bubble } = ExplainPanel.addBot();
-    await ExplainPanel.stream(bubble, MOCK_REPLIES.noContent);
+    await ExplainPanel.stream(bubble, REPLIES.noContent);
   },
 
   // (B) hỏi bằng chat, có thể nhắc tới slide KHÁC slide đang xem.
@@ -182,7 +210,7 @@ const App = {
     if (!m && !RegionSelector.regionPage) {
       ExplainPanel.addUser({ question });
       const { bubble } = ExplainPanel.addBot();
-      await ExplainPanel.stream(bubble, MOCK_REPLIES.noPageInQuestion);
+      await ExplainPanel.stream(bubble, REPLIES.noPageInQuestion);
       return;
     }
 
@@ -192,7 +220,7 @@ const App = {
         ExplainPanel.addUser({ question });
         const { bubble } = ExplainPanel.addBot();
         await ExplainPanel.stream(bubble,
-          MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
+          REPLIES.pageOutOfRange(n, this.source.rangeText()));
         return;
       }
       return this.askAboutPage(n, question);
@@ -220,7 +248,7 @@ const App = {
   async rescanPage(n) {
     if (!this.source.hasPage(n)) {
       const { bubble } = ExplainPanel.addBot();
-      await ExplainPanel.stream(bubble, MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
+      await ExplainPanel.stream(bubble, REPLIES.pageOutOfRange(n, this.source.rangeText()));
       return;
     }
     this.askAboutPage(n, this.lastAsk?.question || "", true);

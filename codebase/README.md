@@ -16,16 +16,28 @@ npx serve .            # hoặc: python -m http.server 8765   (chạy từ GỐC
 # runner: http://localhost:PORT/eval/runner.html
 ```
 
-*(Serve từ gốc repo vì runner cần đọc `data/vlearn-pack/slides/*.pdf`.)*
+*(Serve từ gốc repo vì app và runner đều đọc `data/vlearn-pack/slides/*.pdf`.)*
+
+**Slide deck có sẵn:** header có nút **Slide buổi 1** / **Slide buổi 2** — bấm là mở luôn deck trong data pack, không phải tự chọn file. Nút **Mở PDF khác…** dành cho file ngoài. Data pack không được commit (`.gitignore`) nên máy mới clone sẽ chưa có hai deck đó; nút sẽ báo rõ thay vì lỗi im lặng.
 
 ## Bật AI thật (CP3)
 
 1. Lấy key ở [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 2. Bấm **API key** trên header, dán key.
 3. App gọi `ListModels` để xem key đó dùng được model nào rồi **tự chọn** — không hardcode tên model (đoán sai tên là nhận 404 giữa lúc demo). Badge đổi thành `CP3 · AI THẬT · <tên model>`.
+
+   Thứ tự ưu tiên đặt **flash-lite lên đầu** (`GEMINI_PREFER`), vì VLearn production chạy `gemini-3.1-flash-lite` (1.101/1.261 turn theo `DATA_DICTIONARY.md`) — đo prototype trên cùng model thì kết quả mới nói được gì về sản phẩm thật. Bản lite cũng chịu được nhiều request/phút hơn: chạy trọn bộ 32 case trên `2.5-flash` bị 429 liên tục.
 4. Đổi model thủ công: `localStorage.setItem("GEMINI_MODEL","<tên>")` trong Console rồi tải lại.
 
 Key lưu trong `localStorage` của trình duyệt, **không bao giờ vào repo**. Mỗi lời gọi in `[AI TRACE]` ra Console và cộng vào `Explain.traces` — runner tải xuống thành `traces.json` cho `server/traces/`.
+
+**Quota free tier là ràng buộc thật, không phải chi tiết nhỏ.** Đo trên `gemini-2.5-flash`: giãn 4,5s giữa các call (≈13 req/phút) vẫn ăn **429 ở 12/32 case**. Vì vậy:
+
+- `REAL_AI_DELAY_MS` = 7s (≈8,5 req/phút)
+- Runner tự lùi dần và thử lại tối đa 3 lần (30s → 60s → 90s)
+- Case vẫn 429 sau 3 lần được đánh dấu `rateLimited` và **tách khỏi % chấm máy** — lỗi hạ tầng không được lẫn vào lỗi sản phẩm, nếu không thì bảng kết quả nói sai về chất lượng
+
+Demo tại CP6 chỉ chạy vài case nên không lo; chạy trọn bộ golden set thì nên dùng bản `flash-lite`.
 
 ## Cấu trúc
 

@@ -129,8 +129,11 @@ Cột **Ảnh** trỏ tới file trong `eval/images/`. Cột **Nguồn**: `tự 
 
 ```bash
 npx serve .            # hoặc: python -m http.server 8765   (chạy từ gốc repo)
-# mở http://localhost:PORT/eval/runner.html
+# 1. mở http://localhost:PORT/codebase/web/index.html → nút "API key" → dán key
+# 2. mở http://localhost:PORT/eval/runner.html → "Chạy trọn bộ golden set"
 ```
+
+Chạy với AI thật thì runner tự **giãn cách `REAL_AI_DELAY_MS` = 4,5s** giữa các lời gọi và **thử lại một lần sau 30s nếu gặp 429** — free tier Gemini giới hạn theo phút, bắn 32 call liền là bị chặn giữa lượt đo.
 
 Runner chấm được phần cơ học (kích thước vùng dò, số trang gửi đi, có từ chối/hỏi lại không, chế độ đọc, ảnh có phải cả trang không) — định nghĩa trong [cases.js](cases.js). **Bốn chiều G/S/H/C vẫn phải chấm bằng người**, hai thành viên chấm độc lập rồi so.
 

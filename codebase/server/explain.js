@@ -107,10 +107,23 @@ const Explain = {
   // --- Điểm vào duy nhất ---
   // req: { question, page, region, mode }
   // trả: { text, citation?, mode, zone?, grounded?, disclosure?, trace? }
+  //
+  // MỌI guard phải nằm ở đây, KHÔNG nằm trong MockAI. Bài học từ lượt chạy
+  // 01: guard "vùng quá nhỏ thì hỏi lại" ban đầu chỉ có trong MockAI.route,
+  // nên khi bật AI thật thì một dải viền mảnh vẫn được gửi đi và model mô tả
+  // nó rất tự tin — đúng lỗi mà lớp ② phải chặn. Golden set bắt được (case C04).
   async run(req) {
+    // ③ Ngoài phạm vi — từ chối TRƯỚC khi đóng gói, không gì rời máy
     if (this.isOutOfScope(req.question)) {
-      // Từ chối TRƯỚC khi đóng gói -> không có dữ liệu nào rời máy
-      return { text: MOCK_REPLIES.outOfScope, mode: req.mode, grounded: false };
+      return { text: REPLIES.outOfScope, mode: req.mode, grounded: false };
+    }
+
+    // ② Vùng quá nhỏ / dải viền mảnh — không đủ chắc user hỏi gì thì hỏi lại,
+    // không gửi đi và không đoán. Áp cho CẢ mock và AI thật.
+    const { region, page } = req;
+    const ratio = (region.w * region.h) / (page.width * page.height);
+    if (ratio < CONFIG.MIN_SEL_RATIO) {
+      return { text: REPLIES.tooSmall, mode: req.mode, grounded: false };
     }
 
     const payload = this.buildPayload(req);

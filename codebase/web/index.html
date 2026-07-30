@@ -12,9 +12,10 @@
     <!-- HAX G1: nói rõ phạm vi ngay câu đầu tiên user thấy -->
     <span class="scope-note">Khoanh vùng trên slide, mình giải thích phần đó theo tài liệu buổi học — ngoài tài liệu mình sẽ nói rõ.</span>
     <div class="header-actions">
-      <label class="file-btn" for="pdf-input">📄 Mở PDF…</label>
-      <input type="file" id="pdf-input" accept="application/pdf" />
       <button id="btn-mock">Slide mẫu</button>
+      <span id="deck-buttons"></span>
+      <label class="file-btn" for="pdf-input">Mở PDF khác…</label>
+      <input type="file" id="pdf-input" accept="application/pdf" />
       <button id="btn-key">API key</button>
       <span class="badge-mode" id="badge-mode">CP2 · MOCK — chưa gọi AI thật</span>
     </div>
@@ -52,6 +53,7 @@
           <li><b>Không căn cứ ①:</b> bấm vào vùng trống hẳn (dưới slide 12) → nói không nhận diện được, không bịa.</li>
           <li><b>Ngoài phạm vi ③:</b> bấm vào sơ đồ + gõ <code>làm hộ bài tập này</code> → từ chối, và <b>không gửi gì ra ngoài</b>.</li>
           <li><b>Correction:</b> <b>kéo chuột</b> khoanh tay khi máy dò không đúng ý · nút <b>"Giải thích đơn giản hơn"</b> · 👎 <b>"Sai chỗ nào?"</b>.</li>
+          <li><b>Slide bài giảng thật:</b> bấm <b>"Slide buổi 1"</b> trên header (cần chạy qua server tĩnh) → click vào nội dung trên slide thật của khoá.</li>
         </ol>
       </details>
     </section>

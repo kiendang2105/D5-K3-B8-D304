@@ -1,6 +1,6 @@
 # Đang làm gì — cập nhật cho cả nhóm
 
-*Cập nhật: 30/07/2026 · nhánh `leduc`*
+*Cập nhật: 30/07/2026 · nhánh `leduc1`*
 
 File này trả lời đúng một câu: **hiện repo đang có gì, đang dở chỗ nào, mình nhảy vào đâu.**
 Phân công & checkpoint: [README.md](README.md) · Chi tiết kỹ thuật: [codebase/README.md](codebase/README.md).
@@ -17,7 +17,7 @@ Kể từ mốc CP2, prototype đã thêm 3 thứ **không có trong bản demo 
 2. **Quét ảnh khi PDF không đọc được text** — trang nào rút text ra dưới 30 ký tự thì render trang thành ảnh cho model nhìn, thay vì trả lời chay.
 3. **Giới hạn dữ liệu + bảng công khai "đã gửi đi những gì"** — mỗi câu hỏi chỉ được gửi 1 ảnh vùng đã cắt + text trong vùng, tối đa 1 trang.
 
-Phần **đoạn văn giải thích vẫn là MOCK** — đúng mốc CP2. Bật AI thật là việc của CP3, hàm gọi đã viết sẵn.
+**AI thật đã chạy** (Gemini `2.5-flash`) — CP3 đã mở. Mock vẫn giữ để đối chiếu hành vi mong muốn với hành vi model thật.
 
 ---
 
@@ -28,20 +28,20 @@ Phần **đoạn văn giải thích vẫn là MOCK** — đúng mốc CP2. Bật
 | `eef9e2b` | Nhánh quét ảnh khi PDF không có text layer + tách lại cấu trúc module | [web/lib/pdf-source.js](codebase/web/lib/pdf-source.js) · [web/lib/config.js](codebase/web/lib/config.js) |
 | `3f31b50` | Dựng cấu trúc repo nộp bài đầy đủ theo rubric | `eval/` · `validation/` · `reflection/` · `docs/` |
 | `f9d3437` | Click nhận diện vùng · không rời slide đang đọc · siết giới hạn dữ liệu | [web/lib/content-detector.js](codebase/web/lib/content-detector.js) · [server/explain.js](codebase/server/explain.js) |
+| `fdba6fc` | **CP3**: bộ chạy golden set tự động · AI thật không hardcode model · đo trên PDF thật | [eval/runner.html](eval/runner.html) · [eval/cases.js](eval/cases.js) · [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
 
 ---
 
-## 3. Đang dở trên máy — **chưa commit**
+## 3. Bộ chạy golden set tự động
 
-| File | Đang làm gì dở |
-|---|---|
-| [codebase/web/lib/config.js](codebase/web/lib/config.js) | Bỏ hardcode tên model Gemini → sau khi nhập key thì gọi `ListModels` tự chọn model dùng được (`GEMINI_PREFER`). Tránh 404 giữa lúc demo vì đoán sai tên model. |
-| [codebase/server/explain.js](codebase/server/explain.js) | Phần tự chọn model + đường gọi thật đi kèm |
-| [codebase/web/app.js](codebase/web/app.js) | Nối nút **API key** vào luồng trên |
-| [codebase/web/lib/pdf-source.js](codebase/web/lib/pdf-source.js) | Chỉnh theo |
-| `eval/cases.js` *(file mới)* | Golden set **dạng máy đọc được** — toạ độ click ghi theo tỉ lệ trang `[0..1]` để người khác chạy lại trên máy khác vẫn trúng đúng một chỗ. Bản người đọc vẫn là [eval/golden-set.md](eval/golden-set.md). |
+Nhịp lặp CP3→CP5 là *chạy trọn bộ → bảng % → sửa MỘT failure → chạy lại trọn bộ*. Làm tay 32 case mỗi lượt thì đến lượt hai là bỏ, nên có [eval/runner.html](eval/runner.html):
 
-> Ai định sửa 4 file này thì nhắn trước trong nhóm, tránh đụng nhau.
+- **Máy chấm** phần cơ học: kích thước vùng dò, số trang gửi đi, có từ chối/hỏi lại không, chế độ đọc, ảnh có phải cả trang không.
+- **Người chấm** 4 chiều G/S/H/C — runner để trống cột, hai người chấm độc lập rồi so (rubric R4).
+- Toạ độ click trong [eval/cases.js](eval/cases.js) ghi theo **tỉ lệ trang `[0..1]`** để chạy lại trên máy khác ra đúng một chỗ.
+- Xuất bảng markdown dán vào `run-NN.md` + `traces.json` cho `codebase/server/traces/`.
+
+Chạy với AI thật: runner tự giãn 7s giữa các call và thử lại sau 30s nếu gặp 429 — đo thật thì free tier `gemini-2.5-flash` chặn ở khoảng 10 req/phút.
 
 ---
 
@@ -69,10 +69,13 @@ Cả hai có watermark, là bản rút gọn từ slide gốc, **một số tran
 # Cách 1 — slide mẫu, không cần cài gì, đủ demo toàn bộ đường đi
 mở codebase/web/index.html bằng trình duyệt
 
-# Cách 2 — mở PDF thật + gọi AI thật (cần server tĩnh)
-npx serve codebase        # serve từ codebase/, KHÔNG phải codebase/web/
-# rồi mở http://localhost:3000/web/index.html
+# Cách 2 — slide thật + gọi AI thật (cần server tĩnh, chạy từ GỐC REPO)
+python -m http.server 8765        # hoặc: npx serve .
+# app:    http://localhost:8765/codebase/web/index.html
+# runner: http://localhost:8765/eval/runner.html
 ```
+
+Chạy cách 2 thì header có sẵn nút **Slide buổi 1** / **Slide buổi 2** — bấm là mở luôn deck trong data pack, không phải tự chọn file.
 
 Bấm thử theo thứ tự này là thấy hết:
 
@@ -105,9 +108,11 @@ Bấm thử theo thứ tự này là thấy hết:
 | Việc | Vì sao gấp |
 |---|---|
 | **Điền bảng phân công** trong [README.md](README.md) | R7 cho 1 điểm cho việc có tên người cho từng phần; CP5 sẽ hỏi từng người về phần mang tên mình |
-| **CP3 — bật AI thật + lưu trace** | Hàm `Explain.callGemini()` đã viết sẵn, chỉ cần key + chạy và lưu log vào `codebase/server/traces/` |
-| **Chạy golden set lượt 1** → [eval/run-01.md](eval/run-01.md) | Cần 2 người chấm độc lập 4 chiều G/S/H/C rồi so |
-| **Spec §3–§6** → [spec.md](spec.md) | Hạn cứng |
+| **Chấm 4 chiều G/S/H/C** cho [eval/run-01.md](eval/run-01.md) | Runner đã sinh bảng với output thật; cần **2 người chấm độc lập rồi so** — đây là 4/15 điểm R4 |
+| **Quality bar bằng số** → spec §7 | **Hạn cứng 23:59 N1**, sau đó không đổi được |
+| **≥10 golden case từ chatlog thật** → [eval/golden-set.md](eval/golden-set.md) | Đang 0/10; TA soát ở CP4 |
+| **Log nguyên văn 23 người khảo sát** → [docs/survey-log.md](docs/survey-log.md) | Đang chặn 6/15 điểm R1 — có số 13/23 rồi nhưng thiếu log thì không được tính |
+| **Spec §3** (giải pháp tương tự) → [spec.md](spec.md) | Mỗi người thử 1 sản phẩm, 15 phút |
 | **User test + feedback log** → [validation/feedback-log.md](validation/feedback-log.md) | CP5 |
 
 ---

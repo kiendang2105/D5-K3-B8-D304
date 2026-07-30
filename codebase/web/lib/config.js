@@ -59,12 +59,36 @@ const CONFIG = {
   // model và nhận 404 giữa lúc demo.
   GEMINI_MODEL: null,
   GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models",
-  // Thứ tự ưu tiên khi tự chọn model (khớp theo chuỗi con trong tên)
-  GEMINI_PREFER: ["flash-latest", "2.5-flash", "2.0-flash", "flash", "pro"],
+  // Thứ tự ưu tiên khi tự chọn model (khớp theo chuỗi con trong tên).
+  //
+  // Ưu tiên flash-lite vì hai lý do đo được:
+  //   1. VLearn production chạy `gemini-3.1-flash-lite` (1.101/1.261 turn theo
+  //      DATA_DICTIONARY). Đo prototype trên cùng model thì kết quả mới nói
+  //      được điều gì về sản phẩm thật.
+  //   2. Free tier của bản lite chịu được nhiều request/phút hơn — chạy trọn
+  //      bộ 32 case trên `2.5-flash` bị 429 liên tục (xem run-01).
+  GEMINI_PREFER: [
+    "3.1-flash-lite", "flash-lite-latest", "2.5-flash-lite", "flash-lite",
+    "flash-latest", "2.5-flash", "2.0-flash", "flash", "pro",
+  ],
 
   // Đường dẫn file prompt, tính từ trang đang mở. eval/runner.html ghi đè
   // giá trị này vì nó nằm ở thư mục khác.
   PROMPT_URL: "../server/prompts/explain-region.md",
+
+  // --- Slide deck có sẵn trong data pack ---
+  // Hiện thành nút trên header, bấm là mở luôn — không phải tự chọn file.
+  // Chỉ tải được khi chạy qua server tĩnh (fetch không đọc được file://).
+  // File nằm trong .gitignore nên máy nào chưa có data pack thì nút báo lỗi rõ.
+  BUILTIN_DECKS: [
+    { label: "Slide buổi 1", url: "../../data/vlearn-pack/slides/d1-slide-hackathon.pdf" },
+    { label: "Slide buổi 2", url: "../../data/vlearn-pack/slides/d2-slide-hackathon.pdf" },
+  ],
+
+  // Giãn cách giữa các lời gọi AI thật khi chạy trọn bộ golden set.
+  // Đo thật: 4,5s (≈13 req/phút) vẫn ăn 429 với gemini-2.5-flash free tier
+  // → nới lên 7s (≈8,5 req/phút). Runner còn tự thử lại sau 30s nếu vẫn 429.
+  REAL_AI_DELAY_MS: 7000,
 
   // --- pdf.js (bản UMD 3.11.174, nạp khi user mở PDF) ---
   // Để LOCAL, không dùng CDN, vì hai lý do:

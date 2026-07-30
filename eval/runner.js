@@ -128,16 +128,16 @@ const Runner = {
         // ② không nêu slide và không có vùng chọn -> hỏi lại, chưa gọi AI
         return {
           id: c.id, cls: c.cls, expect: c.expect,
-          out: MOCK_REPLIES.noPageInQuestion, grounded: false,
+          out: REPLIES.noPageInQuestion, grounded: false,
           mode: "-", region: null, disclosure: null, stayedOn,
-          auto: this.check(c, { grounded: false, text: MOCK_REPLIES.noPageInQuestion }, null, null, stayedOn),
+          auto: this.check(c, { grounded: false, text: REPLIES.noPageInQuestion }, null, null, stayedOn),
         };
       }
       const n = parseInt(m[1], 10);
       if (!source.hasPage(n)) {
         return {
           id: c.id, cls: c.cls, expect: c.expect,
-          out: MOCK_REPLIES.pageOutOfRange(n, source.rangeText()), grounded: false,
+          out: REPLIES.pageOutOfRange(n, source.rangeText()), grounded: false,
           mode: "-", region: null, disclosure: null, stayedOn,
           auto: this.check(c, { grounded: false }, null, null, stayedOn),
         };
@@ -162,9 +162,9 @@ const Runner = {
       // Không dò được -> nhánh ①
       return {
         id: c.id, cls: c.cls, expect: c.expect,
-        out: MOCK_REPLIES.noContent, grounded: false,
+        out: REPLIES.noContent, grounded: false,
         mode: "-", region: null, disclosure: null, stayedOn,
-        auto: this.check(c, { grounded: false, text: MOCK_REPLIES.noContent }, null, null, stayedOn),
+        auto: this.check(c, { grounded: false, text: REPLIES.noContent }, null, null, stayedOn),
       };
     }
 
@@ -191,11 +191,11 @@ const Runner = {
     const add = (name, ok, detail) => out.push({ name, ok, detail: detail || "" });
 
     if (a.detected) add("dò được vùng", !!region);
-    if (a.noContentPath) add("đi nhánh ① không đoán", reply.text === MOCK_REPLIES.noContent);
+    if (a.noContentPath) add("đi nhánh ① không đoán", reply.text === REPLIES.noContent);
     if (a.asksBack) {
       add("hỏi lại thay vì đoán",
         reply.grounded === false &&
-        [MOCK_REPLIES.tooSmall, MOCK_REPLIES.noPageInQuestion].includes(reply.text));
+        [REPLIES.tooSmall, REPLIES.noPageInQuestion].includes(reply.text));
     }
     if (a.refused) add("từ chối", reply.grounded === false);
     if (a.nothingSent) add("không gửi gì ra ngoài", !reply.disclosure);
@@ -241,9 +241,26 @@ const Runner = {
     const skipped = GOLDEN_CASES.length - cases.length;
     if (skipped) this.log(`⚠ Bỏ qua ${skipped} case PDF (không tải được PDF thật)`, "warn");
 
+    let i = 0;
     for (const c of cases) {
       try {
-        const r = await this.runCase(c);
+        // Free tier giới hạn theo phút — giãn cách giữa các lời gọi thật
+        if (CONFIG.USE_REAL_AI && i++ > 0) await sleep(CONFIG.REAL_AI_DELAY_MS);
+
+        let r = await this.runCase(c);
+
+        // Ăn 429 (vượt quota theo phút) thì lùi dần rồi thử lại tối đa 3 lần.
+        // Thử một lần là không đủ: đo thật thấy lần hai vẫn 429, và case bị
+        // ghi nhận fail vì lý do hạ tầng chứ không phải vì sản phẩm sai.
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          if (!CONFIG.USE_REAL_AI || !/\(429\)/.test(r.out || "")) break;
+          const backoff = 30000 * attempt;
+          this.log(`${c.id} bị 429 (lần ${attempt}) — chờ ${backoff / 1000}s rồi thử lại`, "warn");
+          await sleep(backoff);
+          r = await this.runCase(c);
+        }
+        // Vẫn 429 sau 3 lần -> đánh dấu là lỗi hạ tầng, KHÔNG lẫn với fail sản phẩm
+        if (CONFIG.USE_REAL_AI && /\(429\)/.test(r.out || "")) r.rateLimited = true;
         this.results.push(r);
         const auto = r.auto || [];
         const fail = auto.filter((x) => !x.ok);
@@ -265,7 +282,10 @@ const Runner = {
   },
 
   renderSummary() {
-    const rows = this.results.filter((r) => !r.skipped && !r.error);
+    const all = this.results.filter((r) => !r.skipped && !r.error);
+    // Case bị chặn quota là lỗi hạ tầng — tách ra, không tính vào % sản phẩm
+    const rl = all.filter((r) => r.rateLimited);
+    const rows = all.filter((r) => !r.rateLimited);
     let total = 0, passed = 0;
     for (const r of rows) for (const a of r.auto || []) { total++; if (a.ok) passed++; }
     const casesWithAuto = rows.filter((r) => (r.auto || []).length);
@@ -277,6 +297,10 @@ const Runner = {
       `(<b>${total ? Math.round(passed * 100 / total) : 0}%</b>) · ` +
       `<b>${casesAllPass.length}/${casesWithAuto.length}</b> case đạt hết điều kiện máy chấm ` +
       `(<b>${casesWithAuto.length ? Math.round(casesAllPass.length * 100 / casesWithAuto.length) : 0}%</b>)` +
+      (rl.length
+        ? `<br><span class="warn">${rl.length} case bị chặn quota (429) sau 3 lần thử — ` +
+          `lỗi hạ tầng, đã tách khỏi % trên: ${rl.map((r) => r.id).join(", ")}</span>`
+        : "") +
       `<br><span class="warn">Bốn chiều G/S/H/C vẫn phải chấm bằng người — bảng markdown bên dưới đã để cột trống.</span>`;
 
     document.getElementById("md").value = this.toMarkdown();
@@ -293,6 +317,7 @@ const Runner = {
     for (const r of this.results) {
       if (r.skipped) { lines.push(`| ${r.id} | ${r.cls} | — | — | BỎ QUA | ${esc(r.skipped)} | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |`); continue; }
       if (r.error) { lines.push(`| ${r.id} | ${r.cls} | — | — | LỖI | ${esc(r.error)} | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |`); continue; }
+      if (r.rateLimited) { lines.push(`| ${r.id} | ${r.cls} | ${r.mode} | — | **429 quota** | ${trunc(r.out, 120)} | — | — | — | — | — | Lỗi hạ tầng, không tính vào % |`); continue; }
       const auto = r.auto || [];
       const fail = auto.filter((a) => !a.ok);
       const autoTxt = auto.length
