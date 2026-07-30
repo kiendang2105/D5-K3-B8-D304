@@ -4,7 +4,7 @@
 
 | # | Mục | Nội dung |
 |---|---|---|
-| 1 | **Hướng** | A — VLearn · Tối ưu tính năng có sẵn (AI Tutor) |
+| 1 | **Hướng** | A — VLearn · Tính năng mới trên VLearn |
 | 2 | **Job executor** | Học viên dùng AI Tutor để tự xem lại và tìm hiểu bài giảng, trong buổi học và sau mỗi buổi |
 | 3 | **Pain một câu** | Khi gặp sơ đồ, biểu đồ hoặc hình minh hoạ trong slide, học viên không nhờ được AI Tutor giải thích vì AI chưa nhận diện được hình ảnh và vùng nội dung được chọn — học viên phải tự đoán hoặc bỏ qua phần đó |
 | 4 | **Bằng chứng đầu** | Khảo sát n=23: **13/23 (56,5%)** nói AI Tutor chưa đọc được ảnh slide · **11/23 (47,8%)** nói khi chọn nội dung trên slide, AI không nhận biết được phần cần giải thích |
