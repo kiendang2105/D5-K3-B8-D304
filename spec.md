@@ -1,4 +1,4 @@
-# AI SPEC — AI Tutor giải thích vùng slide · Nhóm [XX] · Zone B8
+# AI SPEC — AI Tutor giải thích vùng slide · Nhóm B8
 
 Hướng: A — VLearn
 
