@@ -61,6 +61,7 @@ const MOCK_SLIDES = [
           "Ý chính: quyền tự trả lời của AI phụ thuộc vào việc *có căn cứ hay không*, chứ không phụ thuộc độ tự tin của model.",
         simple:
           "Nói đơn giản: AI chỉ được tự trả lời khi tìm thấy câu trả lời trong tài liệu. Không tìm thấy thì nói thật là không biết và gọi TA — tuyệt đối không đoán.",
+        suggestions: ["Nhánh Không xảy ra khi nào?", "Vì sao phải kèm trích dẫn?"],
       },
       {
         id: "z12-bullets",
@@ -75,6 +76,7 @@ const MOCK_SLIDES = [
           "Tiêu chí chọn mức nằm ở tiêu đề slide: **cost-of-error** — sai thì ai chịu gì, sửa đắt hay rẻ.",
         simple:
           "3 mức từ thấp đến cao: AI gợi ý thôi (Augment) → AI tự làm phần chắc chắn (Conditional) → AI tự làm hết (Automate). Lỗi càng đắt thì càng phải để người kiểm soát nhiều.",
+        suggestions: ["Cost-of-error là gì?", "Khi nào chọn Augment?"],
       },
     ],
   },
@@ -118,6 +120,7 @@ const MOCK_SLIDES = [
           "Con số đo trên 1.261 lượt hỏi-đáp thật (22–29/07). Gần một nửa câu trả lời không kiểm chứng được là lý do slide này đặt câu hỏi về grounding.",
         simple:
           "Cứ 2 câu tutor trả lời thì gần 1 câu không dẫn nguồn trang nào — nghĩa là học viên phải tin chay, không kiểm lại được.",
+        suggestions: ["Số liệu này đo thế nào?", "46,2% nghĩa là gì?"],
       },
       {
         id: "z18-note",
@@ -196,6 +199,7 @@ const MOCK_SLIDES = [
           "Lưu ý: vì đọc từ ảnh nên bạn nên đối chiếu lại phần chữ nhỏ với slide gốc.",
         simple:
           "4 kiểu tình huống dễ làm AI hỏng: ① không có nguồn nên bịa · ② không hiểu user muốn gì · ③ bị đòi làm việc ngoài quyền · ④ sai kiến thức chuyên môn.",
+        suggestions: ["Lớp ① khác lớp ② chỗ nào?", "Cho ví dụ lớp ④"],
       },
       {
         id: "z24-cell1",
@@ -215,13 +219,61 @@ const MOCK_SLIDES = [
   },
 ];
 
-// Từ khoá nhận diện yêu cầu ngoài phạm vi (lớp ③)
+// Từ khoá nhận diện yêu cầu ngoài phạm vi (lớp ③).
+//
+// Danh sách này lớn dần theo dữ liệu thật, không theo trí tưởng tượng.
+// Lượt chạy 02 để lọt case `L12` — câu nguyên văn từ chatlog `C0063/T0849`:
+// "TẠO QUIZ ĐỂ TÔI HIỂU RÕ VÀ ÔN LẠI TOÀN BỘ SLIDE NÀY". Sinh quiz là
+// non-goal số 4 và đọc cả slide vượt giới hạn 1 trang/câu hỏi, nhưng không
+// từ khoá nào khớp nên nó được gửi thẳng cho model. Bộ case tự nghĩ không
+// bắt được lỗi này vì không ai nghĩ ra câu viết hoa kiểu đó.
 const OUT_OF_SCOPE_PATTERNS = [
+  // làm hộ bài / đòi đáp án
   "làm hộ", "làm giúp", "giải hộ", "giải giúp", "đáp án", "code hộ",
-  "làm bài tập", "nộp bài", "điểm của", "deadline", "bao giờ thi",
+  "làm bài tập", "làm bài lab", "nộp bài",
+  // logistics
+  "điểm của", "deadline", "bao giờ thi", "khi nào thi", "lịch học",
+  // non-goal: sinh quiz / ra đề
+  "tạo quiz", "làm quiz", "sinh quiz", "tạo câu hỏi", "ra đề", "tạo đề",
+  // vượt giới hạn 1 trang/câu hỏi: đòi đọc cả tài liệu
+  "toàn bộ slide", "toàn bộ tài liệu", "cả tài liệu", "cả bài giảng",
+  "tất cả các trang", "toàn bộ bài",
 ];
 
-const MOCK_REPLIES = {
+// Khớp chuỗi con không đủ. Lượt 03 để lọt `C28` — "đọc **hết tài liệu** rồi
+// tóm tắt" — vì danh sách trên có "cả tài liệu" và "toàn bộ tài liệu" nhưng
+// thiếu "hết tài liệu". Thêm mãi từ khoá là chạy theo đuôi.
+//
+// Regex dưới đòi ĐỦ BA THÀNH PHẦN cạnh nhau: động từ yêu cầu + từ chỉ toàn bộ
+// + đối tượng tài liệu. Nhờ vậy "mình đọc hết rồi mà không hiểu" KHÔNG bị từ
+// chối oan (thiếu thành phần thứ ba), còn "đọc hết tài liệu" thì bị chặn.
+//
+// Hạn chế còn lại: khớp mẫu kiểu này về bản chất vẫn giòn. Cách bền hơn là để
+// model tự phán phạm vi, nhưng đó là một quyết định AI thứ hai — ghi vào
+// backlog thay vì thêm ngay (rubric: sau CP4 không thêm feature mới).
+// Ba nhánh, phân theo BẢN CHẤT của yêu cầu chứ không theo cách gõ:
+const OUT_OF_SCOPE_REGEX = new RegExp([
+  // 1. động từ yêu cầu + từ chỉ toàn bộ + đối tượng tài liệu
+  "(đọc|tóm tắt|tóm lược|summar|xem|giải thích|liệt kê)\\s*(hết|toàn bộ|tất cả|cả|nguyên)\\s*(các\\s*)?(tài liệu|slide|bài giảng|bài|trang|file|deck)",
+  // 2. đòi tóm tắt mà đối tượng là CẢ TÀI LIỆU (không phải một trang).
+  //    Cố ý KHÔNG chặn "tóm tắt slide này / trang này / vùng này" — đó là
+  //    một trang, hoàn toàn nằm trong giới hạn.
+  "(tóm tắt|tóm lược|summar)[^.!?]{0,30}(tài liệu|bài giảng|deck|cả bài)",
+  // 3. dải nhiều trang: "từ trang 1 đến trang 44"
+  "từ\\s*trang\\s*\\d+[^.!?]{0,15}(đến|tới|->|-)\\s*trang\\s*\\d+",
+].join("|"), "i");
+
+// Mock cho nhánh "câu hỏi khái niệm mà tài liệu không nói tới".
+// Bản thật do model quyết và tự gắn nhãn [NGOÀI TÀI LIỆU]; ở đây khớp từ khoá.
+const OUTSIDE_DOC_HINTS = [
+  { k: "agent", a: "Agent là hệ thống dùng LLM để **tự quyết chuỗi hành động** — gọi tool, đọc kết quả, quyết bước tiếp — thay vì chỉ sinh một câu trả lời rồi dừng. Phần slide bạn đang chọn không bàn về Agent, nên đây là kiến thức chung để bạn đối chiếu thôi." },
+  { k: "rag", a: "RAG là cách cho model **tra tài liệu trước khi trả lời** thay vì dựa vào thứ nó nhớ sẵn: tìm đoạn liên quan, nhét vào ngữ cảnh, rồi mới sinh câu trả lời. Slide này không nói về RAG." },
+  { k: "token", a: "Token là đơn vị model cắt văn bản ra để xử lý — thường ngắn hơn một từ. Giới hạn context tính theo token, không theo số chữ. Phần bạn chọn không đề cập khái niệm này." },
+  { k: "fine-tun", a: "Fine-tuning là huấn luyện thêm trên dữ liệu riêng để đổi *hành vi* của model, khác với việc chỉ đổi prompt. Slide này không bàn tới." },
+  { k: "hallucin", a: "Hallucination là khi model nói ra thứ nghe hợp lý nhưng không có căn cứ. Đây đúng là rủi ro mà sản phẩm này phải chặn, nhưng phần slide bạn chọn không định nghĩa nó." },
+];
+
+const REPLIES = {
   outOfScope:
     "Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn.\n\nThay vào đó, nếu bạn chỉ vùng nào trên slide đang khiến bạn kẹt, mình giải thích kỹ vùng đó — hoặc bạn nhắn TA trên Discord cho các câu hỏi về bài tập & deadline nhé.",
   tooSmall:

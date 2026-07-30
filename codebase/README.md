@@ -10,22 +10,55 @@ codebase/web/index.html      ← mở thẳng bằng trình duyệt: chạy ngay
 
 Đủ để demo toàn bộ 4 đường đi trải nghiệm + nhánh quét ảnh. **Mở PDF thật** và **gọi AI thật** cần chạy qua server tĩnh (Worker của pdf.js không tạo được từ `file://`; prompt nạp bằng fetch):
 
+Mở terminal, **`cd` về gốc repo** rồi chạy đúng lệnh này:
+
 ```bash
-npx serve .            # hoặc: python -m http.server 8765   (chạy từ GỐC REPO)
-# app:    http://localhost:PORT/codebase/web/index.html
-# runner: http://localhost:PORT/eval/runner.html
+cd d:/K3-D304-AI-Product-Hackathon-B8      # đổi theo máy bạn — phải là GỐC REPO
+python -m http.server 8765
 ```
 
-*(Serve từ gốc repo vì runner cần đọc `data/vlearn-pack/slides/*.pdf`.)*
+Terminal in `Serving HTTP on :: port 8765` thì để nguyên đó (đóng terminal là tắt server), mở trình duyệt vào:
+
+- **App:** <http://localhost:8765/codebase/web/index.html>
+- **Runner:** <http://localhost:8765/eval/runner.html>
+
+Dừng server: `Ctrl+C`.
+
+<details>
+<summary>Chạy không được?</summary>
+
+| Báo lỗi | Nguyên nhân | Cách xử lý |
+|---|---|---|
+| `npx: command not found` / `'npx' is not recognized` | Máy chưa cài Node.js. **Dùng lệnh `python` ở trên, không cần Node.** | — |
+| `Python was not found` | Alias Microsoft Store chặn | Thử `py -m http.server 8765` |
+| `OSError: [Errno 98/10048] Address already in use` | Cổng 8765 đang bận | Đổi số: `python -m http.server 8790`, rồi đổi luôn số trong URL |
+| Trang trắng / `404` mọi thứ | Đang chạy server từ `codebase/` hoặc `codebase/web/` | `cd` về **gốc repo** rồi chạy lại — app và runner đều đọc `data/vlearn-pack/slides/*.pdf` nên gốc phải là repo |
+| Mở `http://localhost:PORT/...` → không vào được | `PORT` là chỗ điền số, không phải chữ | Gõ đúng số cổng: `8765` |
+
+</details>
+
+**Slide deck có sẵn:** header có nút **Slide buổi 1** / **Slide buổi 2** — bấm là mở luôn deck trong data pack, không phải tự chọn file. Nút **Mở PDF khác…** dành cho file ngoài.
+
+Hai deck này **đã được ban tổ chức commit vào repo đề bài**, nên clone về là có sẵn. Nếu vì lý do nào đó thiếu file, nút sẽ báo rõ đường dẫn thay vì lỗi im lặng.
 
 ## Bật AI thật (CP3)
 
 1. Lấy key ở [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 2. Bấm **API key** trên header, dán key.
 3. App gọi `ListModels` để xem key đó dùng được model nào rồi **tự chọn** — không hardcode tên model (đoán sai tên là nhận 404 giữa lúc demo). Badge đổi thành `CP3 · AI THẬT · <tên model>`.
+
+   Thứ tự ưu tiên đặt **flash-lite lên đầu** (`GEMINI_PREFER`), vì VLearn production chạy `gemini-3.1-flash-lite` (1.101/1.261 turn theo `DATA_DICTIONARY.md`) — đo prototype trên cùng model thì kết quả mới nói được gì về sản phẩm thật. Bản lite cũng chịu được nhiều request/phút hơn: chạy trọn bộ 32 case trên `2.5-flash` bị 429 liên tục.
 4. Đổi model thủ công: `localStorage.setItem("GEMINI_MODEL","<tên>")` trong Console rồi tải lại.
 
 Key lưu trong `localStorage` của trình duyệt, **không bao giờ vào repo**. Mỗi lời gọi in `[AI TRACE]` ra Console và cộng vào `Explain.traces` — runner tải xuống thành `traces.json` cho `server/traces/`.
+
+**Quota free tier là ràng buộc thật, không phải chi tiết nhỏ.** Đo trên `gemini-2.5-flash`: giãn 4,5s giữa các call (≈13 req/phút) vẫn ăn **429 ở 12/32 case**. Vì vậy:
+
+- `REAL_AI_DELAY_MS` = 7s (≈8,5 req/phút)
+- Runner tự lùi dần và thử lại tối đa 3 lần (30s → 60s → 90s)
+- Case vẫn 429 sau 3 lần được đánh dấu `rateLimited` và **tách khỏi % chấm máy** — lỗi hạ tầng không được lẫn vào lỗi sản phẩm, nếu không thì bảng kết quả nói sai về chất lượng
+
+Demo tại CP6 chỉ chạy vài case nên không lo; chạy trọn bộ golden set thì nên dùng bản `flash-lite`.
 
 ## Cấu trúc
 
@@ -89,6 +122,60 @@ Kéo chuột khoanh tay vẫn giữ, làm đường sửa khi máy dò không đ
 Gõ *"giải thích slide 24"* khi đang xem slide 12: hệ thống **không** kéo học viên sang slide 24. Trang 24 chỉ được nạp ngầm để đọc; câu trả lời kèm thumbnail trang 24 làm bằng chứng và nút **"↪ Đi tới slide 24"** để họ tự quyết định có chuyển hay không.
 
 Lý do: học viên đang đọc dở một slide, bị nhảy đi là mất chỗ. Và bằng chứng thumbnail đã đủ để họ kiểm tra hệ thống đọc đúng trang.
+
+## Câu hỏi tiếp — nối được ký ức hội thoại
+
+**Lỗi quan sát khi tự dùng thử:** sau khi được trả lời về ô ① của slide 24, gõ *"tôi muốn chi tiết hơn nữa"* thì hệ thống đáp *"Bạn đang hỏi về slide nào vậy?"* — bắt học viên nhắc lại thứ vừa nói xong.
+
+Nguyên nhân: sau mỗi lượt, `ask()` xoá vùng chọn. Câu tiếp theo không có số slide, không có vùng đang chọn → rơi thẳng vào nhánh ② *hỏi lại*.
+
+Cách xử lý (HAX **G12** — nhớ tương tác gần):
+
+| Tình huống | Hành vi |
+|---|---|
+| Có lượt trước, câu mới không nêu slide | **Nối tiếp đúng vùng vừa hỏi**, kèm dòng *"Hiểu là bạn hỏi tiếp về vùng vừa rồi ở trang N"* |
+| **Chưa** hỏi gì trước đó | Vẫn hỏi lại *"bạn đang hỏi slide nào"* — nhánh ② giữ nguyên, đây mới thật là mơ hồ |
+| Lượt trước bị **từ chối** hoặc **hỏi lại** | Không được ghi thành "vùng đang bàn". Nếu ghi thì một câu vô thưởng vô phạt sau đó lại kéo vùng cũ ra trả lời |
+
+**Lịch sử gửi đi bị siết chặt** để không phá giới hạn dữ liệu:
+
+- Chỉ gửi **chữ** — câu học viên đã gõ + câu model đã trả lời. **Không** ảnh, **không** text mới nào của tài liệu.
+- Chỉ gửi lượt của **đúng trang đang bàn** (`historyFor()` lọc theo `page.num`, `buildPayload()` chặn lại lần nữa). Trộn lượt của trang khác vào là gián tiếp gửi nội dung nhiều trang trong một request.
+- Tối đa **3 lượt**, mỗi câu trả lời cũ cắt ở **700 ký tự** (`HISTORY_MAX_TURNS` / `HISTORY_MAX_CHARS`).
+- Bảng 🔒 công khai thêm một dòng: *"Hội thoại trước: N lượt (M ký tự) — chỉ chữ, chỉ của đúng trang này"*.
+
+## Trả lời câu hỏi text thuần — và ranh giới "ngoài tài liệu"
+
+Trước đây gõ một câu hỏi mà không chọn vùng, không nêu số slide thì bị đáp *"bạn đang hỏi slide nào?"* — hỏi một thứ hiển nhiên khi học viên đang mở slide trước mắt.
+
+Giờ có **4 bậc tìm căn cứ**, từ cụ thể nhất tới rộng nhất, không bậc nào bỏ mặc học viên:
+
+| Bậc | Điều kiện | Căn cứ |
+|---|---|---|
+| 1 | Câu nêu rõ số slide | trang đó |
+| 2 | Đang có vùng chọn | vùng đó |
+| 3 | Vừa hỏi xong một vùng | vùng đó (nối tiếp, G12) |
+| 4 | Không có gì cả | **trang đang xem** |
+
+### Ranh giới cứng giữa "từ slide" và "kiến thức chung"
+
+Học viên hỏi khái niệm mà slide không nói (*"RAG là gì?"*) thì từ chối thẳng là bất tiện, mà trả lời gộp vào là **đúng lỗi lớp ①**. Cách xử lý: model được phép trả lời, nhưng **bắt buộc** gắn nhãn `[NGOÀI TÀI LIỆU]`; `Explain.parseAnswer()` tách ra, UI hiện **khối tím riêng** có nhãn *"💡 Ngoài tài liệu — kiến thức chung, KHÔNG có trong slide này"*.
+
+Phân biệt quan trọng: nhãn này chỉ dùng cho **câu khái niệm**. Hỏi **số liệu** không có trên slide (*"tỷ lệ này bao nhiêu phần trăm?"*) thì chỉ được nói là không có — không được lấy kiến thức chung ra đắp.
+
+Đo thật trên `gemini-3.1-flash-lite-preview`, 5/5 case tuân thủ:
+
+| Câu hỏi | Phần từ slide | Khối ngoài tài liệu |
+|---|---|---|
+| *"cái này nói về gì"* | giải thích 3 mức automation | — (đúng, có trong slide) |
+| *"RAG là gì?"* | *"Phần tài liệu này không đề cập đến RAG."* | ✅ định nghĩa RAG |
+| *"tỷ lệ này bao nhiêu %?"* | *"tài liệu không đề cập tỷ lệ phần trăm nào cả"* | — (đúng, đây là câu số liệu) |
+| *"hi bro"* | chào lại + hỏi muốn biết gì | — |
+| *"lớp ① liên quan gì tới hallucination?"* | nói slide không đề cập trực tiếp + nêu phần slide có nói | ✅ định nghĩa hallucination |
+
+### Gợi ý câu hỏi tiếp
+
+Model kết thúc bằng dòng `GỢI Ý: <q1> | <q2>`, UI hiện thành chip bấm được. Đây là chỗ lấp một feature chết: trường `follow_ups` của tutor hiện tại **chưa dùng lần nào — 0/1.261 turn** (`DATA_DICTIONARY.md`).
 
 ## Giới hạn dữ liệu — AI Tutor không đọc cả tài liệu
 

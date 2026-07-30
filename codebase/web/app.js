@@ -18,7 +18,8 @@ const App = {
   source: null,
   currentPage: null,
   busy: false,
-  lastAsk: null, // để hỏi lại khi user báo quét nhầm trang
+  lastAsk: null, // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
+  turns: [],     // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
 
   async init() {
     SlideViewer.init();
@@ -46,11 +47,60 @@ const App = {
     document.getElementById("btn-mock").onclick = () => this.useMock();
     document.getElementById("btn-key").onclick = () => this.configKey();
 
+    const theme = document.getElementById("btn-theme");
+    if (theme) theme.onclick = () => this.toggleTheme();
+    this.restoreTheme();
+
+    this.buildDeckButtons();
     this.restoreKey();
     await this.useMock();
   },
 
+  // ---------- sáng / tối ----------
+  // CSS đã có sẵn bộ biến cho body.dark; phần này chỉ bật/tắt class và nhớ
+  // lựa chọn. Nhớ được là quan trọng: học viên ngồi học buổi tối bật chế độ
+  // tối rồi tải lại trang mà mất là bực.
+
+  applyTheme(dark) {
+    document.body.classList.toggle("dark", dark);
+    const b = document.getElementById("btn-theme");
+    if (b) {
+      b.textContent = dark ? "☀" : "🌙";
+      b.title = dark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối";
+    }
+    // Slide vẽ trên canvas nên không theo CSS — vẽ lại để nền letterbox
+    // khớp với chủ đề mới, nếu không thì viền quanh slide lệch màu hẳn.
+    if (SlideViewer.page) SlideViewer.draw();
+    RegionSelector.draw();
+  },
+
+  toggleTheme() {
+    const dark = !document.body.classList.contains("dark");
+    localStorage.setItem("VLEARN_THEME", dark ? "dark" : "light");
+    this.applyTheme(dark);
+  },
+
+  restoreTheme() {
+    const saved = localStorage.getItem("VLEARN_THEME");
+    // Chưa chọn bao giờ thì theo cài đặt hệ điều hành
+    const dark = saved
+      ? saved === "dark"
+      : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    this.applyTheme(dark);
+  },
+
   // ---------- nguồn tài liệu ----------
+
+  // Slide deck trong data pack thành nút bấm sẵn, đặt cạnh "Slide mẫu"
+  buildDeckButtons() {
+    const host = document.getElementById("deck-buttons");
+    for (const deck of CONFIG.BUILTIN_DECKS) {
+      const b = document.createElement("button");
+      b.textContent = "📄 " + deck.label;
+      b.onclick = () => this.openBuiltinDeck(deck);
+      host.appendChild(b);
+    }
+  },
 
   async useMock() {
     this.source = new MockSource();
@@ -59,22 +109,38 @@ const App = {
     await this.goToPage(MOCK_SLIDES[0].num);
   },
 
+  // Mở PDF do user tự chọn
   async openPdf(file) {
-    const note = ExplainPanel.addSystemNote(`Đang mở **${file.name}**…`);
+    return this.useSource(
+      () => PdfSource.open(file), file.name);
+  },
+
+  // Mở slide deck có sẵn trong data pack — bấm một nút là xong
+  async openBuiltinDeck(deck) {
+    return this.useSource(() => PdfSource.openUrl(deck.url), deck.label);
+  },
+
+  async useSource(open, label) {
+    const note = ExplainPanel.addSystemNote(`Đang mở **${label}**…`);
     try {
-      this.source = await PdfSource.open(file);
+      this.source = await open();
       document.getElementById("doc-name").textContent =
-        `${file.name} · ${this.source.pageCount} trang`;
+        `${this.source.name} · ${this.source.pageCount} trang`;
       await this.buildTabs();
       await this.goToPage(1);
       note.innerHTML = mdBold(
-        `Đã mở **${file.name}** (${this.source.pageCount} trang). ` +
-        `Khoanh vùng để hỏi, hoặc gõ *"giải thích trang 3"*.`);
+        `Đã mở **${this.source.name}** (${this.source.pageCount} trang). ` +
+        `Bấm vào một phần trên slide để hỏi, hoặc gõ *"giải thích trang 3"*.`);
     } catch (err) {
+      const fileProto = location.protocol === "file:";
       note.innerHTML = mdBold(
-        `Không mở được PDF: ${err.message}\n\n` +
-        `Nếu bạn mở file bằng \`file://\`, hãy chạy qua server tĩnh ` +
-        `(\`npx serve codebase/web\`) rồi thử lại — pdf.js cần tải được worker.`);
+        `**Không mở được ${label}:** ${err.message}\n\n` +
+        (fileProto
+          ? "Đang mở bằng `file://` nên trình duyệt chặn đọc file. Chạy qua server tĩnh: " +
+            "`python -m http.server 8765` từ gốc repo, rồi mở " +
+            "`http://localhost:8765/codebase/web/index.html`."
+          : "Kiểm lại file có trong `data/vlearn-pack/slides/` chưa — data pack " +
+            "không được commit vào repo nên máy mới clone sẽ chưa có."));
     }
   },
 
@@ -164,7 +230,7 @@ const App = {
     this.hidePopover();
     ExplainPanel.addUser({ question: "(bấm vào một chỗ trên slide)" });
     const { bubble } = ExplainPanel.addBot();
-    await ExplainPanel.stream(bubble, MOCK_REPLIES.noContent);
+    await ExplainPanel.stream(bubble, REPLIES.noContent);
   },
 
   // (B) hỏi bằng chat, có thể nhắc tới slide KHÁC slide đang xem.
@@ -176,15 +242,29 @@ const App = {
     if (!question || this.busy) return;
     input.value = "";
 
-    const m = question.match(PAGE_IN_QUESTION);
-
-    // ② Mơ hồ: không nêu slide nào và cũng không chọn vùng -> hỏi lại
-    if (!m && !RegionSelector.regionPage) {
+    // Thứ tự ưu tiên khi tìm CĂN CỨ cho câu hỏi — từ cụ thể nhất tới rộng nhất.
+    // Không còn nhánh nào bỏ mặc học viên: gõ câu gì cũng được trả lời.
+    //
+    //   1. Câu nêu rõ số slide       -> đọc trang đó
+    //   2. Đang có vùng chọn         -> vùng đó
+    //   3. Vừa hỏi xong một vùng     -> nối tiếp vùng đó (G12)
+    //   4. Không có gì cả            -> TRANG ĐANG XEM
+    //
+    // Bậc 4 là đường mới. Trước đây nó đáp "bạn đang hỏi slide nào?" ngay cả
+    // khi học viên đang mở một slide trước mắt — hỏi một thứ hiển nhiên.
+    // Guardrail phải chạy TRƯỚC nhánh số trang. Nếu không thì câu "tóm tắt từ
+    // trang 1 đến trang 20" sẽ đi vào nhánh số trang, trả lời về trang 1 và
+    // IM LẶNG BỎ QUA việc học viên đòi 20 trang — tệ hơn là từ chối thẳng.
+    if (Explain.isOutOfScope(question)) {
       ExplainPanel.addUser({ question });
+      ExplainPanel.addSystemNote(
+        "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
       const { bubble } = ExplainPanel.addBot();
-      await ExplainPanel.stream(bubble, MOCK_REPLIES.noPageInQuestion);
+      await ExplainPanel.stream(bubble, REPLIES.outOfScope);
       return;
     }
+
+    const m = question.match(PAGE_IN_QUESTION);
 
     if (m) {
       const n = parseInt(m[1], 10);
@@ -192,14 +272,40 @@ const App = {
         ExplainPanel.addUser({ question });
         const { bubble } = ExplainPanel.addBot();
         await ExplainPanel.stream(bubble,
-          MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
+          REPLIES.pageOutOfRange(n, this.source.rangeText()));
         return;
       }
       return this.askAboutPage(n, question);
     }
 
-    // có vùng đang chọn sẵn trên slide đang xem -> hỏi về vùng đó
-    this.ask({ question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
+    if (RegionSelector.regionPage) {
+      return this.ask({
+        question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
+    }
+
+    if (this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
+      return this.ask({
+        question,
+        region: this.lastAsk.region,
+        page: this.lastAsk.page,
+        offScreen: this.lastAsk.page !== this.currentPage,
+        followUp: true,
+      });
+    }
+
+    // Bậc 4 — câu hỏi text thuần, lấy trang đang xem làm căn cứ
+    return this.askAboutCurrentPage(question);
+  },
+
+  // Câu hỏi text thuần: không chọn vùng, không nêu slide.
+  // Căn cứ = TRANG ĐANG XEM. Model tự quyết nội dung trang có trả lời được
+  // câu này không; không có thì nói rõ và (nếu là câu khái niệm) trả lời
+  // bằng kiến thức chung NHƯNG phải đánh dấu rõ là ngoài tài liệu.
+  async askAboutCurrentPage(question) {
+    const page = this.currentPage;
+    if (!page) return;
+    const region = { ...ContentDetector.contentBounds(page), wholePage: true };
+    return this.ask({ question, region, page, textQuestion: true });
   },
 
   // Hỏi về một trang bất kỳ mà KHÔNG chuyển màn hình.
@@ -220,7 +326,7 @@ const App = {
   async rescanPage(n) {
     if (!this.source.hasPage(n)) {
       const { bubble } = ExplainPanel.addBot();
-      await ExplainPanel.stream(bubble, MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
+      await ExplainPanel.stream(bubble, REPLIES.pageOutOfRange(n, this.source.rangeText()));
       return;
     }
     this.askAboutPage(n, this.lastAsk?.question || "", true);
@@ -229,12 +335,12 @@ const App = {
   // ---------- lõi: một lượt hỏi ----------
 
   // region: toạ độ TRANG · page: trang được hỏi (có thể khác trang đang xem)
-  async ask({ question, region, page, offScreen, redo }) {
+  // followUp: câu hỏi tiếp về đúng vùng của lượt trước
+  async ask({ question, region, page, offScreen, redo, followUp }) {
     if (this.busy || !region) return;
     page = page || this.currentPage;
     this.busy = true;
     RegionSelector.locked = true;
-    this.lastAsk = { question };
 
     const mode = Explain.readMode(page);
     // Ảnh hiện trong bong bóng chat CHÍNH LÀ ảnh sẽ gửi đi — không có
@@ -255,7 +361,13 @@ const App = {
       ExplainPanel.addSystemNote(
         "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
     } else {
-      if (offScreen) {
+      // Nói rõ đang nối tiếp vùng nào, để học viên không tưởng máy đoán bừa
+      if (followUp) {
+        ExplainPanel.addSystemNote(
+          `Hiểu là bạn hỏi tiếp về **vùng vừa rồi ở trang ${page.num}** — ` +
+          "muốn hỏi phần khác thì bấm vào đúng phần đó trên slide.");
+      }
+      if (offScreen && !followUp) {
         ExplainPanel.addSystemNote(
           `Đang đọc **trang ${page.num}** (bạn vẫn ở trang ${this.currentPage.num}) — ` +
           "chỉ nạp đúng trang đó, không mở cả tài liệu.");
@@ -268,11 +380,27 @@ const App = {
 
     RegionSelector.clear();
 
-    const reply = await Explain.run({ question, page, region, mode });
+    // Lịch sử chỉ gửi khi hỏi tiếp về ĐÚNG vùng đó, và chỉ gửi CHỮ của các
+    // lượt trước (câu hỏi của học viên + câu trả lời của model) — không có
+    // ảnh hay text mới nào của tài liệu rời máy vì thế.
+    const reply = await Explain.run({
+      question, page, region, mode,
+      history: followUp ? this.historyFor(page.num, region) : null,
+    });
 
     const { div, bubble } = ExplainPanel.addBot();
     bubble.innerHTML = '<span class="cursor-blink">▌</span>';
-    await ExplainPanel.stream(bubble, reply.text);
+    if (reply.text) {
+      await ExplainPanel.stream(bubble, reply.text);
+    } else {
+      bubble.remove(); // chỉ có phần kiến thức chung, không có phần từ tài liệu
+    }
+
+    // Kiến thức chung hiện trong khối riêng, có nhãn — không trộn vào trên
+    if (reply.outsideDoc) {
+      const body = ExplainPanel.addOutsideDoc(div, "");
+      await ExplainPanel.stream(body, reply.outsideDoc);
+    }
 
     // Chỉ khoe "đọc bằng gì" khi thực sự có đọc nội dung. Câu từ chối
     // hoặc hỏi lại (grounded: false) không kèm badge/bằng chứng.
@@ -296,11 +424,44 @@ const App = {
     }
 
     if (reply.citation) ExplainPanel.addCitation(div, reply.citation);
-    ExplainPanel.addActions(div, reply.zone || null);
+
+    // Nút "Vùng này ở đâu?" chỉ có nghĩa khi vùng nằm trên trang ĐANG XEM.
+    // Nháy sáng một vùng của trang khác thì vô nghĩa và gây hiểu nhầm.
+    const canShow = reply.grounded !== false && page === this.currentPage;
+    ExplainPanel.addActions(div, reply.zone || null,
+      canShow ? () => RegionSelector.flash(region) : null);
+    // Gợi ý câu hỏi tiếp — bấm là gửi luôn, coi như học viên tự gõ
+    ExplainPanel.addSuggestions(div, reply.suggestions, (q) => {
+      document.getElementById("chat-q").value = q;
+      this.askFromChat();
+    });
     ExplainPanel.scroll();
+
+    // Ghi lượt này lại để câu hỏi tiếp nối được đúng vùng.
+    // Chỉ ghi khi thực sự đã đọc nội dung — câu bị từ chối hoặc hỏi lại
+    // không được thành "vùng đang bàn", nếu không thì học viên gõ tiếp một
+    // câu vô thưởng vô phạt lại kéo cả vùng cũ ra trả lời.
+    if (reply.grounded !== false) {
+      this.turns.push({ page: page.num, question: question || "(giải thích vùng này)", answer: reply.text });
+      if (this.turns.length > CONFIG.HISTORY_MAX_TURNS) this.turns.shift();
+      this.lastAsk = { question, region, page };
+    }
 
     this.busy = false;
     RegionSelector.locked = false;
+  },
+
+  // Lịch sử hội thoại cho câu hỏi tiếp — CHỈ các lượt về đúng trang này.
+  // Không trộn lượt của trang khác vào: làm vậy là gián tiếp gửi nội dung
+  // nhiều trang trong một request, phá giới hạn 1 trang/câu hỏi.
+  historyFor(pageNum) {
+    return this.turns
+      .filter((t) => t.page === pageNum)
+      .slice(-CONFIG.HISTORY_MAX_TURNS)
+      .map((t) => ({
+        question: t.question.slice(0, 300),
+        answer: t.answer.slice(0, CONFIG.HISTORY_MAX_CHARS),
+      }));
   },
 
   // ---------- API key (CP3) ----------

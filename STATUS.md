@@ -1,6 +1,6 @@
 # Đang làm gì — cập nhật cho cả nhóm
 
-*Cập nhật: 30/07/2026 · nhánh `leduc`*
+*Cập nhật: 30/07/2026 · nhánh `leduc1`*
 
 File này trả lời đúng một câu: **hiện repo đang có gì, đang dở chỗ nào, mình nhảy vào đâu.**
 Phân công & checkpoint: [README.md](README.md) · Chi tiết kỹ thuật: [codebase/README.md](codebase/README.md).
@@ -16,8 +16,11 @@ Kể từ mốc CP2, prototype đã thêm 3 thứ **không có trong bản demo 
 1. **Bấm một phát là nhận diện được vùng** — không phải kéo khung cho khéo nữa. Máy tự dò ranh giới khối nội dung tại chỗ bấm.
 2. **Quét ảnh khi PDF không đọc được text** — trang nào rút text ra dưới 30 ký tự thì render trang thành ảnh cho model nhìn, thay vì trả lời chay.
 3. **Giới hạn dữ liệu + bảng công khai "đã gửi đi những gì"** — mỗi câu hỏi chỉ được gửi 1 ảnh vùng đã cắt + text trong vùng, tối đa 1 trang.
+4. **Câu hỏi tiếp nối được hội thoại** — gõ *"chi tiết hơn nữa"* thì bám đúng vùng vừa hỏi, không hỏi lại "slide nào".
 
-Phần **đoạn văn giải thích vẫn là MOCK** — đúng mốc CP2. Bật AI thật là việc của CP3, hàm gọi đã viết sẵn.
+**AI thật đã chạy** (`gemini-3.1-flash-lite-preview` — đúng dòng model VLearn production) — **CP3 đã đóng**. Mock vẫn giữ để đối chiếu hành vi mong muốn với hành vi model thật.
+
+**Đã chạy 2 lượt đo với AI thật:** lượt 01 = 23/32 case · lượt 02 = **43/46 case (93%)**, 0 lần bị quota chặn. Đáp án 6 câu form CP3: [docs/cp3-form-answers.md](docs/cp3-form-answers.md).
 
 ---
 
@@ -28,20 +31,26 @@ Phần **đoạn văn giải thích vẫn là MOCK** — đúng mốc CP2. Bật
 | `eef9e2b` | Nhánh quét ảnh khi PDF không có text layer + tách lại cấu trúc module | [web/lib/pdf-source.js](codebase/web/lib/pdf-source.js) · [web/lib/config.js](codebase/web/lib/config.js) |
 | `3f31b50` | Dựng cấu trúc repo nộp bài đầy đủ theo rubric | `eval/` · `validation/` · `reflection/` · `docs/` |
 | `f9d3437` | Click nhận diện vùng · không rời slide đang đọc · siết giới hạn dữ liệu | [web/lib/content-detector.js](codebase/web/lib/content-detector.js) · [server/explain.js](codebase/server/explain.js) |
+| `fdba6fc` | **CP3**: bộ chạy golden set tự động · AI thật không hardcode model · đo trên PDF thật | [eval/runner.html](eval/runner.html) · [eval/cases.js](eval/cases.js) · [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
+| `7310b02` | CP3 đóng: AI thật đã chạy, 4 trace, run-01 có % + phân tích failure | [eval/run-01.md](eval/run-01.md) · [docs/mining-log.md](docs/mining-log.md) · [docs/mining.py](docs/mining.py) |
+| `1b2f5aa` | Lượt 02: 46 case (**14 từ chatlog thật**), 43/46 đạt, đổi sang model production | [eval/run-02.md](eval/run-02.md) · [docs/cp3-form-answers.md](docs/cp3-form-answers.md) |
 
 ---
 
-## 3. Đang dở trên máy — **chưa commit**
+## 3. Bộ chạy golden set tự động
 
-| File | Đang làm gì dở |
-|---|---|
-| [codebase/web/lib/config.js](codebase/web/lib/config.js) | Bỏ hardcode tên model Gemini → sau khi nhập key thì gọi `ListModels` tự chọn model dùng được (`GEMINI_PREFER`). Tránh 404 giữa lúc demo vì đoán sai tên model. |
-| [codebase/server/explain.js](codebase/server/explain.js) | Phần tự chọn model + đường gọi thật đi kèm |
-| [codebase/web/app.js](codebase/web/app.js) | Nối nút **API key** vào luồng trên |
-| [codebase/web/lib/pdf-source.js](codebase/web/lib/pdf-source.js) | Chỉnh theo |
-| `eval/cases.js` *(file mới)* | Golden set **dạng máy đọc được** — toạ độ click ghi theo tỉ lệ trang `[0..1]` để người khác chạy lại trên máy khác vẫn trúng đúng một chỗ. Bản người đọc vẫn là [eval/golden-set.md](eval/golden-set.md). |
+Nhịp lặp CP3→CP5 là *chạy trọn bộ → bảng % → sửa MỘT failure → chạy lại trọn bộ*. Làm tay 46 case mỗi lượt thì đến lượt hai là bỏ, nên có [eval/runner.html](eval/runner.html):
 
-> Ai định sửa 4 file này thì nhắn trước trong nhóm, tránh đụng nhau.
+- **Máy chấm** phần cơ học: kích thước vùng dò, số trang gửi đi, có từ chối/hỏi lại không, chế độ đọc, ảnh có phải cả trang không.
+- **Người chấm** 4 chiều G/S/H/C — runner để trống cột, hai người chấm độc lập rồi so (rubric R4).
+- Toạ độ click trong [eval/cases.js](eval/cases.js) ghi theo **tỉ lệ trang `[0..1]`** để chạy lại trên máy khác ra đúng một chỗ.
+- Xuất bảng markdown dán vào `run-NN.md` + `traces.json` cho `codebase/server/traces/`.
+
+Chạy với AI thật: runner tự giãn 7s giữa các call và lùi dần thử lại 3 lần (30/60/90s) nếu gặp 429. Đo thật: `flash-latest` bị chặn **23 lần/lượt**, đổi sang `3.1-flash-lite` thì **0 lần** — và độ trễ median từ 7.182ms xuống **1.420ms** (tutor hiện tại 1.758ms).
+
+**Bộ case đã bắt được 2 bug thật** mà chạy mock không thấy:
+1. Guard ② *"vùng quá nhỏ thì hỏi lại"* chỉ cài trong nhánh mock → bật AI thật thì dải viền mảnh vẫn bị gửi đi (lượt 01, case C04).
+2. *"TẠO QUIZ… TOÀN BỘ SLIDE NÀY"* — câu nguyên văn từ chatlog `C0063/T0849` — không bị guardrail chặn (lượt 02, case L12). **Case tự nghĩ không bắt được lỗi này.**
 
 ---
 
@@ -59,7 +68,9 @@ Cả hai có watermark, là bản rút gọn từ slide gốc, **một số tran
 1. **Cả 2 file đều CÓ lớp text** (kiểm bằng cách đếm khối vẽ chữ trong PDF: d1 có 645 khối `BT` / 4387 lệnh vẽ chữ, d2 có 971 / 6246). Nghĩa là mở 2 file này lên thì hệ thống chạy **chế độ đọc text**, **nhánh quét ảnh sẽ không tự kích hoạt**. Muốn demo nhánh quét trên PDF thật thì phải có trang không có text layer — hiện demo nhánh này bằng **slide 24 mock** (SVG tự dựng, cố tình không text).
 2. **Footer số trang ≠ chỉ số trang trong file** — đúng cái bẫy đã lường: đọc nhầm trang thì câu trả lời sai hoàn toàn nhưng nghe vẫn trơn tru. Vì vậy mỗi câu trả lời đều kèm thumbnail trang đã đọc + nút *"Không phải trang này?"*.
 
-⚠️ **Không `git add` thư mục `slides/`** — data được cấp thuộc quy định bảo mật, không commit vào repo nộp bài ([01-de-bai.md](01-de-bai.md) mục 3).
+ℹ️ **Cập nhật:** hai file slide này **đã được ban tổ chức commit vào repo đề bài** (commit `976c713`, merge từ `main`) — clone về là có sẵn, không phải tự tải.
+
+⚠️ Quy định *"không commit data pack"* ([01-de-bai.md](01-de-bai.md) mục 3) vẫn áp **nếu nhóm tách repo nộp bài riêng**. Trong repo này thì ban tổ chức đã tự quyết, mình không phải làm gì.
 
 ---
 
@@ -69,10 +80,16 @@ Cả hai có watermark, là bản rút gọn từ slide gốc, **một số tran
 # Cách 1 — slide mẫu, không cần cài gì, đủ demo toàn bộ đường đi
 mở codebase/web/index.html bằng trình duyệt
 
-# Cách 2 — mở PDF thật + gọi AI thật (cần server tĩnh)
-npx serve codebase        # serve từ codebase/, KHÔNG phải codebase/web/
-# rồi mở http://localhost:3000/web/index.html
+# Cách 2 — slide thật + gọi AI thật (cần server tĩnh, chạy từ GỐC REPO)
+cd <đường dẫn tới gốc repo>
+python -m http.server 8765
+# app:    http://localhost:8765/codebase/web/index.html
+# runner: http://localhost:8765/eval/runner.html
 ```
+
+Dùng `python`, **đừng dùng `npx serve`** — máy chưa cài Node thì `npx` không có. Cổng 8765 bận thì đổi số và đổi luôn trong URL. Lỗi khác: xem mục *"Chạy không được?"* trong [codebase/README.md](codebase/README.md).
+
+Chạy cách 2 thì header có sẵn nút **Slide buổi 1** / **Slide buổi 2** — bấm là mở luôn deck trong data pack, không phải tự chọn file.
 
 Bấm thử theo thứ tự này là thấy hết:
 
@@ -105,9 +122,12 @@ Bấm thử theo thứ tự này là thấy hết:
 | Việc | Vì sao gấp |
 |---|---|
 | **Điền bảng phân công** trong [README.md](README.md) | R7 cho 1 điểm cho việc có tên người cho từng phần; CP5 sẽ hỏi từng người về phần mang tên mình |
-| **CP3 — bật AI thật + lưu trace** | Hàm `Explain.callGemini()` đã viết sẵn, chỉ cần key + chạy và lưu log vào `codebase/server/traces/` |
-| **Chạy golden set lượt 1** → [eval/run-01.md](eval/run-01.md) | Cần 2 người chấm độc lập 4 chiều G/S/H/C rồi so |
-| **Spec §3–§6** → [spec.md](spec.md) | Hạn cứng |
+| **Chấm 4 chiều G/S/H/C** cho [eval/run-02.md](eval/run-02.md) | Runner đã sinh bảng 46 dòng với output thật; cần **2 người chấm độc lập rồi so** — 4/15 điểm R4. **Việc còn thiếu lớn nhất.** |
+| **Xác nhận quality bar** → spec §7 | Đề xuất **≥80% + không bịa lần nào**; nhóm phải chốt trước **23:59 N1**, sau đó không hạ được |
+| ~~≥10 golden case từ chatlog thật~~ | ✅ **xong — 14 case** (L01–L14), mỗi case kèm mã hội thoại |
+| **Chạy lượt 03** sau khi sửa L12 + toạ độ L01/L02 | Xác nhận 46/46; cần key Gemini |
+| **Log nguyên văn 23 người khảo sát** → [docs/survey-log.md](docs/survey-log.md) | Đang chặn 6/15 điểm R1 — có số 13/23 rồi nhưng thiếu log thì không được tính |
+| **Spec §3** (giải pháp tương tự) → [spec.md](spec.md) | Mỗi người thử 1 sản phẩm, 15 phút |
 | **User test + feedback log** → [validation/feedback-log.md](validation/feedback-log.md) | CP5 |
 
 ---

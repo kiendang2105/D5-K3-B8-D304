@@ -27,9 +27,14 @@ const RegionSelector = {
   init() {
     this.overlay = document.getElementById("overlay");
     this.ctx = this.overlay.getContext("2d");
-    this.overlay.addEventListener("mousedown", (e) => this.onDown(e));
-    this.overlay.addEventListener("mousemove", (e) => this.onMove(e));
-    window.addEventListener("mouseup", (e) => this.onUp(e));
+    // Pointer events thay cho mouse events: cùng một đường code chạy cho
+    // chuột, cảm ứng và bút. Máy tính bảng là thiết bị thật của học viên
+    // ngồi trong lớp — bản chỉ nhận chuột thì trên iPad không chọn được gì.
+    // (#overlay có touch-action: none để kéo chọn không kéo trôi trang.)
+    this.overlay.addEventListener("pointerdown", (e) => this.onDown(e));
+    this.overlay.addEventListener("pointermove", (e) => this.onMove(e));
+    window.addEventListener("pointerup", (e) => this.onUp(e));
+    window.addEventListener("pointercancel", () => { this.dragging = false; });
   },
 
   // ---- đổi hệ toạ độ ----
@@ -140,7 +145,7 @@ const RegionSelector = {
     this.ctx.fillStyle = "rgba(17,24,39,0.30)";
     this.ctx.fillRect(0, 0, SLIDE_W, SLIDE_H);
     this.ctx.clearRect(x, y, w, h);
-    this.ctx.strokeStyle = "#4f46e5";
+    this.ctx.strokeStyle = SlideViewer.cssVar("--indigo", "#4f46e5");
     this.ctx.lineWidth = 2.5;
     this.ctx.setLineDash([7, 5]);
     this.ctx.strokeRect(x, y, w, h);
@@ -151,6 +156,31 @@ const RegionSelector = {
     this.selection = null;
     this.regionPage = null;
     if (this.ctx) this.ctx.clearRect(0, 0, CONFIG.SLIDE_W, CONFIG.SLIDE_H);
+  },
+
+  // Nháy sáng một vùng (toạ độ TRANG) để học viên đối chiếu câu trả lời với
+  // đúng chỗ trên slide (G11). Chỉ vẽ, KHÔNG đổi vùng đang chọn — bấm xem lại
+  // một câu trả lời cũ không được làm mất vùng đang làm việc.
+  flash(rectPage, ms = 1600) {
+    const r = this.pageRectToDisplay(rectPage);
+    if (!r) return;
+    const keep = this.selection;
+    let on = true, n = 0;
+    const tick = () => {
+      this.ctx.clearRect(0, 0, CONFIG.SLIDE_W, CONFIG.SLIDE_H);
+      if (on) {
+        this.ctx.fillStyle = "rgba(79,70,229,0.16)";
+        this.ctx.fillRect(r.x, r.y, r.w, r.h);
+        this.ctx.strokeStyle = SlideViewer.cssVar("--indigo", "#4f46e5");
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(r.x, r.y, r.w, r.h);
+      }
+      on = !on;
+      if (++n < 6) return setTimeout(tick, ms / 6);
+      this.selection = keep;   // trả lại đúng trạng thái trước khi nháy
+      this.draw();
+    };
+    tick();
   },
 
   // Chọn trọn phần CÓ NỘI DUNG của trang (bỏ lề trống) — dùng khi học

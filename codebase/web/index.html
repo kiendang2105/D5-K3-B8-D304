@@ -7,26 +7,140 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <header>
-    <span class="logo">VLearn</span>
-    <!-- HAX G1: nói rõ phạm vi ngay câu đầu tiên user thấy -->
-    <span class="scope-note">Khoanh vùng trên slide, mình giải thích phần đó theo tài liệu buổi học — ngoài tài liệu mình sẽ nói rõ.</span>
-    <div class="header-actions">
-      <label class="file-btn" for="pdf-input">📄 Mở PDF…</label>
-      <input type="file" id="pdf-input" accept="application/pdf" />
-      <button id="btn-mock">Slide mẫu</button>
-      <button id="btn-key">API key</button>
-      <span class="badge-mode" id="badge-mode">CP2 · MOCK — chưa gọi AI thật</span>
+
+<!-- ============================================================
+     Giao diện dựng theo đúng khung VLearn thật (header tài liệu ·
+     sidebar học liệu · khung đọc ở giữa · panel Tutor bên phải) để
+     người thử nghiệm thấy tính năng nằm ĐÚNG chỗ nó sẽ sống, chứ
+     không phải một trang demo rời.
+
+     Phần nào là khung trang trí (không thuộc lát cắt) đều mang class
+     .chrome và bị vô hiệu hoá — không để người dùng tưởng bấm được.
+     ============================================================ -->
+
+<header class="app-bar">
+  <!-- Chỉ hiện ở màn hẹp: mở ngăn học liệu -->
+  <button class="icon-btn only-narrow" id="btn-menu" title="Học liệu môn học">☰</button>
+  <button class="icon-btn chrome hide-narrow" disabled title="Khung giao diện VLearn — không thuộc lát cắt">‹</button>
+
+  <a class="brand" href="#" onclick="return false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h5l4 9 4-9h5L13 21h-2L3 4z"/></svg>
+    <span>VLearn</span>
+  </a>
+
+  <div class="doc-chip">
+    <span class="doc-ico" aria-hidden="true">📖</span>
+    <div>
+      <div class="doc-name" id="doc-name">—</div>
+      <div class="doc-sub">COMP2010 · AI Product Hackathon · Zone B8</div>
     </div>
-  </header>
+  </div>
 
-  <main>
-    <section class="slide-area">
-      <div class="doc-bar">Tài liệu: <b id="doc-name">—</b></div>
-      <div class="page-tabs" id="page-tabs"></div>
+  <div class="app-bar-right">
+    <span class="badge-mode" id="badge-mode">CP2 · MOCK — chưa gọi AI thật</span>
+    <button class="ghost-btn" id="btn-key">API key</button>
+    <button class="icon-btn chrome hide-narrow" disabled title="Khung giao diện VLearn">VI</button>
+    <button class="icon-btn" id="btn-theme" title="Sáng / tối">🌙</button>
+  </div>
+</header>
+
+<!-- Nền mờ khi mở ngăn kéo ở màn hẹp — bấm ra ngoài là đóng -->
+<div class="scrim" id="scrim"></div>
+
+<main class="workspace">
+
+  <!-- ---------- Sidebar: học liệu môn học ---------- -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head">
+      <span class="side-ico" aria-hidden="true">📚</span>
+      <div>
+        <div class="side-title">Học liệu môn học</div>
+        <div class="side-sub">Chương, slide và tài liệu đã upload</div>
+      </div>
+    </div>
+
+    <div class="side-scroll">
+      <div class="day chrome"><span class="play">▶</span>
+        <div><div class="day-name">Day01</div><div class="day-meta">2 TÀI LIỆU · PUBLISHED</div></div>
+        <span class="chev">⌄</span>
+      </div>
+
+      <!-- Buổi đang học: chứa nguồn slide THẬT của prototype -->
+      <div class="day open">
+        <span class="play">▶</span>
+        <div><div class="day-name">Day02</div><div class="day-meta">Tài liệu · PUBLISHED</div></div>
+        <span class="tag-studying">STUDYING</span>
+      </div>
+
+      <div class="day-children">
+        <button class="doc-item" id="btn-mock">
+          <span class="doc-item-ico">🗂</span>
+          <span><b>Slide mẫu (mock)</b><small>3 trang · có 1 trang không text</small></span>
+        </button>
+
+        <!-- app.js đổ nút "Slide buổi 1 / buổi 2" từ CONFIG.BUILTIN_DECKS -->
+        <span id="deck-buttons"></span>
+
+        <label class="doc-item file-btn" for="pdf-input">
+          <span class="doc-item-ico">＋</span>
+          <span><b>Mở PDF khác…</b><small>File trên máy, không upload đi đâu</small></span>
+        </label>
+        <input type="file" id="pdf-input" accept="application/pdf" />
+      </div>
+
+      <div class="day chrome"><span class="play">▶</span>
+        <div><div class="day-name">Day03</div><div class="day-meta">2 TÀI LIỆU · PUBLISHED</div></div>
+        <span class="chev">⌄</span>
+      </div>
+      <div class="day chrome"><span class="play">▶</span>
+        <div><div class="day-name">Day04</div><div class="day-meta">3 TÀI LIỆU · PUBLISHED</div></div>
+        <span class="chev">⌄</span>
+      </div>
+      <div class="day chrome"><span class="play">▶</span>
+        <div><div class="day-name">Day05</div><div class="day-meta">3 TÀI LIỆU · PUBLISHED</div></div>
+        <span class="chev">⌄</span>
+      </div>
+      <div class="day chrome"><span class="play">▶</span>
+        <div><div class="day-name">Day06</div><div class="day-meta">1 TÀI LIỆU · PUBLISHED</div></div>
+        <span class="chev">⌄</span>
+      </div>
+
+      <details class="demo-script">
+        <summary>Kịch bản demo — click nhận diện · quét ảnh · 4 đường đi</summary>
+        <ol>
+          <li><b>Click nhận diện (happy path):</b> Slide 12 → <b>bấm một phát</b> vào giữa sơ đồ bên phải → máy tự khoanh trọn sơ đồ → giải thích + trích dẫn trang.</li>
+          <li><b>Quét ảnh khi PDF không đọc được text:</b> sang <b>Slide 24</b> — băng vàng báo trang không có lớp text → bấm vào ô ① → quét ảnh vùng đó, trả lời kèm thumbnail trang đã đọc.</li>
+          <li><b>Hỏi slide khác mà không rời chỗ đang đọc:</b> đang ở Slide 12, gõ <code>giải thích slide 24</code> → trả lời về slide 24 nhưng <b>màn hình vẫn ở slide 12</b>, kèm nút <b>"↪ Đi tới slide 24"</b>.</li>
+          <li><b>Giới hạn dữ liệu:</b> mở <b>"🔒 Đã gửi đi…"</b> dưới câu trả lời — chỉ 1 ảnh vùng + text trong vùng, đúng 1 trang.</li>
+          <li><b>Sai trang (bẫy số trang lệch):</b> bấm <b>"Không phải trang này?"</b> → nhập trang khác → đọc lại.</li>
+          <li><b>Low-confidence ②:</b> bấm vào khe hẹp giữa hai hộp trên Slide 24 → dò ra dải mảnh, không chắc → hỏi lại. Hoặc gõ <code>giải thích cái sơ đồ đó</code> → hỏi lại slide nào.</li>
+          <li><b>Không căn cứ ①:</b> bấm vào vùng trống hẳn → nói không nhận diện được, không bịa.</li>
+          <li><b>Ngoài phạm vi ③:</b> bấm vào sơ đồ + gõ <code>làm hộ bài tập này</code> → từ chối, và <b>không gửi gì ra ngoài</b>.</li>
+          <li><b>Correction:</b> <b>kéo chuột</b> khoanh tay · <b>"Giải thích đơn giản hơn"</b> · 👎 <b>"Sai chỗ nào?"</b>.</li>
+          <li><b>Slide bài giảng thật:</b> bấm <b>Slide buổi 1</b> ở trên (cần chạy qua server tĩnh).</li>
+        </ol>
+        <p class="chrome-note">Day01 · Day03–Day06 và các nút mờ là <b>khung giao diện VLearn</b> dựng lại cho đúng bối cảnh — không thuộc lát cắt nên cố tình không bấm được.</p>
+      </details>
+    </div>
+  </aside>
+
+  <!-- ---------- Khung đọc tài liệu ---------- -->
+  <section class="reader">
+    <div class="reader-bar">
+      <div class="tool-group">
+        <button class="tool active">◈ Đọc</button>
+        <button class="tool chrome" disabled title="Khung giao diện VLearn — không thuộc lát cắt">✎ Bút</button>
+        <button class="tool chrome" disabled title="Khung giao diện VLearn — không thuộc lát cắt">🖍 Highlight</button>
+        <button class="tool chrome" disabled title="Khung giao diện VLearn">···</button>
+      </div>
+      <!-- Băng chế độ đọc: học viên biết TRƯỚC KHI hỏi là trang này
+           đọc được text hay phải quét ảnh (HAX G2) -->
       <div class="page-meta" id="page-meta"></div>
-      <p class="hint"><b>Bấm vào</b> sơ đồ / biểu đồ / đoạn chữ — AI tự nhận diện ranh giới phần đó. Muốn chọn khác thì <b>kéo chuột</b> khoanh tay. Hoặc gõ <b>"giải thích slide 24"</b> ở ô chat.</p>
+    </div>
 
+    <p class="hint"><b>Bấm vào</b> sơ đồ / biểu đồ / đoạn chữ — AI tự nhận diện ranh giới phần đó. Muốn chọn khác thì <b>kéo chuột</b> khoanh tay. Hoặc gõ <b>"giải thích slide 24"</b> ở ô chat.</p>
+
+    <div class="paper">
       <div class="slide-wrap" id="slide-wrap">
         <canvas id="slide" width="960" height="540"></canvas>
         <canvas id="overlay" width="960" height="540"></canvas>
@@ -39,53 +153,101 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <details class="demo-script">
-        <summary>Kịch bản demo — click nhận diện · quét ảnh · 4 đường đi trải nghiệm</summary>
-        <ol>
-          <li><b>Click nhận diện (happy path):</b> Slide 12 → <b>bấm một phát</b> vào giữa sơ đồ bên phải → máy tự khoanh trọn sơ đồ → giải thích + trích dẫn trang.</li>
-          <li><b>Quét ảnh khi PDF không đọc được text:</b> sang <b>Slide 24</b> — băng vàng báo trang không có lớp text → bấm vào ô ① → quét ảnh vùng đó, trả lời kèm thumbnail trang đã đọc.</li>
-          <li><b>Hỏi slide khác mà không rời chỗ đang đọc:</b> đang ở Slide 12, gõ <code>giải thích slide 24</code> → trả lời về slide 24 nhưng <b>màn hình vẫn ở slide 12</b>, kèm nút <b>"↪ Đi tới slide 24"</b>.</li>
-          <li><b>Giới hạn dữ liệu:</b> mở <b>"🔒 Đã gửi đi…"</b> dưới câu trả lời — chỉ 1 ảnh vùng + text trong vùng, đúng 1 trang.</li>
-          <li><b>Sai trang (bẫy số trang lệch):</b> bấm <b>"Không phải trang này?"</b> → nhập trang khác → đọc lại.</li>
-          <li><b>Low-confidence ②:</b> bấm vào khe hẹp giữa hai hộp trên Slide 24 → máy dò ra dải mảnh, không chắc → hỏi lại. Hoặc gõ <code>giải thích cái sơ đồ đó</code> (không nêu số slide) → hỏi lại slide nào.</li>
-          <li><b>Không căn cứ ①:</b> bấm vào vùng trống hẳn (dưới slide 12) → nói không nhận diện được, không bịa.</li>
-          <li><b>Ngoài phạm vi ③:</b> bấm vào sơ đồ + gõ <code>làm hộ bài tập này</code> → từ chối, và <b>không gửi gì ra ngoài</b>.</li>
-          <li><b>Correction:</b> <b>kéo chuột</b> khoanh tay khi máy dò không đúng ý · nút <b>"Giải thích đơn giản hơn"</b> · 👎 <b>"Sai chỗ nào?"</b>.</li>
-        </ol>
-      </details>
-    </section>
+    <!-- Thanh trang THẬT (app.js đổ nút từng trang vào đây) -->
+    <div class="pager"><div class="page-tabs" id="page-tabs"></div></div>
+  </section>
 
-    <aside class="chat-panel">
-      <div class="chat-head">
-        <div class="title">AI Tutor</div>
-        <div class="sub">Giải thích vùng bạn chọn · luôn cho biết đọc từ text hay từ ảnh quét</div>
+  <!-- ---------- Panel VLearn Tutor ---------- -->
+  <aside class="tutor" id="tutor">
+    <div class="tutor-head">
+      <span class="tutor-ava" aria-hidden="true">🤖</span>
+      <div class="tutor-id">
+        <div class="tutor-name">VLearn Tutor</div>
+        <div class="tutor-sub">Giải thích đúng vùng bạn chọn · luôn cho biết đọc từ text hay ảnh quét</div>
       </div>
-      <div class="chat-body" id="chat-body">
-        <div class="empty-chat">
-          Chưa có hội thoại.<br />
-          Khoanh một vùng trên slide 👈 hoặc hỏi <br /><i>"giải thích slide 24"</i> ở ô dưới.
-        </div>
-      </div>
-      <div class="chat-input">
-        <input id="chat-q" type="text" placeholder='Hỏi về một slide bất kỳ — vd: "giải thích slide 24"' />
-        <button id="chat-send">Gửi</button>
-      </div>
-    </aside>
-  </main>
+      <button class="icon-btn only-narrow" id="btn-tutor-close" title="Thu gọn">✕</button>
+    </div>
 
-  <!-- lib: cấu hình + dữ liệu + nguồn slide -->
-  <script src="lib/config.js"></script>
-  <script src="lib/mock-data.js"></script>
-  <script src="lib/pdf-source.js"></script>
-  <script src="lib/content-detector.js"></script>
-  <script src="lib/mock-ai.js"></script>
-  <!-- quyết định AI trung tâm (mức Sketch: chạy thẳng ở client) -->
-  <script src="../server/explain.js"></script>
-  <!-- components -->
-  <script src="components/SlideViewer.js"></script>
-  <script src="components/RegionSelector.js"></script>
-  <script src="components/ExplainPanel.js"></script>
-  <script src="app.js"></script>
+    <div class="chat-body" id="chat-body">
+      <div class="empty-chat">
+        Chưa có hội thoại.<br />
+        Bấm vào một phần trên slide 👈 hoặc hỏi <br /><i>"giải thích slide 24"</i> ở ô dưới.
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <input id="chat-q" type="text" placeholder="Nhập câu hỏi hoặc bấm vào phần cần hỏi trên slide…" />
+      <button id="chat-send" title="Gửi">➤</button>
+    </div>
+  </aside>
+
+</main>
+
+<!-- Màn hẹp: panel Tutor thu thành nút nổi, mở ra là tấm trượt từ dưới lên -->
+<button class="fab only-narrow" id="btn-tutor-open">
+  <span aria-hidden="true">🤖</span> Hỏi Tutor
+</button>
+
+<!-- lib: cấu hình + dữ liệu + nguồn slide -->
+<script src="lib/config.js"></script>
+<script src="lib/mock-data.js"></script>
+<script src="lib/pdf-source.js"></script>
+<script src="lib/content-detector.js"></script>
+<script src="lib/mock-ai.js"></script>
+<!-- quyết định AI trung tâm (mức Sketch: chạy thẳng ở client) -->
+<script src="../server/explain.js"></script>
+<!-- components -->
+<script src="components/SlideViewer.js"></script>
+<script src="components/RegionSelector.js"></script>
+<script src="components/ExplainPanel.js"></script>
+<script src="app.js"></script>
+
+<!-- Sáng/tối + hai ngăn kéo của màn hẹp.
+     Thuần giao diện, không chạm vào logic chọn vùng / gọi AI nên để tại chỗ. -->
+<script>
+  (function () {
+    // ---- sáng / tối ----
+    const btn = document.getElementById("btn-theme");
+    if (localStorage.getItem("VLEARN_THEME") === "dark") document.body.classList.add("dark");
+    const paint = () => { btn.textContent = document.body.classList.contains("dark") ? "☀" : "🌙"; };
+    paint();
+    btn.onclick = () => {
+      const dark = document.body.classList.toggle("dark");
+      localStorage.setItem("VLEARN_THEME", dark ? "dark" : "light");
+      paint();
+    };
+
+    // ---- ngăn kéo: học liệu (trái) và Tutor (dưới) ----
+    const body = document.body;
+    const scrim = document.getElementById("scrim");
+
+    const close = () => body.classList.remove("nav-open", "tutor-open");
+    const openNav = () => { body.classList.add("nav-open"); body.classList.remove("tutor-open"); };
+    const openTutor = () => {
+      body.classList.add("tutor-open");
+      body.classList.remove("nav-open");
+      document.getElementById("chat-q").focus();
+    };
+
+    document.getElementById("btn-menu").onclick = openNav;
+    document.getElementById("btn-tutor-open").onclick = openTutor;
+    document.getElementById("btn-tutor-close").onclick = close;
+    scrim.onclick = close;
+    addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+    // Chọn xong một vùng thì câu trả lời nằm trong panel Tutor — ở màn hẹp
+    // panel đang đóng, nên tự mở ra. Không có bước này thì học viên bấm vào
+    // slide và tưởng máy không phản hồi gì.
+    const chat = document.getElementById("chat-body");
+    new MutationObserver(() => {
+      if (matchMedia("(max-width: 980px)").matches) body.classList.add("tutor-open");
+    }).observe(chat, { childList: true });
+
+    // Về lại màn rộng thì bỏ mọi trạng thái ngăn kéo, tránh kẹt lớp phủ
+    matchMedia("(min-width: 981px)").addEventListener("change", (e) => { if (e.matches) close(); });
+  })();
+</script>
 </body>
 </html>

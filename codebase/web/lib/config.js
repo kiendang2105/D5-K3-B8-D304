@@ -43,6 +43,17 @@ const CONFIG = {
   TEXT_MARGIN_PX: 24,         // chỉ lấy text nằm trong vùng chọn + lề này
   MAX_TEXT_CHARS: 1200,       // trần ký tự text gửi kèm
 
+  // --- Ký ức hội thoại (chỉ dùng cho câu hỏi tiếp về ĐÚNG vùng đó) ---
+  HISTORY_MAX_TURNS: 3,       // gửi kèm tối đa 3 lượt gần nhất CỦA CÙNG TRANG
+  HISTORY_MAX_CHARS: 700,     // trần ký tự mỗi câu trả lời cũ
+
+  // --- Tự kiểm grounding (ghi vào trace, KHÔNG hiện cho học viên) ---
+  // Ngưỡng gắn cờ "đọc case này trước" khi chấm tay chiều H.
+  // Đo thử: câu từ chối trung thực chỉ có 2 từ nội dung mà vẫn ra 100% lệch
+  // -> phải có sàn số từ, nếu không thì cờ toàn báo động sai và bị bỏ qua.
+  PROBE_MIN_WORDS: 8,         // dưới ngần này từ nội dung thì không gắn cờ
+  PROBE_FLAG_RATIO: 70,       // % từ nội dung không tìm thấy trong text đã gửi
+
   // --- Render ---
   // Chiều rộng tối đa khi render trang để gửi cho vision.
   // Cao hơn = chữ rõ hơn nhưng tốn token ảnh và chậm hơn.
@@ -59,12 +70,36 @@ const CONFIG = {
   // model và nhận 404 giữa lúc demo.
   GEMINI_MODEL: null,
   GEMINI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/models",
-  // Thứ tự ưu tiên khi tự chọn model (khớp theo chuỗi con trong tên)
-  GEMINI_PREFER: ["flash-latest", "2.5-flash", "2.0-flash", "flash", "pro"],
+  // Thứ tự ưu tiên khi tự chọn model (khớp theo chuỗi con trong tên).
+  //
+  // Ưu tiên flash-lite vì hai lý do đo được:
+  //   1. VLearn production chạy `gemini-3.1-flash-lite` (1.101/1.261 turn theo
+  //      DATA_DICTIONARY). Đo prototype trên cùng model thì kết quả mới nói
+  //      được điều gì về sản phẩm thật.
+  //   2. Free tier của bản lite chịu được nhiều request/phút hơn — chạy trọn
+  //      bộ 32 case trên `2.5-flash` bị 429 liên tục (xem run-01).
+  GEMINI_PREFER: [
+    "3.1-flash-lite", "flash-lite-latest", "2.5-flash-lite", "flash-lite",
+    "flash-latest", "2.5-flash", "2.0-flash", "flash", "pro",
+  ],
 
   // Đường dẫn file prompt, tính từ trang đang mở. eval/runner.html ghi đè
   // giá trị này vì nó nằm ở thư mục khác.
   PROMPT_URL: "../server/prompts/explain-region.md",
+
+  // --- Slide deck có sẵn trong data pack ---
+  // Hiện thành nút trên header, bấm là mở luôn — không phải tự chọn file.
+  // Chỉ tải được khi chạy qua server tĩnh (fetch không đọc được file://).
+  // File nằm trong .gitignore nên máy nào chưa có data pack thì nút báo lỗi rõ.
+  BUILTIN_DECKS: [
+    { label: "Slide buổi 1", url: "../../data/vlearn-pack/slides/d1-slide-hackathon.pdf" },
+    { label: "Slide buổi 2", url: "../../data/vlearn-pack/slides/d2-slide-hackathon.pdf" },
+  ],
+
+  // Giãn cách giữa các lời gọi AI thật khi chạy trọn bộ golden set.
+  // Đo thật: 4,5s (≈13 req/phút) vẫn ăn 429 với gemini-2.5-flash free tier
+  // → nới lên 7s (≈8,5 req/phút). Runner còn tự thử lại sau 30s nếu vẫn 429.
+  REAL_AI_DELAY_MS: 7000,
 
   // --- pdf.js (bản UMD 3.11.174, nạp khi user mở PDF) ---
   // Để LOCAL, không dùng CDN, vì hai lý do:
@@ -95,6 +130,11 @@ const PAGE_IN_QUESTION = /(?:slide|trang|page)\s*(?:số\s*)?(\d{1,3})/i;
 //   4. Không gửi tên file, không gửi tổng số trang, không gửi nội dung
 //      của bất kỳ trang nào khác.
 //   5. Mỗi câu trả lời kèm bảng "Đã gửi đi những gì" để học viên tự kiểm.
+//   6. Câu hỏi TIẾP được gửi kèm lịch sử, nhưng chỉ là CHỮ của các lượt
+//      trước (câu học viên đã gõ + câu model đã trả lời) và chỉ của ĐÚNG
+//      trang đang bàn. Không lượt nào của trang khác được trộn vào — làm
+//      vậy là gián tiếp gửi nội dung nhiều trang trong một request.
+//      Bảng công khai ghi rõ số lượt và số ký tự lịch sử đã gửi.
 //
 // Kiểm lại: Explain.buildPayload() là chỗ duy nhất đóng gói dữ liệu ra
 // ngoài — soát hàm đó là soát được toàn bộ đường dữ liệu rời máy.

@@ -1,0 +1,154 @@
+[
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "Dòng này viết gì?",
+    "model": "gemini-flash-latest",
+    "latency_ms": 6910,
+    "usage": {
+      "promptTokenCount": 1323,
+      "candidatesTokenCount": 93,
+      "totalTokenCount": 2305,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 248
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1075
+        }
+      ],
+      "thoughtsTokenCount": 889,
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 404,
+      "imageH": 240,
+      "regionPctOfPage": 7,
+      "textChars": 0,
+      "textItems": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, hình ảnh bạn gửi thuộc mục số 3 nói về các trường hợp \"Ngoài phạm vi\". Nội dung đề cập đến tình huống khi người dùng đưa ra những yêu cầu vượt quá thẩm quyền hoặc không được phép làm, và đặt ra vấn đề làm sao để từ chối nhưng vẫn đem lại giá trị hữu ích. Cuối ảnh có kèm theo ví dụ minh họa cụ thể cho trường hợp này là yêu cầu \"làm hộ bài tập\"."
+  },
+  {
+    "page": 18,
+    "mode": "text",
+    "question": "Con số này nghĩa là gì?",
+    "model": "gemini-flash-latest",
+    "latency_ms": 6831,
+    "usage": {
+      "promptTokenCount": 1331,
+      "candidatesTokenCount": 94,
+      "totalTokenCount": 2420,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 246
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1085
+        }
+      ],
+      "thoughtsTokenCount": 995,
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 18,
+      "imageW": 648,
+      "imageH": 584,
+      "regionPctOfPage": 29,
+      "textChars": 23,
+      "textItems": 1,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, đây là biểu đồ thể hiện tỷ lệ trích dẫn. \n\nTrong đó, con số 53,8% đại diện cho tỷ lệ các trường hợp \"Có trích dẫn\". Con số 46,2% biểu thị tỷ lệ các trường hợp \"Trích dẫn rỗng\". Hai giá trị này cộng lại bằng 100%, phản ánh sự phân bổ giữa hai trạng thái trích dẫn trong phần dữ liệu này."
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "Giải thích bảng này",
+    "model": "gemini-flash-latest",
+    "latency_ms": 9757,
+    "usage": {
+      "promptTokenCount": 1338,
+      "candidatesTokenCount": 232,
+      "totalTokenCount": 2954,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 246
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1092
+        }
+      ],
+      "thoughtsTokenCount": 1384,
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 1398,
+      "imageH": 562,
+      "regionPctOfPage": 59,
+      "textChars": 0,
+      "textItems": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, hình ảnh này nêu ra 4 tình huống quan trọng cần lưu ý để kiểm soát hành vi và chất lượng phản hồi của AI:\n\n1. **Nguồn sự thật**: Tránh việc AI tự bịa ra thông tin khi không có căn cứ xác thực (ví dụ như dẫn sai số trang).\n2. **Mơ hồ / thiếu thông tin**: Cần có hướng xử lý (như hỏi lại hoặc từ chối) khi đầu vào người dùng đưa ra chưa rõ ràng (ví dụ yêu cầu \"giải thích cái này\" nhưng không chỉ rõ là cái nào).\n3. **Ngoài phạm vi**: Cách phản hồi từ chối sao cho vẫn có ích khi người dùng đưa ra yêu cầu không đúng quy định (ví dụ nhờ AI \"làm hộ bài tập\").\n4. **Đặc thù domain**: Mức độ ảnh hưởng khi AI cung cấp sai kiến thức chuyên môn (ví dụ giải thích sai công thức trên sơ đồ), dẫn đến người dùng tiếp thu sai và mất niềm tin.\n\nHy vọng phần tóm tắt này giúp bạn dễ hình dung nội dung trong ảnh nhé!"
+  },
+  {
+    "page": 1,
+    "mode": "text",
+    "question": "Phần này nói gì?",
+    "model": "gemini-flash-latest",
+    "latency_ms": 7182,
+    "usage": {
+      "promptTokenCount": 1363,
+      "candidatesTokenCount": 97,
+      "totalTokenCount": 2229,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1106
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 257
+        }
+      ],
+      "thoughtsTokenCount": 769,
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 1,
+      "imageW": 904,
+      "imageH": 160,
+      "regionPctOfPage": 11,
+      "textChars": 87,
+      "textItems": 2,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn! Phần nội dung này giới thiệu về chủ đề nền tảng của AI và LLM (\"AI & LLM Foundation\"). \n\nDòng thông điệp bên dưới đặt ra một câu hỏi gợi mở: tuy chúng ta sử dụng AI hằng ngày, nhưng bản chất bên trong nó thực sự đang hoạt động như thế nào. Như vậy, phần này hướng người học đến việc tìm hiểu sâu hơn về cơ chế vận hành phía sau các công cụ AI quen thuộc."
+  }
+]

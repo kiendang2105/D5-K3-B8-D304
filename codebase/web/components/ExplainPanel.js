@@ -72,6 +72,38 @@ const ExplainPanel = {
     bubble.innerHTML = mdBold(acc);
   },
 
+  // Phần kiến thức chung — TÁCH KHỎI bong bóng chính, không trộn vào.
+  // Học viên phải thấy ngay câu nào dựa vào slide, câu nào không. Trộn hai
+  // loại là đúng cái lỗi lớp ① mà sản phẩm phải tránh.
+  addOutsideDoc(div, text) {
+    const box = el("div", "outside-doc");
+    const cap = el("div", "cap");
+    cap.textContent = "💡 Ngoài tài liệu — kiến thức chung, KHÔNG có trong slide này";
+    box.appendChild(cap);
+    const body = el("div", "body");
+    body.innerHTML = mdBold(text);
+    box.appendChild(body);
+    div.appendChild(box);
+    return body;
+  },
+
+  // Gợi ý câu hỏi tiếp. Trường `follow_ups` của tutor hiện tại chưa dùng lần
+  // nào (0/1.261 turn theo DATA_DICTIONARY) — đây là chỗ lấp.
+  addSuggestions(div, list, onPick) {
+    if (!list || !list.length) return;
+    const box = el("div", "suggestions");
+    const cap = el("span", "cap");
+    cap.textContent = "Hỏi tiếp:";
+    box.appendChild(cap);
+    for (const q of list) {
+      const b = el("button");
+      b.textContent = q;
+      b.onclick = () => onPick(q);
+      box.appendChild(b);
+    }
+    div.appendChild(box);
+  },
+
   // Badge chế độ đọc — cho học viên biết câu trả lời đến từ đâu (G2)
   addModeBadge(div, mode) {
     const b = el("span", "mode-badge " + (mode === "scan" ? "scan" : "text"));
@@ -132,6 +164,10 @@ const ExplainPanel = {
     const ul = el("ul");
     const rows = [
       `Trang gửi đi: <b>duy nhất trang ${d.pageNum}</b> (trần cứng: 1 trang/câu hỏi)`,
+      d.historyTurns
+        ? `Hội thoại trước: <b>${d.historyTurns} lượt</b> (${d.historyChars} ký tự) — chỉ chữ, ` +
+          "chỉ của đúng trang này; không có ảnh hay nội dung tài liệu mới nào"
+        : null,
       d.wholePage
         ? `Ảnh: <b>cả phần có nội dung của trang</b> — ${d.imageW}×${d.imageH}px. ` +
           "Vì bạn hỏi cả slide; muốn gửi ít hơn thì bấm vào đúng phần cần hỏi."
@@ -142,6 +178,7 @@ const ExplainPanel = {
       "Tên file, tổng số trang, nội dung các trang khác: <b>không gửi</b>",
     ];
     for (const r of rows) {
+      if (!r) continue; // dòng lịch sử chỉ hiện khi thực sự có gửi
       const li = el("li");
       li.innerHTML = r;
       ul.appendChild(li);
@@ -157,8 +194,16 @@ const ExplainPanel = {
   },
 
   // Nút hành động: sửa dễ (G9) + mời feedback chi tiết (G15)
-  addActions(div, zone) {
+  // onShowRegion: nháy sáng vùng đã đọc trên slide để đối chiếu (G11)
+  addActions(div, zone, onShowRegion) {
     const actions = el("div", "actions");
+
+    if (onShowRegion) {
+      const show = el("button");
+      show.textContent = "◎ Vùng này ở đâu?";
+      show.onclick = () => onShowRegion();
+      actions.appendChild(show);
+    }
 
     if (zone) {
       const simpler = el("button");
@@ -183,7 +228,7 @@ const ExplainPanel = {
         up.disabled = true;
         console.log("[MOCK feedback log]", { why });
         const { bubble } = this.addBot();
-        await this.stream(bubble, MOCK_REPLIES.feedbackThanks);
+        await this.stream(bubble, REPLIES.feedbackThanks);
       }
     };
     actions.appendChild(up);

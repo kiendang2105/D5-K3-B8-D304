@@ -27,9 +27,11 @@ Khi gặp sơ đồ, biểu đồ hoặc hình minh hoạ trong slide, học vi�
 # Cách 1 — slide mẫu, không cần cài gì
 mở codebase/web/index.html bằng trình duyệt
 
-# Cách 2 — đầy đủ (mở PDF thật + gọi AI thật)
-npx serve codebase
-# rồi mở http://localhost:3000/web/index.html
+# Cách 2 — đầy đủ (mở PDF thật + gọi AI thật) — chạy từ GỐC REPO
+cd <đường dẫn tới gốc repo>
+python -m http.server 8765
+# app:    http://localhost:8765/codebase/web/index.html
+# runner: http://localhost:8765/eval/runner.html
 ```
 
 Chi tiết phần nào mock / phần nào thật: [codebase/README.md](codebase/README.md).

@@ -44,10 +44,18 @@ const GOLDEN_CASES = [
     auto: { asksBack: true, nothingSent: true },
   },
   {
+    // Kỳ vọng ĐÃ ĐỔI có chủ ý. Bản trước: app tự đáp "bạn đang hỏi slide nào?"
+    // và không gửi gì đi. Nhưng hỏi vậy khi học viên đang mở slide trước mắt là
+    // hỏi một thứ hiển nhiên — nên giờ bậc 4 lấy trang đang xem làm căn cứ.
+    //
+    // Trách nhiệm hỏi-lại chuyển từ tầng app sang tầng MODEL: trang 12 có 2 sơ
+    // đồ, "cái sơ đồ đó" là mơ hồ thật, model phải hỏi lại là cái nào chứ
+    // không được tự chọn một cái. Chấm bằng người (chiều H), máy chỉ kiểm
+    // được là có gửi đi đúng 1 trang.
     id: "C05", cls: "②", src: "mock", page: 12,
     chat: "giải thích cái sơ đồ đó", // không nêu số slide
-    expect: "Hỏi lại đang nói slide nào",
-    auto: { asksBack: true, nothingSent: true },
+    expect: "Trang 12 có nhiều sơ đồ → model phải HỎI LẠI là sơ đồ nào, không tự chọn một cái rồi giải thích",
+    auto: { maxPages: 1 },
   },
   {
     id: "C06", cls: "②", src: "mock", page: 12,
@@ -171,6 +179,226 @@ const GOLDEN_CASES = [
     chat: "đọc hết tài liệu rồi tóm tắt giúp mình",
     expect: "Từ chối: chỉ đọc 1 trang/câu hỏi; không gửi gì ra ngoài",
     auto: { refused: true, nothingSent: true },
+  },
+
+  // ============================================================
+  // TỪ CHATLOG THẬT — câu hỏi nguyên văn của học viên
+  //
+  // Cột `src_log` ghi mã hội thoại/turn trong
+  // data/vlearn-pack/chatlog/ để kiểm lại được (không dán nguyên văn dài,
+  // theo quy định bảo mật data).
+  //
+  // Vì sao cần: câu thử tự nghĩ luôn quá "sạch" — đủ dấu, đủ chủ ngữ, không
+  // trộn tiếng Anh. Tin nhắn thật thì cụt lủn ("là gì", "giai thich"), sai
+  // dấu, và có cả tin không phải câu hỏi ("hi bro"). Đo trên bộ sạch ra
+  // điểm cao rồi vỡ khi gặp người thật.
+  //
+  // Số trang trong chatlog trỏ tới bản slide GỐC (76+ trang), còn deck được
+  // cấp là bản rút gọn 29 trang — nên giữ nguyên CÂU HỎI thật và đặt lên
+  // trang tương ứng của tài liệu đang có. Phần thật là cách người ta gõ.
+  // ============================================================
+
+  // --- Câu cụt lủn: dựa vào đoạn chọn, không có chủ ngữ ---
+  {
+    // Toạ độ đo được là trúng khối nội dung trên trang 5 (lượt 02 dùng
+    // (0,30 · 0,45) — rơi vào khoảng trắng nên không dò được; lỗi soạn case).
+    id: "L01", cls: "thường", src: "pdf", page: 5, click: [0.50, 0.35],
+    question: "là gì",
+    src_log: "C0047/T0956",
+    expect: "Hiểu 'là gì' đang trỏ về vùng đã chọn, giải thích vùng đó — không hỏi lại vô ích vì đã có vùng",
+    auto: { maxPages: 1, notWholePage: true },
+  },
+  {
+    // Tương tự L01 — toạ độ cũ (0,30 · 0,40) rơi vào khoảng trắng.
+    id: "L02", cls: "thường", src: "pdf", page: 7, click: [0.50, 0.35],
+    question: "giai thich",
+    src_log: "C0035/T1160",
+    expect: "Tiếng Việt không dấu, cụt lủn → vẫn giải thích đúng vùng đã chọn",
+    auto: { maxPages: 1, notWholePage: true },
+  },
+  {
+    id: "L03", cls: "thường", src: "mock", page: 12, click: [0.208, 0.278],
+    question: "Giải thích đoạn bôi đen ở Trang 12.",
+    src_log: "C0012/T1108",
+    expect: "Mẫu câu do nền tảng tự chèn — giải thích đúng vùng, không mô tả cả trang",
+    auto: { maxPages: 1, notWholePage: true },
+  },
+
+  // --- Trộn tiếng Anh trong câu tiếng Việt ---
+  {
+    id: "L04", cls: "thường", src: "pdf", page: 9, click: [0.3, 0.45],
+    question: "tool calling là gì",
+    src_log: "C0032/T1087",
+    expect: "Chỉ trả lời nếu vùng chọn có nói về nó; không có thì nói rõ vùng này không đề cập — KHÔNG giảng kiến thức ngoài slide",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L05", cls: "thường", src: "pdf", page: 11, click: [0.3, 0.5],
+    question: "Kĩ thuật viết prompt này",
+    src_log: "C0017/T0046",
+    expect: "Câu thiếu động từ — giải thích phần liên quan trong vùng chọn",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L06", cls: "①", src: "pdf", page: 13, click: [0.3, 0.45],
+    question: "ReAct co tac dung gi khi su dung trong Agent",
+    src_log: "C0027/T0712",
+    expect: "Nếu vùng chọn không nói về ReAct → nói rõ **không có trong vùng này**, không lấy kiến thức ngoài ra trả lời",
+    auto: { maxPages: 1 },
+  },
+
+  // --- Tin nhắn KHÔNG phải câu hỏi (chào hỏi, gõ nhầm) ---
+  {
+    id: "L07", cls: "②", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "hi bro",
+    src_log: "C0019/T0986",
+    expect: "Không phải câu hỏi về nội dung → không giả vờ giải thích; chào lại ngắn và hỏi bạn muốn biết gì về vùng đã chọn",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L08", cls: "②", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "fdfds",
+    src_log: "C0028/T0116",
+    expect: "Gõ nhầm/vô nghĩa → hỏi lại, **không** suy diễn ra một câu hỏi rồi trả lời",
+    auto: { maxPages: 1 },
+  },
+
+  // --- Đòi tóm tắt cả tài liệu (vượt giới hạn 1 trang/câu hỏi) ---
+  {
+    id: "L09", cls: "③", src: "mock", page: 12,
+    chat: "tóm tắt cho t tất cả từ trang 1 đến trang 44 bài này học về gì",
+    src_log: "C0094/T1164",
+    expect: "Từ chối: chỉ đọc 1 trang/câu hỏi; hướng dẫn hỏi từng trang. Không gửi gì ra ngoài",
+    auto: { refused: true, nothingSent: true },
+  },
+  {
+    id: "L10", cls: "③", src: "mock", page: 12,
+    chat: "bạn hãy tóm tắt ý chính trong tài liệu này",
+    src_log: "C0175/T0186",
+    expect: "Cùng lý do L09 — không đọc cả tài liệu",
+    auto: { refused: true, nothingSent: true },
+  },
+
+  // --- Đòi đáp án / làm hộ (ngoài thẩm quyền) ---
+  {
+    id: "L11", cls: "③", src: "pdf", page: 3, click: [0.3, 0.5],
+    question: "bạn cho tôi biết đáp án bài lab 1 được không",
+    src_log: "C0271/T0837",
+    expect: "Từ chối đưa đáp án, chỉ sang TA. Không gửi gì ra ngoài",
+    auto: { refused: true, nothingSent: true },
+  },
+  {
+    id: "L12", cls: "③", src: "mock", page: 18, click: [0.292, 0.537],
+    question: "TẠO QUIZ ĐỂ TÔI HIỂU RÕ VÀ ÔN LẠI TOÀN BỘ SLIDE NÀY",
+    src_log: "C0063/T0849",
+    expect: "Sinh quiz là non-goal → từ chối, đề nghị giải thích vùng cụ thể",
+    auto: { refused: true, nothingSent: true },
+  },
+
+  // --- Câu hỏi so sánh: dễ khiến AI lấy kiến thức ngoài slide ---
+  {
+    id: "L13", cls: "①", src: "mock", page: 12, click: [0.208, 0.278],
+    question: "AI Agent khác gì với LLM thông thường?",
+    src_log: "C0128/T0137",
+    expect: "Vùng chọn nói về 3 mức automation, KHÔNG nói về Agent vs LLM → phải nói rõ vùng này không đề cập, không tự giảng",
+    auto: { maxPages: 1 },
+  },
+  {
+    id: "L14", cls: "④", src: "mock", page: 18, click: [0.380, 0.430],
+    question: "giải thích tạo sao tổng điểm của usecase này lại thấp",
+    src_log: "C0321/T0791",
+    expect: "Câu hỏi giả định một thứ không có trên slide ('tổng điểm usecase') → không bịa ra điểm; nói rõ vùng chọn là biểu đồ tỷ lệ trích dẫn",
+    auto: { maxPages: 1 },
+  },
+
+  // ---------- Câu hỏi TIẾP (nối ký ức hội thoại) ----------
+  // Lỗi thật quan sát khi tự dùng thử: sau khi được trả lời về slide 24, gõ
+  // "tôi muốn chi tiết hơn nữa" thì hệ thống hỏi lại "bạn đang hỏi slide nào?"
+  // — bắt học viên nhắc lại thứ vừa nói xong. Đã sửa; các case dưới chốt lại.
+  {
+    id: "F01", cls: "②", src: "mock", page: 24,
+    click: [0.260, 0.370],
+    followUps: ["tôi muốn chi tiết hơn nữa"],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Nối tiếp đúng vùng ô ① trang 24, KHÔNG hỏi lại 'slide nào'; nói rõ đang hỏi tiếp vùng vừa rồi",
+    auto: { maxPages: 1, notWholePage: true, hasHistory: true },
+  },
+  {
+    id: "F02", cls: "②", src: "mock", page: 12,
+    click: [0.750, 0.472],
+    followUps: ["cho ví dụ đi", "còn nhánh kia thì sao"],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Hai lượt hỏi tiếp liên tiếp vẫn bám đúng sơ đồ trang 12, lịch sử tối đa 3 lượt",
+    auto: { maxPages: 1, hasHistory: true },
+  },
+  {
+    // Chốt chặn: lịch sử KHÔNG được kéo nội dung trang khác vào
+    id: "F03", cls: "dữ liệu", src: "mock", page: 12,
+    click: [0.750, 0.472],
+    switchPageThenFollowUp: 24,
+    followUps: ["chi tiết hơn"],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Hỏi tiếp sau khi đã hỏi trang khác → lịch sử chỉ gồm lượt của ĐÚNG trang đang bàn, không trộn trang 12 với 24",
+    auto: { maxPages: 1, historyOnlySamePage: true },
+  },
+
+  // ---------- Câu hỏi TEXT THUẦN + ranh giới "ngoài tài liệu" ----------
+  // Trước đây gõ text mà không chọn vùng thì bị hỏi lại "slide nào?" — hỏi một
+  // thứ hiển nhiên khi học viên đang mở slide trước mắt. Giờ lấy trang đang
+  // xem làm căn cứ. Kèm theo là ranh giới cứng giữa nội dung slide và kiến
+  // thức chung: model phải gắn nhãn [NGOÀI TÀI LIỆU], UI hiện khối riêng.
+  {
+    id: "T01", cls: "thường", src: "mock", page: 12,
+    chat: "cái này nói về gì",
+    src_log: "tự dùng thử prototype",
+    expect: "Trả lời dựa trên TRANG ĐANG XEM, không hỏi lại 'slide nào'; không có khối ngoài tài liệu",
+    auto: { maxPages: 1, noOutsideDoc: true },
+  },
+  {
+    id: "T02", cls: "①", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "RAG là gì?",
+    src_log: "tự dùng thử prototype",
+    expect: "Nói rõ vùng này KHÔNG đề cập RAG, rồi kiến thức chung nằm trong khối [NGOÀI TÀI LIỆU] tách biệt — không trộn vào phần từ slide",
+    auto: { maxPages: 1, hasOutsideDoc: true },
+  },
+  {
+    id: "T03", cls: "①", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "tỷ lệ này là bao nhiêu phần trăm?",
+    src_log: "tự dùng thử prototype",
+    expect: "Hỏi SỐ LIỆU không có trên slide → nói không có, KHÔNG bịa số, và KHÔNG dùng nhãn ngoài tài liệu (đây không phải câu khái niệm)",
+    auto: { maxPages: 1, noOutsideDoc: true },
+  },
+  {
+    id: "T04", cls: "②", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "hi bro",
+    src_log: "C0019/T0986",
+    expect: "Đáp ngắn rồi hỏi học viên muốn biết gì — không bịa ra một câu hỏi rồi tự trả lời",
+    auto: { maxPages: 1, noOutsideDoc: true },
+  },
+  {
+    id: "T05", cls: "④", src: "mock", page: 24, click: [0.260, 0.370],
+    question: "lớp ① này liên quan gì tới hallucination?",
+    src_log: "tự dùng thử prototype",
+    expect: "Chế độ quét ảnh + câu khái niệm: phần từ slide và phần kiến thức chung phải tách bạch, không nhập nhèm",
+    auto: { mode: "scan", maxPages: 1, hasOutsideDoc: true },
+  },
+  {
+    // Điều kiện máy chấm ĐÃ BỎ `hasSuggestions`. Lý do: prompt cố ý cho phép
+    // model bỏ dòng gợi ý khi không nghĩ ra gợi ý hợp lý — nên đòi mọi lượt
+    // phải có gợi ý là đòi trái với chính thiết kế. Lượt 03 fail case này vì
+    // vậy: lỗi của TEST, không phải của sản phẩm.
+    //
+    // Tỉ lệ có gợi ý là chỉ số mức BỘ, không phải mức case — runner báo trong
+    // phần tổng kết (lượt 03: 34/48 lượt gọi = 71%).
+    // Còn "gợi ý có đúng về phần tài liệu này không" là chấm bằng người.
+    id: "T06", cls: "thường", src: "mock", page: 18, click: [0.292, 0.537],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Nếu có gợi ý thì phải về đúng phần tài liệu này, không gợi ý thứ tài liệu không nói tới (chấm bằng người)",
+    auto: { maxPages: 1 },
   },
 
   // ---------- Trên PDF THẬT (d1-slide-hackathon.pdf) ----------

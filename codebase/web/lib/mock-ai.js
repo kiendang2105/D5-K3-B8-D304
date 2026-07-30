@@ -15,16 +15,14 @@ const MockAI = {
     // tránh khoe "đã quét trang 24" trong khi thực chất chỉ từ chối.
     // (③ ngoài phạm vi đã bị chặn ở Explain.run trước khi tới đây)
 
-    // ② Mơ hồ: vùng chọn quá nhỏ, không chắc user hỏi gì
-    const ratio = (region.w * region.h) / (page.width * page.height);
-    if (ratio < CONFIG.MIN_SEL_RATIO) {
-      return { text: MOCK_REPLIES.tooSmall, mode, grounded: false };
-    }
+    // ② vùng quá nhỏ và ③ ngoài phạm vi đã được Explain.run chặn TRƯỚC khi
+    // tới đây — guard là hành vi sản phẩm, phải áp cho cả AI thật, không
+    // được nằm riêng trong nhánh mock (bài học từ case C04, lượt chạy 01).
 
     // PDF thật: chưa có zone khai sẵn -> trả lời mock nêu rõ chế độ đọc
     if (!page.zones) {
       return {
-        text: MOCK_REPLIES.realPdfPlaceholder(page.num, mode),
+        text: REPLIES.realPdfPlaceholder(page.num, mode),
         citation: `Trang ${page.num}${mode === "scan" ? " (quét ảnh)" : ""}`,
         mode,
       };
@@ -34,9 +32,20 @@ const MockAI = {
     const best = this.hitZone(region, page.zones);
 
     // ① Không có căn cứ: không trúng nội dung nào -> nói thật, không bịa
-    if (!best) return { text: MOCK_REPLIES.noContent, mode, grounded: false };
+    if (!best) return { text: REPLIES.noContent, mode, grounded: false };
 
-    return { text: best.answer, citation: best.citation, mode, zone: best };
+    // Mô phỏng nhánh "câu hỏi khái niệm tài liệu không nói" — nhãn tách bạch
+    // giữa nội dung slide và kiến thức chung.
+    const q = (question || "").toLowerCase();
+    const outside = OUTSIDE_DOC_HINTS.find((h) => q.includes(h.k));
+
+    return {
+      text: best.answer,
+      outsideDoc: outside ? outside.a : null,
+      suggestions: best.suggestions || null,
+      citation: best.citation,
+      mode, zone: best,
+    };
   },
 
   hitZone(sel, zones) {

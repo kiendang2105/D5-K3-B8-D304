@@ -13,11 +13,18 @@
 | Case thường | 8–10 | 8 (C12–C19) |
 | Case hiếm | 2–4 | 3 (C20–C22) |
 | Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
+| **Từ chatlog thật** (L01–L14) | ≥10 | **14** ✅ |
+| Hỏi tiếp / ký ức hội thoại (F01–F03) | — | 3 |
 | Trên PDF thật (`d1-slide-hackathon.pdf`) | — | 4 (P01–P04) |
-| **Tổng** | ≥20 | **32** |
-| *Trong đó lấy từ chatlog thật* | ≥10 | ⬜ **0 — CẦN LÀM** |
+| **Tổng** | ≥20 | **49** |
 
-> ⚠️ **Việc còn thiếu:** ≥10 case phải lấy hoặc phát triển từ chatlog thật (`data/vlearn-pack/chatlog/`). Cách làm: tìm các lượt học viên hỏi về sơ đồ/hình/biểu đồ, lấy câu hỏi nguyên văn làm input, ghi mã hội thoại (`C0xxx` / `T0xxx`) vào cột Nguồn — **không dán nguyên văn dài** (quy định bảo mật data).
+Phủ 4 lớp chỗ khó: ① 5 · ② 7 · ③ 6 · ④ 4 — mỗi lớp ≥4, vượt yêu cầu ≥2.
+
+**F01–F03 đến từ việc tự dùng thử prototype**, không phải từ chatlog: sau khi được trả lời về ô ① slide 24, gõ *"tôi muốn chi tiết hơn nữa"* thì hệ thống hỏi lại *"bạn đang hỏi slide nào?"* — bắt học viên nhắc lại thứ vừa nói. Đây là nguồn hợp lệ thứ tư trong form CP3 (*"tình huống nhóm gặp khi tự dùng thử sản phẩm"*). `F03` là chốt chặn: lịch sử **không được** kéo nội dung trang khác vào.
+
+**14 case từ chatlog thật** giữ nguyên **câu hỏi nguyên văn** của học viên, kèm mã hội thoại/turn để kiểm lại. Vì sao cần: câu thử tự nghĩ luôn quá *sạch* — đủ dấu, đủ chủ ngữ, không trộn tiếng Anh. Tin nhắn thật thì cụt lủn (*"là gì"*, *"giai thich"*), sai dấu, và có cả tin không phải câu hỏi (*"hi bro"*, *"fdfds"*). Đo trên bộ sạch ra điểm cao rồi vỡ khi gặp người thật.
+
+*Lưu ý về số trang:* số trang trong chatlog trỏ tới bản slide **gốc** (76+ trang), còn deck được cấp là bản rút gọn 29 trang. Nên các case này giữ nguyên **câu hỏi** thật và đặt lên trang tương ứng của tài liệu đang có — phần thật là **cách người ta gõ**, không phải số trang.
 
 ## Chiều chất lượng — định nghĩa kiểm chứng được
 
@@ -129,8 +136,11 @@ Cột **Ảnh** trỏ tới file trong `eval/images/`. Cột **Nguồn**: `tự 
 
 ```bash
 npx serve .            # hoặc: python -m http.server 8765   (chạy từ gốc repo)
-# mở http://localhost:PORT/eval/runner.html
+# 1. mở http://localhost:PORT/codebase/web/index.html → nút "API key" → dán key
+# 2. mở http://localhost:PORT/eval/runner.html → "Chạy trọn bộ golden set"
 ```
+
+Chạy với AI thật thì runner tự **giãn cách `REAL_AI_DELAY_MS` = 4,5s** giữa các lời gọi và **thử lại một lần sau 30s nếu gặp 429** — free tier Gemini giới hạn theo phút, bắn 32 call liền là bị chặn giữa lượt đo.
 
 Runner chấm được phần cơ học (kích thước vùng dò, số trang gửi đi, có từ chối/hỏi lại không, chế độ đọc, ảnh có phải cả trang không) — định nghĩa trong [cases.js](cases.js). **Bốn chiều G/S/H/C vẫn phải chấm bằng người**, hai thành viên chấm độc lập rồi so.
 
