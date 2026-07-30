@@ -217,6 +217,11 @@ const Runner = {
         reply.disclosure ? String(reply.disclosure.textChars) : "-");
     }
     if (a.hasCitation) add("có trích dẫn trang", !!reply.citation);
+    if (a.hasOutsideDoc) add("có khối [NGOÀI TÀI LIỆU] tách biệt", !!reply.outsideDoc);
+    if (a.noOutsideDoc) add("KHÔNG dùng nhãn ngoài tài liệu", !reply.outsideDoc);
+    if (a.hasSuggestions) add("có gợi ý câu hỏi tiếp",
+      !!(reply.suggestions && reply.suggestions.length),
+      String((reply.suggestions || []).length));
     if (a.regionDisplay && region && page) {
       const s = CONFIG.SLIDE_W / page.width; // trang -> hệ hiển thị 960
       const dw = Math.round(region.w * s), dh = Math.round(region.h * s);

@@ -205,28 +205,17 @@ const App = {
     if (!question || this.busy) return;
     input.value = "";
 
+    // Thứ tự ưu tiên khi tìm CĂN CỨ cho câu hỏi — từ cụ thể nhất tới rộng nhất.
+    // Không còn nhánh nào bỏ mặc học viên: gõ câu gì cũng được trả lời.
+    //
+    //   1. Câu nêu rõ số slide       -> đọc trang đó
+    //   2. Đang có vùng chọn         -> vùng đó
+    //   3. Vừa hỏi xong một vùng     -> nối tiếp vùng đó (G12)
+    //   4. Không có gì cả            -> TRANG ĐANG XEM
+    //
+    // Bậc 4 là đường mới. Trước đây nó đáp "bạn đang hỏi slide nào?" ngay cả
+    // khi học viên đang mở một slide trước mắt — hỏi một thứ hiển nhiên.
     const m = question.match(PAGE_IN_QUESTION);
-
-    // Không nêu slide, không có vùng đang chọn -> ĐÂY CÓ THỂ LÀ CÂU HỎI TIẾP.
-    // Trước đây rơi thẳng vào nhánh ② "bạn đang hỏi slide nào?" — sai, vì học
-    // viên vừa được trả lời về một vùng cụ thể xong; hỏi lại là bắt họ nhắc
-    // lại thứ mình vừa nói. Nối tiếp đúng vùng vừa hỏi (HAX G12).
-    if (!m && !RegionSelector.regionPage) {
-      if (this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
-        return this.ask({
-          question,
-          region: this.lastAsk.region,
-          page: this.lastAsk.page,
-          offScreen: this.lastAsk.page !== this.currentPage,
-          followUp: true,
-        });
-      }
-      // Chưa hỏi gì trước đó thì mới thật là mơ hồ (②)
-      ExplainPanel.addUser({ question });
-      const { bubble } = ExplainPanel.addBot();
-      await ExplainPanel.stream(bubble, REPLIES.noPageInQuestion);
-      return;
-    }
 
     if (m) {
       const n = parseInt(m[1], 10);
@@ -240,8 +229,34 @@ const App = {
       return this.askAboutPage(n, question);
     }
 
-    // có vùng đang chọn sẵn trên slide đang xem -> hỏi về vùng đó
-    this.ask({ question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
+    if (RegionSelector.regionPage) {
+      return this.ask({
+        question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
+    }
+
+    if (this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
+      return this.ask({
+        question,
+        region: this.lastAsk.region,
+        page: this.lastAsk.page,
+        offScreen: this.lastAsk.page !== this.currentPage,
+        followUp: true,
+      });
+    }
+
+    // Bậc 4 — câu hỏi text thuần, lấy trang đang xem làm căn cứ
+    return this.askAboutCurrentPage(question);
+  },
+
+  // Câu hỏi text thuần: không chọn vùng, không nêu slide.
+  // Căn cứ = TRANG ĐANG XEM. Model tự quyết nội dung trang có trả lời được
+  // câu này không; không có thì nói rõ và (nếu là câu khái niệm) trả lời
+  // bằng kiến thức chung NHƯNG phải đánh dấu rõ là ngoài tài liệu.
+  async askAboutCurrentPage(question) {
+    const page = this.currentPage;
+    if (!page) return;
+    const region = { ...ContentDetector.contentBounds(page), wholePage: true };
+    return this.ask({ question, region, page, textQuestion: true });
   },
 
   // Hỏi về một trang bất kỳ mà KHÔNG chuyển màn hình.
@@ -326,7 +341,17 @@ const App = {
 
     const { div, bubble } = ExplainPanel.addBot();
     bubble.innerHTML = '<span class="cursor-blink">▌</span>';
-    await ExplainPanel.stream(bubble, reply.text);
+    if (reply.text) {
+      await ExplainPanel.stream(bubble, reply.text);
+    } else {
+      bubble.remove(); // chỉ có phần kiến thức chung, không có phần từ tài liệu
+    }
+
+    // Kiến thức chung hiện trong khối riêng, có nhãn — không trộn vào trên
+    if (reply.outsideDoc) {
+      const body = ExplainPanel.addOutsideDoc(div, "");
+      await ExplainPanel.stream(body, reply.outsideDoc);
+    }
 
     // Chỉ khoe "đọc bằng gì" khi thực sự có đọc nội dung. Câu từ chối
     // hoặc hỏi lại (grounded: false) không kèm badge/bằng chứng.
@@ -351,6 +376,11 @@ const App = {
 
     if (reply.citation) ExplainPanel.addCitation(div, reply.citation);
     ExplainPanel.addActions(div, reply.zone || null);
+    // Gợi ý câu hỏi tiếp — bấm là gửi luôn, coi như học viên tự gõ
+    ExplainPanel.addSuggestions(div, reply.suggestions, (q) => {
+      document.getElementById("chat-q").value = q;
+      this.askFromChat();
+    });
     ExplainPanel.scroll();
 
     // Ghi lượt này lại để câu hỏi tiếp nối được đúng vùng.

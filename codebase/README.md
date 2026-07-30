@@ -144,6 +144,39 @@ Cách xử lý (HAX **G12** — nhớ tương tác gần):
 - Tối đa **3 lượt**, mỗi câu trả lời cũ cắt ở **700 ký tự** (`HISTORY_MAX_TURNS` / `HISTORY_MAX_CHARS`).
 - Bảng 🔒 công khai thêm một dòng: *"Hội thoại trước: N lượt (M ký tự) — chỉ chữ, chỉ của đúng trang này"*.
 
+## Trả lời câu hỏi text thuần — và ranh giới "ngoài tài liệu"
+
+Trước đây gõ một câu hỏi mà không chọn vùng, không nêu số slide thì bị đáp *"bạn đang hỏi slide nào?"* — hỏi một thứ hiển nhiên khi học viên đang mở slide trước mắt.
+
+Giờ có **4 bậc tìm căn cứ**, từ cụ thể nhất tới rộng nhất, không bậc nào bỏ mặc học viên:
+
+| Bậc | Điều kiện | Căn cứ |
+|---|---|---|
+| 1 | Câu nêu rõ số slide | trang đó |
+| 2 | Đang có vùng chọn | vùng đó |
+| 3 | Vừa hỏi xong một vùng | vùng đó (nối tiếp, G12) |
+| 4 | Không có gì cả | **trang đang xem** |
+
+### Ranh giới cứng giữa "từ slide" và "kiến thức chung"
+
+Học viên hỏi khái niệm mà slide không nói (*"RAG là gì?"*) thì từ chối thẳng là bất tiện, mà trả lời gộp vào là **đúng lỗi lớp ①**. Cách xử lý: model được phép trả lời, nhưng **bắt buộc** gắn nhãn `[NGOÀI TÀI LIỆU]`; `Explain.parseAnswer()` tách ra, UI hiện **khối tím riêng** có nhãn *"💡 Ngoài tài liệu — kiến thức chung, KHÔNG có trong slide này"*.
+
+Phân biệt quan trọng: nhãn này chỉ dùng cho **câu khái niệm**. Hỏi **số liệu** không có trên slide (*"tỷ lệ này bao nhiêu phần trăm?"*) thì chỉ được nói là không có — không được lấy kiến thức chung ra đắp.
+
+Đo thật trên `gemini-3.1-flash-lite-preview`, 5/5 case tuân thủ:
+
+| Câu hỏi | Phần từ slide | Khối ngoài tài liệu |
+|---|---|---|
+| *"cái này nói về gì"* | giải thích 3 mức automation | — (đúng, có trong slide) |
+| *"RAG là gì?"* | *"Phần tài liệu này không đề cập đến RAG."* | ✅ định nghĩa RAG |
+| *"tỷ lệ này bao nhiêu %?"* | *"tài liệu không đề cập tỷ lệ phần trăm nào cả"* | — (đúng, đây là câu số liệu) |
+| *"hi bro"* | chào lại + hỏi muốn biết gì | — |
+| *"lớp ① liên quan gì tới hallucination?"* | nói slide không đề cập trực tiếp + nêu phần slide có nói | ✅ định nghĩa hallucination |
+
+### Gợi ý câu hỏi tiếp
+
+Model kết thúc bằng dòng `GỢI Ý: <q1> | <q2>`, UI hiện thành chip bấm được. Đây là chỗ lấp một feature chết: trường `follow_ups` của tutor hiện tại **chưa dùng lần nào — 0/1.261 turn** (`DATA_DICTIONARY.md`).
+
 ## Giới hạn dữ liệu — AI Tutor không đọc cả tài liệu
 
 Ràng buộc cứng, khai ở đầu [config.js](web/lib/config.js):

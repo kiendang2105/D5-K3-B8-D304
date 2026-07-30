@@ -72,6 +72,38 @@ const ExplainPanel = {
     bubble.innerHTML = mdBold(acc);
   },
 
+  // Phần kiến thức chung — TÁCH KHỎI bong bóng chính, không trộn vào.
+  // Học viên phải thấy ngay câu nào dựa vào slide, câu nào không. Trộn hai
+  // loại là đúng cái lỗi lớp ① mà sản phẩm phải tránh.
+  addOutsideDoc(div, text) {
+    const box = el("div", "outside-doc");
+    const cap = el("div", "cap");
+    cap.textContent = "💡 Ngoài tài liệu — kiến thức chung, KHÔNG có trong slide này";
+    box.appendChild(cap);
+    const body = el("div", "body");
+    body.innerHTML = mdBold(text);
+    box.appendChild(body);
+    div.appendChild(box);
+    return body;
+  },
+
+  // Gợi ý câu hỏi tiếp. Trường `follow_ups` của tutor hiện tại chưa dùng lần
+  // nào (0/1.261 turn theo DATA_DICTIONARY) — đây là chỗ lấp.
+  addSuggestions(div, list, onPick) {
+    if (!list || !list.length) return;
+    const box = el("div", "suggestions");
+    const cap = el("span", "cap");
+    cap.textContent = "Hỏi tiếp:";
+    box.appendChild(cap);
+    for (const q of list) {
+      const b = el("button");
+      b.textContent = q;
+      b.onclick = () => onPick(q);
+      box.appendChild(b);
+    }
+    div.appendChild(box);
+  },
+
   // Badge chế độ đọc — cho học viên biết câu trả lời đến từ đâu (G2)
   addModeBadge(div, mode) {
     const b = el("span", "mode-badge " + (mode === "scan" ? "scan" : "text"));

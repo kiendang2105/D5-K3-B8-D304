@@ -61,6 +61,7 @@ const MOCK_SLIDES = [
           "Ý chính: quyền tự trả lời của AI phụ thuộc vào việc *có căn cứ hay không*, chứ không phụ thuộc độ tự tin của model.",
         simple:
           "Nói đơn giản: AI chỉ được tự trả lời khi tìm thấy câu trả lời trong tài liệu. Không tìm thấy thì nói thật là không biết và gọi TA — tuyệt đối không đoán.",
+        suggestions: ["Nhánh Không xảy ra khi nào?", "Vì sao phải kèm trích dẫn?"],
       },
       {
         id: "z12-bullets",
@@ -75,6 +76,7 @@ const MOCK_SLIDES = [
           "Tiêu chí chọn mức nằm ở tiêu đề slide: **cost-of-error** — sai thì ai chịu gì, sửa đắt hay rẻ.",
         simple:
           "3 mức từ thấp đến cao: AI gợi ý thôi (Augment) → AI tự làm phần chắc chắn (Conditional) → AI tự làm hết (Automate). Lỗi càng đắt thì càng phải để người kiểm soát nhiều.",
+        suggestions: ["Cost-of-error là gì?", "Khi nào chọn Augment?"],
       },
     ],
   },
@@ -118,6 +120,7 @@ const MOCK_SLIDES = [
           "Con số đo trên 1.261 lượt hỏi-đáp thật (22–29/07). Gần một nửa câu trả lời không kiểm chứng được là lý do slide này đặt câu hỏi về grounding.",
         simple:
           "Cứ 2 câu tutor trả lời thì gần 1 câu không dẫn nguồn trang nào — nghĩa là học viên phải tin chay, không kiểm lại được.",
+        suggestions: ["Số liệu này đo thế nào?", "46,2% nghĩa là gì?"],
       },
       {
         id: "z18-note",
@@ -196,6 +199,7 @@ const MOCK_SLIDES = [
           "Lưu ý: vì đọc từ ảnh nên bạn nên đối chiếu lại phần chữ nhỏ với slide gốc.",
         simple:
           "4 kiểu tình huống dễ làm AI hỏng: ① không có nguồn nên bịa · ② không hiểu user muốn gì · ③ bị đòi làm việc ngoài quyền · ④ sai kiến thức chuyên môn.",
+        suggestions: ["Lớp ① khác lớp ② chỗ nào?", "Cho ví dụ lớp ④"],
       },
       {
         id: "z24-cell1",
@@ -234,6 +238,16 @@ const OUT_OF_SCOPE_PATTERNS = [
   // vượt giới hạn 1 trang/câu hỏi: đòi đọc cả tài liệu
   "toàn bộ slide", "toàn bộ tài liệu", "cả tài liệu", "cả bài giảng",
   "tất cả các trang", "toàn bộ bài",
+];
+
+// Mock cho nhánh "câu hỏi khái niệm mà tài liệu không nói tới".
+// Bản thật do model quyết và tự gắn nhãn [NGOÀI TÀI LIỆU]; ở đây khớp từ khoá.
+const OUTSIDE_DOC_HINTS = [
+  { k: "agent", a: "Agent là hệ thống dùng LLM để **tự quyết chuỗi hành động** — gọi tool, đọc kết quả, quyết bước tiếp — thay vì chỉ sinh một câu trả lời rồi dừng. Phần slide bạn đang chọn không bàn về Agent, nên đây là kiến thức chung để bạn đối chiếu thôi." },
+  { k: "rag", a: "RAG là cách cho model **tra tài liệu trước khi trả lời** thay vì dựa vào thứ nó nhớ sẵn: tìm đoạn liên quan, nhét vào ngữ cảnh, rồi mới sinh câu trả lời. Slide này không nói về RAG." },
+  { k: "token", a: "Token là đơn vị model cắt văn bản ra để xử lý — thường ngắn hơn một từ. Giới hạn context tính theo token, không theo số chữ. Phần bạn chọn không đề cập khái niệm này." },
+  { k: "fine-tun", a: "Fine-tuning là huấn luyện thêm trên dữ liệu riêng để đổi *hành vi* của model, khác với việc chỉ đổi prompt. Slide này không bàn tới." },
+  { k: "hallucin", a: "Hallucination là khi model nói ra thứ nghe hợp lý nhưng không có căn cứ. Đây đúng là rủi ro mà sản phẩm này phải chặn, nhưng phần slide bạn chọn không định nghĩa nó." },
 ];
 
 const REPLIES = {

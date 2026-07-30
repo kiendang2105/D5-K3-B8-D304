@@ -337,6 +337,54 @@ const GOLDEN_CASES = [
     auto: { maxPages: 1, historyOnlySamePage: true },
   },
 
+  // ---------- Câu hỏi TEXT THUẦN + ranh giới "ngoài tài liệu" ----------
+  // Trước đây gõ text mà không chọn vùng thì bị hỏi lại "slide nào?" — hỏi một
+  // thứ hiển nhiên khi học viên đang mở slide trước mắt. Giờ lấy trang đang
+  // xem làm căn cứ. Kèm theo là ranh giới cứng giữa nội dung slide và kiến
+  // thức chung: model phải gắn nhãn [NGOÀI TÀI LIỆU], UI hiện khối riêng.
+  {
+    id: "T01", cls: "thường", src: "mock", page: 12,
+    chat: "cái này nói về gì",
+    src_log: "tự dùng thử prototype",
+    expect: "Trả lời dựa trên TRANG ĐANG XEM, không hỏi lại 'slide nào'; không có khối ngoài tài liệu",
+    auto: { maxPages: 1, noOutsideDoc: true },
+  },
+  {
+    id: "T02", cls: "①", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "RAG là gì?",
+    src_log: "tự dùng thử prototype",
+    expect: "Nói rõ vùng này KHÔNG đề cập RAG, rồi kiến thức chung nằm trong khối [NGOÀI TÀI LIỆU] tách biệt — không trộn vào phần từ slide",
+    auto: { maxPages: 1, hasOutsideDoc: true },
+  },
+  {
+    id: "T03", cls: "①", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "tỷ lệ này là bao nhiêu phần trăm?",
+    src_log: "tự dùng thử prototype",
+    expect: "Hỏi SỐ LIỆU không có trên slide → nói không có, KHÔNG bịa số, và KHÔNG dùng nhãn ngoài tài liệu (đây không phải câu khái niệm)",
+    auto: { maxPages: 1, noOutsideDoc: true },
+  },
+  {
+    id: "T04", cls: "②", src: "mock", page: 12, click: [0.750, 0.472],
+    question: "hi bro",
+    src_log: "C0019/T0986",
+    expect: "Đáp ngắn rồi hỏi học viên muốn biết gì — không bịa ra một câu hỏi rồi tự trả lời",
+    auto: { maxPages: 1, noOutsideDoc: true },
+  },
+  {
+    id: "T05", cls: "④", src: "mock", page: 24, click: [0.260, 0.370],
+    question: "lớp ① này liên quan gì tới hallucination?",
+    src_log: "tự dùng thử prototype",
+    expect: "Chế độ quét ảnh + câu khái niệm: phần từ slide và phần kiến thức chung phải tách bạch, không nhập nhèm",
+    auto: { mode: "scan", maxPages: 1, hasOutsideDoc: true },
+  },
+  {
+    id: "T06", cls: "thường", src: "mock", page: 18, click: [0.292, 0.537],
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Có ≥1 gợi ý câu hỏi tiếp, và gợi ý phải về đúng phần tài liệu này (trường follow_ups của tutor hiện tại chưa dùng lần nào)",
+    auto: { maxPages: 1, hasSuggestions: true },
+  },
+
   // ---------- Trên PDF THẬT (d1-slide-hackathon.pdf) ----------
   // Chạy được khi runner mở qua HTTP và tìm thấy file trong data/vlearn-pack/slides/
   {

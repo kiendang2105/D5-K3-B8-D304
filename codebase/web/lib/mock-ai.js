@@ -34,7 +34,18 @@ const MockAI = {
     // ① Không có căn cứ: không trúng nội dung nào -> nói thật, không bịa
     if (!best) return { text: REPLIES.noContent, mode, grounded: false };
 
-    return { text: best.answer, citation: best.citation, mode, zone: best };
+    // Mô phỏng nhánh "câu hỏi khái niệm tài liệu không nói" — nhãn tách bạch
+    // giữa nội dung slide và kiến thức chung.
+    const q = (question || "").toLowerCase();
+    const outside = OUTSIDE_DOC_HINTS.find((h) => q.includes(h.k));
+
+    return {
+      text: best.answer,
+      outsideDoc: outside ? outside.a : null,
+      suggestions: best.suggestions || null,
+      citation: best.citation,
+      mode, zone: best,
+    };
   },
 
   hitZone(sel, zones) {

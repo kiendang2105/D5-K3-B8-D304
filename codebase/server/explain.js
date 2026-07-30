@@ -199,9 +199,14 @@ const Explain = {
       return { text: `Gọi model lỗi (${res.status})${hint}`, mode, grounded: false };
     }
     const data = await res.json();
-    const answer = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "";
+    const raw = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "";
     const blockReason = data?.promptFeedback?.blockReason
       || data?.candidates?.[0]?.finishReason;
+
+    // Tách 3 phần model trả về: nội dung dựa vào tài liệu · phần kiến thức
+    // chung (sau nhãn [NGOÀI TÀI LIỆU]) · dòng GỢI Ý cuối.
+    const parsed = this.parseAnswer(raw);
+    const answer = parsed.text;
 
     // Trace cho R5 ("≥1 lời gọi AI thật, có log/trace trong repo").
     // Ghi cả disclosure để chứng minh đã gửi đi đúng những gì đã khai.
@@ -213,11 +218,13 @@ const Explain = {
       finish_reason: blockReason || null,
       sent: disclosure,
       answer,
+      outsideDoc: parsed.outsideDoc || null,
+      suggestions: parsed.suggestions,
     };
     console.log("[AI TRACE]", JSON.stringify(trace, null, 2));
     Explain.traces.push(trace);
 
-    if (!answer) {
+    if (!answer && !parsed.outsideDoc) {
       return {
         text: `Model không trả về nội dung${blockReason ? ` (lý do: ${blockReason})` : ""}.`,
         mode, grounded: false, trace,
@@ -225,9 +232,35 @@ const Explain = {
     }
     return {
       text: answer,
+      outsideDoc: parsed.outsideDoc,      // phần kiến thức chung, hiển thị tách biệt
+      suggestions: parsed.suggestions,    // gợi ý câu hỏi tiếp
       citation: `Trang ${page.num}${mode === "scan" ? " (quét ảnh)" : ""}`,
       mode, raw: data, trace,
     };
+  },
+
+  // Tách câu trả lời thành 3 phần. Nhãn [NGOÀI TÀI LIỆU] là ranh giới cứng
+  // giữa "cái này có trong slide" và "cái này là kiến thức chung" — trộn hai
+  // loại vào nhau chính là lỗi lớp ① mà sản phẩm phải tránh.
+  parseAnswer(raw) {
+    let s = (raw || "").trim();
+
+    // Dòng gợi ý ở cuối
+    let suggestions = [];
+    s = s.replace(/^\s*GỢI Ý\s*:\s*(.+)$/im, (_, list) => {
+      suggestions = list.split("|").map((x) => x.trim())
+        .filter((x) => x && x.length <= 60).slice(0, 3);
+      return "";
+    }).trim();
+
+    // Nhãn ngoài tài liệu
+    let outsideDoc = null;
+    const i = s.search(/\[\s*NGOÀI TÀI LIỆU\s*\]/i);
+    if (i >= 0) {
+      outsideDoc = s.slice(i).replace(/\[\s*NGOÀI TÀI LIỆU\s*\]/i, "").trim();
+      s = s.slice(0, i).trim();
+    }
+    return { text: s, outsideDoc, suggestions };
   },
 
   // Bộ trace của phiên hiện tại — runner tải xuống thành file cho eval/
