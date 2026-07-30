@@ -16,11 +16,12 @@ const App = {
   lastAsk: null, // để hỏi lại khi user báo quét nhầm trang
 
   async init() {
-    Slide.init();
-    Chat.init();
+    SlideViewer.init();
+    RegionSelector.init();
+    ExplainPanel.init();
 
-    Slide.onSelected = (rect, e) => this.showPopover(e);
-    Chat.onFixPage = (n) => this.rescanPage(n);
+    RegionSelector.onSelected = (rect, e) => this.showPopover(e);
+    ExplainPanel.onFixPage = (n) => this.rescanPage(n);
 
     document.getElementById("btn-ask").onclick = () => this.askFromPopover();
     document.getElementById("btn-cancel").onclick = () => this.cancelSelection();
@@ -52,7 +53,7 @@ const App = {
   },
 
   async openPdf(file) {
-    const note = Chat.addSystemNote(`Đang mở **${file.name}**…`);
+    const note = ExplainPanel.addSystemNote(`Đang mở **${file.name}**…`);
     try {
       this.source = await PdfSource.open(file);
       document.getElementById("doc-name").textContent =
@@ -94,7 +95,7 @@ const App = {
     const page = await this.source.getPage(num);
     if (!page) return null;
     this.currentPage = page;
-    Slide.setPage(page);
+    SlideViewer.setPage(page);
     this.hidePopover();
     [...document.getElementById("page-tabs").children].forEach((b) =>
       b.classList && b.classList.toggle("active", Number(b.dataset.page) === num));
@@ -106,7 +107,7 @@ const App = {
   // hệ thống đang làm tốt đến đâu, TRƯỚC khi user hỏi)
   renderPageMeta(page) {
     const meta = document.getElementById("page-meta");
-    const mode = AiClient.readMode(page);
+    const mode = Explain.readMode(page);
     meta.className = "page-meta " + mode;
     meta.innerHTML = mode === "text"
       ? `<b>📄 Trang này đọc được text</b> (${page.textLen} ký tự) — mình trả lời dựa trên nội dung tài liệu.`
@@ -135,7 +136,7 @@ const App = {
   },
 
   cancelSelection() {
-    Slide.clearSelection();
+    RegionSelector.clear();
     this.hidePopover();
   },
 
@@ -143,9 +144,9 @@ const App = {
 
   // (A) hỏi về vùng vừa khoanh
   askFromPopover() {
-    if (!Slide.selection) return;
+    if (!RegionSelector.selection) return;
     const question = document.getElementById("question").value.trim();
-    const region = { ...Slide.selection };
+    const region = { ...RegionSelector.selection };
     this.hidePopover();
     this.ask({ question, region });
   },
@@ -160,41 +161,41 @@ const App = {
     const m = question.match(PAGE_IN_QUESTION);
 
     // ② Mơ hồ: không nêu slide nào và cũng không khoanh vùng -> hỏi lại
-    if (!m && !Slide.selection) {
-      Chat.addUser({ question });
-      const { bubble } = Chat.addBot();
-      await Chat.stream(bubble, MOCK_REPLIES.noPageInQuestion);
+    if (!m && !RegionSelector.selection) {
+      ExplainPanel.addUser({ question });
+      const { bubble } = ExplainPanel.addBot();
+      await ExplainPanel.stream(bubble, MOCK_REPLIES.noPageInQuestion);
       return;
     }
 
     if (m) {
       const n = parseInt(m[1], 10);
       if (!this.source.hasPage(n)) {
-        Chat.addUser({ question });
-        const { bubble } = Chat.addBot();
-        await Chat.stream(bubble,
+        ExplainPanel.addUser({ question });
+        const { bubble } = ExplainPanel.addBot();
+        await ExplainPanel.stream(bubble,
           MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
         return;
       }
       await this.goToPage(n);
       // hỏi về cả trang = khoanh trọn trang
-      const region = Slide.selectWholePage();
+      const region = RegionSelector.selectWholePage();
       return this.ask({ question, region, wholePage: true });
     }
 
     // có vùng đang khoanh sẵn -> hỏi về vùng đó
-    this.ask({ question, region: { ...Slide.selection } });
+    this.ask({ question, region: { ...RegionSelector.selection } });
   },
 
   // Khi user báo "không phải trang này" -> quét lại trang khác, giữ câu hỏi cũ
   async rescanPage(n) {
     if (!this.source.hasPage(n)) {
-      const { bubble } = Chat.addBot();
-      await Chat.stream(bubble, MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
+      const { bubble } = ExplainPanel.addBot();
+      await ExplainPanel.stream(bubble, MOCK_REPLIES.pageOutOfRange(n, this.source.rangeText()));
       return;
     }
     await this.goToPage(n);
-    const region = Slide.selectWholePage();
+    const region = RegionSelector.selectWholePage();
     this.ask({
       question: this.lastAsk?.question || "",
       region,
@@ -208,52 +209,52 @@ const App = {
   async ask({ question, region, wholePage, redo }) {
     if (this.busy || !region) return;
     this.busy = true;
-    Slide.locked = true;
+    RegionSelector.locked = true;
     this.lastAsk = { question, wholePage };
 
     const page = this.currentPage;
-    const mode = AiClient.readMode(page);
-    const cropImage = Slide.crop(region);
+    const mode = Explain.readMode(page);
+    const cropImage = RegionSelector.crop(region);
 
-    Chat.addUser({
+    ExplainPanel.addUser({
       cropImage,
       question: redo ? `(đọc lại) ${question || "Giải thích trang này"}` : question,
     });
 
     // Câu ngoài phạm vi bị chặn trước -> không quét trang, không tốn token ảnh
-    const blocked = AiClient.isOutOfScope(question);
+    const blocked = Explain.isOutOfScope(question);
 
     // Nói cho user biết hệ thống đang làm gì TRƯỚC khi trả lời (G1/G11)
     if (mode === "scan" && !blocked) {
-      Chat.addSystemNote(
+      ExplainPanel.addSystemNote(
         `Trang ${page.num} không có lớp text → **đang quét ảnh trang** ở ${page.width}px để đọc…`);
     }
 
-    Slide.clearSelection();
+    RegionSelector.clear();
 
-    const reply = await AiClient.explain({
+    const reply = await Explain.run({
       question,
       cropImage,
-      pageImage: mode === "scan" && !blocked ? Slide.pageImage() : null,
+      pageImage: mode === "scan" && !blocked ? SlideViewer.pageImage() : null,
       page,
       region,
       mode,
     });
 
-    const { div, bubble } = Chat.addBot();
+    const { div, bubble } = ExplainPanel.addBot();
     bubble.innerHTML = '<span class="cursor-blink">▌</span>';
-    await Chat.stream(bubble, reply.text);
+    await ExplainPanel.stream(bubble, reply.text);
 
     // Chỉ khoe "đọc bằng gì" khi thực sự có đọc nội dung. Câu từ chối
     // hoặc hỏi lại (grounded: false) không kèm badge/bằng chứng.
     if (reply.grounded !== false) {
-      Chat.addModeBadge(div, reply.mode || mode);
+      ExplainPanel.addModeBadge(div, reply.mode || mode);
 
       // Chế độ quét: bắt buộc cho user thấy đã quét trang nào + đường sửa.
       // Đây là chốt chặn cho bẫy "số trang trên slide ≠ trang trong file".
       if ((reply.mode || mode) === "scan") {
-        Chat.addScanEvidence(div, {
-          thumb: Slide.pageThumb(),
+        ExplainPanel.addScanEvidence(div, {
+          thumb: SlideViewer.pageThumb(),
           pageNum: page.num,
           // Chỉ PDF mới có đánh số trang liên tục để hiện "x / y"
           pageCount: this.source.kind === "pdf" ? this.source.pageCount : null,
@@ -261,12 +262,12 @@ const App = {
       }
     }
 
-    if (reply.citation) Chat.addCitation(div, reply.citation);
-    Chat.addActions(div, reply.zone || null);
-    Chat.scroll();
+    if (reply.citation) ExplainPanel.addCitation(div, reply.citation);
+    ExplainPanel.addActions(div, reply.zone || null);
+    ExplainPanel.scroll();
 
     this.busy = false;
-    Slide.locked = false;
+    RegionSelector.locked = false;
   },
 
   // ---------- API key (CP3) ----------

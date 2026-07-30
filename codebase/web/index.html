@@ -73,12 +73,17 @@
     </aside>
   </main>
 
-  <script src="js/config.js"></script>
-  <script src="js/mock-data.js"></script>
-  <script src="js/pdf-source.js"></script>
-  <script src="js/selection.js"></script>
-  <script src="js/ai-client.js"></script>
-  <script src="js/chat-ui.js"></script>
-  <script src="js/app.js"></script>
+  <!-- lib: cấu hình + dữ liệu + nguồn slide -->
+  <script src="lib/config.js"></script>
+  <script src="lib/mock-data.js"></script>
+  <script src="lib/pdf-source.js"></script>
+  <script src="lib/mock-ai.js"></script>
+  <!-- quyết định AI trung tâm (mức Sketch: chạy thẳng ở client) -->
+  <script src="../server/explain.js"></script>
+  <!-- components -->
+  <script src="components/SlideViewer.js"></script>
+  <script src="components/RegionSelector.js"></script>
+  <script src="components/ExplainPanel.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

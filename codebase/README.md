@@ -5,33 +5,45 @@
 ## Chạy thử
 
 ```
-codebase/web/index.html      ← mở thẳng bằng trình duyệt, chạy được ngay với slide mẫu
+codebase/web/index.html      ← mở thẳng bằng trình duyệt: chạy ngay với slide mẫu
 ```
 
-Muốn dùng **PDF thật** (nút "Mở PDF…") thì phải chạy qua server tĩnh, vì pdf.js cần tải worker:
+Đủ để demo toàn bộ 4 đường đi trải nghiệm + nhánh quét ảnh. **Mở PDF thật** và **gọi AI thật** cần chạy qua server tĩnh (pdf.js phải tải worker; prompt được nạp từ file):
 
 ```bash
-npx serve codebase/web
+npx serve codebase        # lưu ý: serve từ codebase/, KHÔNG phải codebase/web/
+# mở http://localhost:3000/web/index.html
 ```
+
+*(Serve từ `codebase/` vì `web/index.html` nạp `../server/explain.js`.)*
 
 ## Cấu trúc
 
 ```
 codebase/
 ├── README.md
-├── .env.example              ← mẫu biến môi trường (KHÔNG commit key thật)
-└── web/
-    ├── index.html
-    ├── css/styles.css
-    └── js/
-        ├── config.js         ← mọi ngưỡng quyết định nằm ở đây, sửa 1 chỗ
-        ├── mock-data.js      ← 3 slide mẫu + toàn bộ câu trả lời mock
-        ├── pdf-source.js     ← nguồn slide: MockSource | PdfSource (pdf.js)
-        ├── selection.js      ← vẽ slide, khoanh vùng, cắt ảnh, thumbnail
-        ├── ai-client.js      ← RANH GIỚI AI — CP3 chỉ sửa file này
-        ├── chat-ui.js        ← chat panel, badge, bằng chứng quét, feedback
-        └── app.js            ← nối các phần, điều phối một lượt hỏi
+├── .env.example                  ← mẫu biến môi trường (KHÔNG commit key thật)
+├── web/
+│   ├── index.html
+│   ├── app.js                    ← điều phối một lượt hỏi, nối các phần
+│   ├── css/styles.css
+│   ├── components/
+│   │   ├── SlideViewer.js        ← render trang vào canvas, letterbox, thumbnail
+│   │   ├── RegionSelector.js     ← kéo-thả chọn vùng → crop base64 ở độ phân giải gốc
+│   │   └── ExplainPanel.js       ← chat, badge chế độ đọc, bằng chứng quét, 👍👎
+│   └── lib/
+│       ├── config.js             ← mọi ngưỡng quyết định nằm ở đây, sửa 1 chỗ
+│       ├── mock-data.js          ← 3 slide mẫu + toàn bộ câu trả lời mock
+│       ├── pdf-source.js         ← nguồn slide: MockSource | PdfSource (pdf.js)
+│       └── mock-ai.js            ← router mock (CP2)
+└── server/
+    ├── explain.js                ← QUYẾT ĐỊNH AI TRUNG TÂM — CP3 chỉ sửa file này
+    ├── prompts/
+    │   └── explain-region.md     ← prompt tách riêng, sửa không cần đụng code
+    └── traces/                   ← log request/response của AI call thật [R5]
 ```
+
+**Vì sao `server/` chạy ở client:** mức prototype là Mock nên `explain.js` được nạp thẳng vào trang, không dựng backend riêng. Khi tách backend thật, đem nguyên hàm `callGemini()` sang server và đổi `fetch` trong `Explain.run()` — giao diện không đổi.
 
 ## Tính năng: quét ảnh khi PDF không đọc được text
 
@@ -41,11 +53,11 @@ Cách xử lý trong prototype:
 
 | Bước | Làm gì | Ở đâu |
 |---|---|---|
-| 1 | Rút text của trang bằng `page.getTextContent()` | [pdf-source.js](web/js/pdf-source.js) |
-| 2 | Dưới `MIN_TEXT_CHARS` (30) ký tự → kết luận trang **không có lớp text** | [config.js](web/js/config.js) |
-| 3 | Render trang thành ảnh ở `SCAN_MAX_WIDTH` (1536px) | [pdf-source.js](web/js/pdf-source.js) |
-| 4 | Gửi **ảnh trọn trang + ảnh vùng khoanh** cho model nhìn | [ai-client.js](web/js/ai-client.js) |
-| 5 | Trả lời kèm badge `👁 Đọc bằng quét ảnh trang` + **thumbnail trang đã quét** | [chat-ui.js](web/js/chat-ui.js) |
+| 1 | Rút text của trang bằng `page.getTextContent()` | [pdf-source.js](web/lib/pdf-source.js) |
+| 2 | Dưới `MIN_TEXT_CHARS` (30) ký tự → kết luận trang **không có lớp text** | [config.js](web/lib/config.js) |
+| 3 | Render trang thành ảnh ở `SCAN_MAX_WIDTH` (1536px) | [pdf-source.js](web/lib/pdf-source.js) |
+| 4 | Gửi **ảnh trọn trang + ảnh vùng khoanh** cho model nhìn | [server/explain.js](server/explain.js) |
+| 5 | Trả lời kèm badge `👁 Đọc bằng quét ảnh trang` + **thumbnail trang đã quét** | [ExplainPanel.js](web/components/ExplainPanel.js) |
 
 Ngưỡng ở bước 2 là **định nghĩa kiểm chứng được** — người ngoài nhóm mở cùng file PDF sẽ đếm ra cùng kết quả. Đây là điều kiện để đưa vào golden set.
 
@@ -61,10 +73,10 @@ Ngưỡng ở bước 2 là **định nghĩa kiểm chứng được** — ngư�
 | Render trang → ảnh · khoanh vùng · cắt ảnh ở độ phân giải gốc | ✅ **thật** |
 | Thumbnail trang đã quét, sửa số trang, badge chế độ đọc | ✅ **thật** |
 | Guardrail ngoài phạm vi | ✅ **thật** (khớp từ khoá) |
-| **Đoạn văn giải thích** | ⚠️ **MOCK** — `MockAI.route()` trong [ai-client.js](web/js/ai-client.js) |
+| **Đoạn văn giải thích** | ⚠️ **MOCK** — `MockAI.route()` trong [web/lib/mock-ai.js](web/lib/mock-ai.js) |
 | 3 slide mẫu | ⚠️ MOCK — SVG tự dựng; slide 24 cố tình không có text layer để demo nhánh quét |
 
-**CP3:** hàm `AiClient.callGemini()` đã viết sẵn và đầy đủ trong [ai-client.js](web/js/ai-client.js). Bật bằng nút **API key** trên header (key lưu ở `localStorage`, không commit). Không phải sửa UI hay flow.
+**CP3:** hàm `Explain.callGemini()` đã viết sẵn và đầy đủ trong [server/explain.js](server/explain.js). Bật bằng nút **API key** trên header (key lưu ở `localStorage`, không commit). Không phải sửa UI hay flow.
 
 ## Kịch bản demo
 

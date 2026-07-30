@@ -7,7 +7,7 @@
 //   - chip trích dẫn trang
 // ============================================================
 
-const Chat = {
+const ExplainPanel = {
   body: null,
   onFixPage: null, // callback(pageNum) khi user báo quét nhầm trang
 
