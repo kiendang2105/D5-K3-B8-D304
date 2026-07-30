@@ -273,6 +273,35 @@ const OUTSIDE_DOC_HINTS = [
   { k: "hallucin", a: "Hallucination là khi model nói ra thứ nghe hợp lý nhưng không có căn cứ. Đây đúng là rủi ro mà sản phẩm này phải chặn, nhưng phần slide bạn chọn không định nghĩa nó." },
 ];
 
+// Tin nhắn KHÔNG phải câu hỏi về tài liệu. Trả lời như người, và quan trọng
+// hơn: KHÔNG gắn vào vùng nào, KHÔNG gửi gì ra ngoài. Gõ nhầm một chữ mà tốn
+// một lời gọi AI kèm ảnh vùng là vô lý.
+const CHITCHAT = {
+  greeting: [
+    "Chào bạn 👋 Bạn muốn hỏi gì về slide này?",
+    "Chào bạn! Bấm vào phần nào trên slide là mình giải thích phần đó, hoặc cứ hỏi thẳng ở đây.",
+  ],
+  ack: [
+    "Không có gì. Cần gì cứ hỏi nhé.",
+    "Ừ, có gì bạn hỏi tiếp.",
+  ],
+  unclear: [
+    "Mình chưa rõ ý bạn. Bạn gõ rõ hơn một chút, hoặc bấm vào phần trên slide mà bạn muốn hỏi nhé.",
+    "Chỗ này mình chưa hiểu bạn muốn gì. Bạn viết đầy đủ hơn, hoặc chỉ vào phần cần hỏi trên slide.",
+  ],
+};
+
+// Chào hỏi / cảm ơn / ừ ok — nhận diện để đáp cho tự nhiên
+const CHITCHAT_GREET = /^(hi+|hello+|helo+|hey+|yo|alo|chào|chao|xin chào|hola)\b/i;
+const CHITCHAT_ACK = /^(ok|oke|okay|ổn|uh|ừ|um|vâng|dạ|thanks?|thank you|tks|ty|cảm ơn|cam on|good|nice|hay)\b/i;
+
+// Từ nối cho thấy đang hỏi TIẾP về thứ vừa bàn, không phải câu hỏi mới
+const FOLLOWUP_HINT = /(chi tiết hơn|rõ hơn|kỹ hơn|đơn giản hơn|ngắn hơn|dài hơn|ví dụ|vd|còn|thế còn|vậy còn|tại sao|vì sao|sao lại|nghĩa là|tức là|ý là|cụ thể|thêm|nữa|này|đó|kia|ấy|vậy)/i;
+
+// "slide này" / "trang này" trỏ tới TRANG ĐANG XEM chứ không phải vùng vừa
+// hỏi. Chữ "này" nằm trong cả hai mẫu nên phải xét mẫu này trước.
+const CURRENT_PAGE_REF = /\b(slide|trang|tài liệu|bài)\s*(này|hiện tại|đang xem|đang mở)/i;
+
 const REPLIES = {
   outOfScope:
     "Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn.\n\nThay vào đó, nếu bạn chỉ vùng nào trên slide đang khiến bạn kẹt, mình giải thích kỹ vùng đó — hoặc bạn nhắn TA trên Discord cho các câu hỏi về bài tập & deadline nhé.",

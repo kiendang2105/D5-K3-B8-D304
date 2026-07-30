@@ -18,8 +18,9 @@ const App = {
   source: null,
   currentPage: null,
   busy: false,
-  lastAsk: null, // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
-  turns: [],     // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
+  lastAsk: null,    // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
+  turns: [],        // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
+  chitchatTurn: 0,  // đổi câu đáp qua lại cho đỡ máy móc
 
   async init() {
     SlideViewer.init();
@@ -278,12 +279,26 @@ const App = {
       return this.askAboutPage(n, question);
     }
 
+    // Đang có vùng chọn thì học viên đã chỉ rõ, khỏi đoán
     if (RegionSelector.regionPage) {
       return this.ask({
         question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
     }
 
-    if (this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
+    // Phân loại TRƯỚC khi gắn vào vùng nào. Bản trước gắn mọi tin nhắn vào
+    // vùng vừa hỏi, nên gõ nhầm một chữ cũng tốn một lời gọi AI kèm ảnh vùng,
+    // và câu "Hiểu là bạn hỏi tiếp về vùng vừa rồi..." lặp ở mọi tin nhắn.
+    const kind = this.classify(question);
+
+    if (kind === "chitchat") {
+      // Không gắn vùng, KHÔNG gửi gì ra ngoài
+      return this.chitchat(question);
+    }
+
+    // Chỉ nối tiếp vùng cũ khi câu hỏi thật sự có ý nối tiếp ("chi tiết hơn",
+    // "còn cái kia", "ví dụ"...). Câu hỏi mới thì bám TRANG ĐANG XEM cho dễ
+    // đoán, chứ không kéo lại vùng đã bấm từ mười tin nhắn trước.
+    if (kind === "followup" && this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
       return this.ask({
         question,
         region: this.lastAsk.region,
@@ -293,8 +308,43 @@ const App = {
       });
     }
 
-    // Bậc 4 — câu hỏi text thuần, lấy trang đang xem làm căn cứ
     return this.askAboutCurrentPage(question);
+  },
+
+  // Phân loại tin nhắn: 'chitchat' | 'followup' | 'document'
+  classify(q) {
+    const s = (q || "").trim();
+    if (CHITCHAT_GREET.test(s) || CHITCHAT_ACK.test(s)) return "chitchat";
+
+    // Một "từ" cụt lủn -> gõ nhầm hoặc chưa nói gì. Hỏi lại rẻ hơn nhiều so
+    // với đoán rồi trả lời sai (lớp ②). Dấu "?" chỉ được tính là câu hỏi khi
+    // có kèm chữ; mỗi dấu "?" trơ trọi thì vẫn là chưa nói gì.
+    const tokens = s.split(/\s+/).filter((t) => t.length >= 2);
+    const hasWord = /\p{L}{2,}/u.test(s);
+    if (tokens.length <= 1 && !/\d/.test(s) && !(hasWord && /\?/.test(s)) && s.length < 8) {
+      return "chitchat";
+    }
+
+    // "slide này" / "trang này" trỏ tới TRANG ĐANG XEM, không phải vùng vừa
+    // hỏi. Phải xét trước FOLLOWUP_HINT vì chữ "này" nằm trong cả hai.
+    if (CURRENT_PAGE_REF.test(s)) return "document";
+
+    if (FOLLOWUP_HINT.test(s)) return "followup";
+    return "document";
+  },
+
+  async chitchat(question) {
+    const s = question.trim();
+    const bucket = CHITCHAT_GREET.test(s) ? "greeting"
+      : CHITCHAT_ACK.test(s) ? "ack" : "unclear";
+    const list = CHITCHAT[bucket];
+    // Đổi câu qua lại cho đỡ máy móc khi học viên nhắn mấy lần
+    const text = list[this.chitchatTurn++ % list.length];
+
+    ExplainPanel.addUser({ question });
+    const { bubble } = ExplainPanel.addBot();
+    await ExplainPanel.stream(bubble, text);
+    ExplainPanel.scroll();
   },
 
   // Câu hỏi text thuần: không chọn vùng, không nêu slide.
@@ -361,11 +411,12 @@ const App = {
       ExplainPanel.addSystemNote(
         "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
     } else {
-      // Nói rõ đang nối tiếp vùng nào, để học viên không tưởng máy đoán bừa
-      if (followUp) {
+      // Chỉ báo khi vùng được nối tiếp nằm ở TRANG KHÁC trang đang xem. Nối
+      // tiếp một vùng ngay trước mắt thì học viên tự biết, báo mỗi tin nhắn
+      // chỉ làm khung chat đầy chữ thừa.
+      if (followUp && page !== this.currentPage) {
         ExplainPanel.addSystemNote(
-          `Hiểu là bạn hỏi tiếp về **vùng vừa rồi ở trang ${page.num}** — ` +
-          "muốn hỏi phần khác thì bấm vào đúng phần đó trên slide.");
+          `Đang hỏi tiếp về vùng ở **trang ${page.num}**, bạn vẫn đang xem trang ${this.currentPage.num}.`);
       }
       if (offScreen && !followUp) {
         ExplainPanel.addSystemNote(
