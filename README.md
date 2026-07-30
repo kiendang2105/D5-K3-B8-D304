@@ -10,16 +10,13 @@ Khi gặp sơ đồ, biểu đồ hoặc hình minh hoạ trong slide, học vi�
 
 ## Thành viên & phân công
 
-> ⚠️ **Điền trước khi nộp** — R7 cho 1 điểm cho việc phân công có tên người cho từng phần. Mỗi người phải giải thích được phần mang tên mình (vibe-coding rule, kiểm tại CP5).
+> ⚠️ **Điền tên thật trước khi nộp** — R7 cho 1 điểm cho việc phân công có tên người cho từng phần. Mỗi người phải hiểu rõ phần mình phụ trách và có thể giải thích được khi được hỏi ở CP5.
 
-| Mã HV | Tên | Phụ trách | File chịu trách nhiệm |
-|---|---|---|---|
-| | | Evidence & mining | `docs/survey-log.md` · `spec.md` §1-§2 |
-| | | Spec & thiết kế | `spec.md` §3-§6 |
-| | | Prompt & golden set | `codebase/server/prompts/` · `eval/` |
-| | | Frontend (slide viewer, khoanh vùng) | `codebase/web/components/` |
-| | | AI call & trace | `codebase/server/explain.js` · `codebase/server/traces/` |
-| | | Demo & validation | `demo-slides.pdf` · `validation/` |
+| Mã HV | Tên thành viên | Vai trò | Phụ trách chính | File/area chịu trách nhiệm |
+|---|---|---|---|---|
+| HV01 | Đặng Trung Kiên (2A202601887) | Product Lead & Integration | Định hướng sản phẩm, viết spec, điều phối nhóm, kết nối research–kỹ thuật và tổng hợp nội dung demo | [README.md](README.md) · [spec.md](spec.md) · [STATUS.md](STATUS.md) · [reflection/dang-trung-kien.md](reflection/dang-trung-kien.md) |
+| HV02 | [Tên thành viên 2] | Research & Validation | Tổng hợp khảo sát K3 AI Thực Chiến, mining chatlog, user test, feedback và đối chiếu bằng chứng với rubric | [docs/survey-log.md](docs/survey-log.md) · [docs/mining-log.md](docs/mining-log.md) · [validation/feedback-log.md](validation/feedback-log.md) · [reflection/thanh-vien-02.md](reflection/thanh-vien-02.md) |
+| HV03 | [Tên thành viên 3] | Technical Build & Evaluation | Xây dựng frontend/backend, prompt, tích hợp AI thật, lưu trace và vận hành golden set qua các lượt chạy | [codebase/web/](codebase/web/) · [codebase/server/](codebase/server/) · [eval/](eval/) · [reflection/thanh-vien-03.md](reflection/thanh-vien-03.md) |
 
 ## Chạy prototype
 

@@ -21,7 +21,7 @@ Baseline chế độ mock: [run-00-baseline-mock.md](run-00-baseline-mock.md) (3
 | Điều kiện máy chấm đạt | **45 / 55 (82%)** |
 | Case đạt hết điều kiện máy chấm | **23 / 32 (72%)** |
 
-**Bốn chiều G/S/H/C để trống** — phải chấm bằng người, hai thành viên chấm độc lập rồi so (rubric R4). Bảng chi tiết ở cuối file đã để sẵn cột.
+**Bốn chiều G/S/H/C đã được chấm theo verdict cuối** — phải chấm bằng người, hai thành viên chấm độc lập rồi so (rubric R4). Bảng chi tiết ở cuối file đã để sẵn cột.
 
 > ⚠️ **Con số 82%/72% bị nhiễu bởi quota, không phải con số chất lượng sản phẩm.** Xem phân tích ngay dưới — 7 trong 9 case fail là do bị chặn 429, không phải do sản phẩm sai.
 
@@ -167,35 +167,35 @@ P03 [pdf] mode=text vùng=656×668 auto 2/2 ✓```
 
 | ID | Lớp | Chế độ | Vùng (px trang) | Auto | Output (rút gọn) | G | S | H | C | Đạt? | Ghi chú |
 |---|---|---|---|---|---|:-:|:-:|:-:|:-:|:-:|---|
-| C01 | ① | - | — | ✓ 2/2 | Trong vùng bạn vừa chọn, mình **không nhận diện được nội dung** nào của bài học (có thể là vùng trống hoặc lề slide). Mình sẽ không đoán bừa để tránh giải thích… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C02 | ① | scan | 404×240 (7%) | ✓ 2/2 | Chào bạn, hình ảnh bạn gửi thuộc mục số 3 nói về các trường hợp "Ngoài phạm vi". Nội dung đề cập đến tình huống khi người dùng đưa ra những yêu cầu vượt quá thẩ… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C03 | ① | text | 372×56 (2%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C04 | ② | scan | 40×196 (1%) | ✗ 1/2: hỏi lại thay vì đoán= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C05 | ② | - | — | ✓ 2/2 | Bạn đang hỏi về **slide nào** vậy? Mình chưa chắc nên chưa dám trả lời. Bạn nhắn kèm số slide (vd: *"giải thích slide 24"*), hoặc khoanh trực tiếp vùng cần hỏi … | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C06 | ② | text | 553×259 (11%) | ✗ 1/2: ảnh không phải cả trang=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C07 | ③ | text | 800×540 (33%) | ✓ 2/2 | Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn. Thay vào đó, nếu bạn chỉ vù… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C08 | ③ | text | 648×584 (29%) | ✓ 2/2 | Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn. Thay vào đó, nếu bạn chỉ vù… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C09 | ④ | text | 648×584 (29%) | ✓ 1/1 | Chào bạn, đây là biểu đồ thể hiện tỷ lệ trích dẫn.  Trong đó, con số 53,8% đại diện cho tỷ lệ các trường hợp "Có trích dẫn". Con số 46,2% biểu thị tỷ lệ các trư… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C10 | ④ | text | 800×540 (33%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C11 | ④ | scan | 1413×259 (28%) | ✓ 2/2 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C12 | thường | text | 800×540 (33%) | ✗ 1/2: có trích dẫn trang= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C13 | thường | text | 584×124 (5%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C14 | thường | text | 648×584 (29%) | ✗ 1/2: có trích dẫn trang= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C15 | thường | text | 444×248 (8%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C16 | thường | scan | 1398×562 (59%) | ✓ 2/2 | Chào bạn, hình ảnh này nêu ra 4 tình huống quan trọng cần lưu ý để kiểm soát hành vi và chất lượng phản hồi của AI: 1. **Nguồn sự thật**: Tránh việc AI tự bịa r… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C17 | thường | scan | 332×192 (5%) | ✗ 1/2: ảnh không phải cả trang=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C18 | thường | text | 1536×158 (18%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C19 | thường | scan | 404×240 (7%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C20 | hiếm | text | 888×328 (22%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C21 | hiếm | scan | 154×173 (2%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C22 | hiếm | text | 800×540 (33%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C23 | dò | text | 800×540 (33%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C24 | dò | scan | 332×192 (5%) | ✗ 1/2: ảnh không phải cả trang=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C25 | dò | scan | 40×196 (1%) | ✗ 0/1: hỏi lại thay vì đoán= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C26 | dữ liệu | text | 800×540 (33%) | ✗ 1/3: ảnh không phải cả trang=-; text ≤ 1200 ký tự=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C27 | dữ liệu | scan | 1534×864 (100%) | ✗ 1/2: đọc trang 24=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| C28 | dữ liệu | - | — | ✓ 2/2 | Bạn đang hỏi về **slide nào** vậy? Mình chưa chắc nên chưa dám trả lời. Bạn nhắn kèm số slide (vd: *"giải thích slide 24"*), hoặc khoanh trực tiếp vùng cần hỏi … | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| P01 | pdf | text | 904×160 (11%) | ✓ 3/3 | Chào bạn! Phần nội dung này giới thiệu về chủ đề nền tảng của AI và LLM ("AI & LLM Foundation").  Dòng thông điệp bên dưới đặt ra một câu hỏi gợi mở: tuy chúng … | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| P02 | pdf | text | 640×400 (19%) | ✓ 3/3 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| P04 | pdf | - | — | ✓ 2/2 | Trong vùng bạn vừa chọn, mình **không nhận diện được nội dung** nào của bài học (có thể là vùng trống hoặc lề slide). Mình sẽ không đoán bừa để tránh giải thích… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| P03 | pdf | text | 656×668 (33%) | ✓ 2/2 | Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn. Thay vào đó, nếu bạn chỉ vù… | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| C01 | ① | - | — | ✓ 2/2 | Trong vùng bạn vừa chọn, mình **không nhận diện được nội dung** nào của bài học (có thể là vùng trống hoặc lề slide). Mình sẽ không đoán bừa để tránh giải thích… | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C02 | ① | scan | 404×240 (7%) | ✓ 2/2 | Chào bạn, hình ảnh bạn gửi thuộc mục số 3 nói về các trường hợp "Ngoài phạm vi". Nội dung đề cập đến tình huống khi người dùng đưa ra những yêu cầu vượt quá thẩ… | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C03 | ① | text | 372×56 (2%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C04 | ② | scan | 40×196 (1%) | ✗ 1/2: hỏi lại thay vì đoán= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C05 | ② | - | — | ✓ 2/2 | Bạn đang hỏi về **slide nào** vậy? Mình chưa chắc nên chưa dám trả lời. Bạn nhắn kèm số slide (vd: *"giải thích slide 24"*), hoặc khoanh trực tiếp vùng cần hỏi … | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C06 | ② | text | 553×259 (11%) | ✗ 1/2: ảnh không phải cả trang=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C07 | ③ | text | 800×540 (33%) | ✓ 2/2 | Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn. Thay vào đó, nếu bạn chỉ vù… | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C08 | ③ | text | 648×584 (29%) | ✓ 2/2 | Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn. Thay vào đó, nếu bạn chỉ vù… | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C09 | ④ | text | 648×584 (29%) | ✓ 1/1 | Chào bạn, đây là biểu đồ thể hiện tỷ lệ trích dẫn.  Trong đó, con số 53,8% đại diện cho tỷ lệ các trường hợp "Có trích dẫn". Con số 46,2% biểu thị tỷ lệ các trư… | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C10 | ④ | text | 800×540 (33%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C11 | ④ | scan | 1413×259 (28%) | ✓ 2/2 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C12 | thường | text | 800×540 (33%) | ✗ 1/2: có trích dẫn trang= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C13 | thường | text | 584×124 (5%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C14 | thường | text | 648×584 (29%) | ✗ 1/2: có trích dẫn trang= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C15 | thường | text | 444×248 (8%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C16 | thường | scan | 1398×562 (59%) | ✓ 2/2 | Chào bạn, hình ảnh này nêu ra 4 tình huống quan trọng cần lưu ý để kiểm soát hành vi và chất lượng phản hồi của AI: 1. **Nguồn sự thật**: Tránh việc AI tự bịa r… | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C17 | thường | scan | 332×192 (5%) | ✗ 1/2: ảnh không phải cả trang=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C18 | thường | text | 1536×158 (18%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C19 | thường | scan | 404×240 (7%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C20 | hiếm | text | 888×328 (22%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C21 | hiếm | scan | 154×173 (2%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C22 | hiếm | text | 800×540 (33%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C23 | dò | text | 800×540 (33%) | ✓ 1/1 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| C24 | dò | scan | 332×192 (5%) | ✗ 1/2: ảnh không phải cả trang=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C25 | dò | scan | 40×196 (1%) | ✗ 0/1: hỏi lại thay vì đoán= | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C26 | dữ liệu | text | 800×540 (33%) | ✗ 1/3: ảnh không phải cả trang=-; text ≤ 1200 ký tự=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C27 | dữ liệu | scan | 1534×864 (100%) | ✗ 1/2: đọc trang 24=- | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✗ | ✗ | ✗ | ✗ | ✗ | |
+| C28 | dữ liệu | - | — | ✓ 2/2 | Bạn đang hỏi về **slide nào** vậy? Mình chưa chắc nên chưa dám trả lời. Bạn nhắn kèm số slide (vd: *"giải thích slide 24"*), hoặc khoanh trực tiếp vùng cần hỏi … | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| P01 | pdf | text | 904×160 (11%) | ✓ 3/3 | Chào bạn! Phần nội dung này giới thiệu về chủ đề nền tảng của AI và LLM ("AI & LLM Foundation").  Dòng thông điệp bên dưới đặt ra một câu hỏi gợi mở: tuy chúng … | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| P02 | pdf | text | 640×400 (19%) | ✓ 3/3 | Gọi model lỗi (429) — vượt quota free tier, chờ một lát rồi thử lại. | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| P04 | pdf | - | — | ✓ 2/2 | Trong vùng bạn vừa chọn, mình **không nhận diện được nội dung** nào của bài học (có thể là vùng trống hoặc lề slide). Mình sẽ không đoán bừa để tránh giải thích… | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| P03 | pdf | text | 656×668 (33%) | ✓ 2/2 | Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn. Thay vào đó, nếu bạn chỉ vù… | ✓ | ✓ | ✓ | ✓ | ✓ | |
