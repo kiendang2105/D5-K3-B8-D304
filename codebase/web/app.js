@@ -279,20 +279,19 @@ const App = {
       return this.askAboutPage(n, question);
     }
 
+    // Phân loại TRƯỚC MỌI THỨ. Bản trước để nhánh "đang có vùng chọn" chạy
+    // trước, nên vừa bấm chọn một vùng rồi gõ "lo" thì vẫn gửi cả ảnh vùng
+    // đi kèm. Chào hỏi hay gõ nhầm thì không được gửi gì, dù đang chọn gì.
+    const kind = this.classify(question);
+
+    if (kind === "chitchat") {
+      return this.chitchat(question);
+    }
+
     // Đang có vùng chọn thì học viên đã chỉ rõ, khỏi đoán
     if (RegionSelector.regionPage) {
       return this.ask({
         question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
-    }
-
-    // Phân loại TRƯỚC khi gắn vào vùng nào. Bản trước gắn mọi tin nhắn vào
-    // vùng vừa hỏi, nên gõ nhầm một chữ cũng tốn một lời gọi AI kèm ảnh vùng,
-    // và câu "Hiểu là bạn hỏi tiếp về vùng vừa rồi..." lặp ở mọi tin nhắn.
-    const kind = this.classify(question);
-
-    if (kind === "chitchat") {
-      // Không gắn vùng, KHÔNG gửi gì ra ngoài
-      return this.chitchat(question);
     }
 
     // Chỉ nối tiếp vùng cũ khi câu hỏi thật sự có ý nối tiếp ("chi tiết hơn",
