@@ -215,6 +215,18 @@ const App = {
     //
     // Bậc 4 là đường mới. Trước đây nó đáp "bạn đang hỏi slide nào?" ngay cả
     // khi học viên đang mở một slide trước mắt — hỏi một thứ hiển nhiên.
+    // Guardrail phải chạy TRƯỚC nhánh số trang. Nếu không thì câu "tóm tắt từ
+    // trang 1 đến trang 20" sẽ đi vào nhánh số trang, trả lời về trang 1 và
+    // IM LẶNG BỎ QUA việc học viên đòi 20 trang — tệ hơn là từ chối thẳng.
+    if (Explain.isOutOfScope(question)) {
+      ExplainPanel.addUser({ question });
+      ExplainPanel.addSystemNote(
+        "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
+      const { bubble } = ExplainPanel.addBot();
+      await ExplainPanel.stream(bubble, REPLIES.outOfScope);
+      return;
+    }
+
     const m = question.match(PAGE_IN_QUESTION);
 
     if (m) {
@@ -375,7 +387,12 @@ const App = {
     }
 
     if (reply.citation) ExplainPanel.addCitation(div, reply.citation);
-    ExplainPanel.addActions(div, reply.zone || null);
+
+    // Nút "Vùng này ở đâu?" chỉ có nghĩa khi vùng nằm trên trang ĐANG XEM.
+    // Nháy sáng một vùng của trang khác thì vô nghĩa và gây hiểu nhầm.
+    const canShow = reply.grounded !== false && page === this.currentPage;
+    ExplainPanel.addActions(div, reply.zone || null,
+      canShow ? () => RegionSelector.flash(region) : null);
     // Gợi ý câu hỏi tiếp — bấm là gửi luôn, coi như học viên tự gõ
     ExplainPanel.addSuggestions(div, reply.suggestions, (q) => {
       document.getElementById("chat-q").value = q;

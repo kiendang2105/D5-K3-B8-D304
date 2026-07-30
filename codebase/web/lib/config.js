@@ -47,6 +47,13 @@ const CONFIG = {
   HISTORY_MAX_TURNS: 3,       // gửi kèm tối đa 3 lượt gần nhất CỦA CÙNG TRANG
   HISTORY_MAX_CHARS: 700,     // trần ký tự mỗi câu trả lời cũ
 
+  // --- Tự kiểm grounding (ghi vào trace, KHÔNG hiện cho học viên) ---
+  // Ngưỡng gắn cờ "đọc case này trước" khi chấm tay chiều H.
+  // Đo thử: câu từ chối trung thực chỉ có 2 từ nội dung mà vẫn ra 100% lệch
+  // -> phải có sàn số từ, nếu không thì cờ toàn báo động sai và bị bỏ qua.
+  PROBE_MIN_WORDS: 8,         // dưới ngần này từ nội dung thì không gắn cờ
+  PROBE_FLAG_RATIO: 70,       // % từ nội dung không tìm thấy trong text đã gửi
+
   // --- Render ---
   // Chiều rộng tối đa khi render trang để gửi cho vision.
   // Cao hơn = chữ rõ hơn nhưng tốn token ảnh và chậm hơn.

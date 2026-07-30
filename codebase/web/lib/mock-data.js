@@ -240,6 +240,29 @@ const OUT_OF_SCOPE_PATTERNS = [
   "tất cả các trang", "toàn bộ bài",
 ];
 
+// Khớp chuỗi con không đủ. Lượt 03 để lọt `C28` — "đọc **hết tài liệu** rồi
+// tóm tắt" — vì danh sách trên có "cả tài liệu" và "toàn bộ tài liệu" nhưng
+// thiếu "hết tài liệu". Thêm mãi từ khoá là chạy theo đuôi.
+//
+// Regex dưới đòi ĐỦ BA THÀNH PHẦN cạnh nhau: động từ yêu cầu + từ chỉ toàn bộ
+// + đối tượng tài liệu. Nhờ vậy "mình đọc hết rồi mà không hiểu" KHÔNG bị từ
+// chối oan (thiếu thành phần thứ ba), còn "đọc hết tài liệu" thì bị chặn.
+//
+// Hạn chế còn lại: khớp mẫu kiểu này về bản chất vẫn giòn. Cách bền hơn là để
+// model tự phán phạm vi, nhưng đó là một quyết định AI thứ hai — ghi vào
+// backlog thay vì thêm ngay (rubric: sau CP4 không thêm feature mới).
+// Ba nhánh, phân theo BẢN CHẤT của yêu cầu chứ không theo cách gõ:
+const OUT_OF_SCOPE_REGEX = new RegExp([
+  // 1. động từ yêu cầu + từ chỉ toàn bộ + đối tượng tài liệu
+  "(đọc|tóm tắt|tóm lược|summar|xem|giải thích|liệt kê)\\s*(hết|toàn bộ|tất cả|cả|nguyên)\\s*(các\\s*)?(tài liệu|slide|bài giảng|bài|trang|file|deck)",
+  // 2. đòi tóm tắt mà đối tượng là CẢ TÀI LIỆU (không phải một trang).
+  //    Cố ý KHÔNG chặn "tóm tắt slide này / trang này / vùng này" — đó là
+  //    một trang, hoàn toàn nằm trong giới hạn.
+  "(tóm tắt|tóm lược|summar)[^.!?]{0,30}(tài liệu|bài giảng|deck|cả bài)",
+  // 3. dải nhiều trang: "từ trang 1 đến trang 44"
+  "từ\\s*trang\\s*\\d+[^.!?]{0,15}(đến|tới|->|-)\\s*trang\\s*\\d+",
+].join("|"), "i");
+
 // Mock cho nhánh "câu hỏi khái niệm mà tài liệu không nói tới".
 // Bản thật do model quyết và tự gắn nhãn [NGOÀI TÀI LIỆU]; ở đây khớp từ khoá.
 const OUTSIDE_DOC_HINTS = [

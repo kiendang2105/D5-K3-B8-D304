@@ -194,8 +194,16 @@ const ExplainPanel = {
   },
 
   // Nút hành động: sửa dễ (G9) + mời feedback chi tiết (G15)
-  addActions(div, zone) {
+  // onShowRegion: nháy sáng vùng đã đọc trên slide để đối chiếu (G11)
+  addActions(div, zone, onShowRegion) {
     const actions = el("div", "actions");
+
+    if (onShowRegion) {
+      const show = el("button");
+      show.textContent = "◎ Vùng này ở đâu?";
+      show.onclick = () => onShowRegion();
+      actions.appendChild(show);
+    }
 
     if (zone) {
       const simpler = el("button");

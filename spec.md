@@ -276,12 +276,19 @@ npx serve .            # hoặc: python -m http.server 8765
 | 00 | **MOCK** | 32 | **100%** (55/55 điều kiện) | chưa chấm | — *(baseline, không tính R4)* | [eval/run-00-baseline-mock.md](eval/run-00-baseline-mock.md) |
 | 01 | **AI THẬT** `gemini-flash-latest` | 32 | **82%** (45/55) · 23/32 case | ⬜ chưa chấm | ⬜ | [eval/run-01.md](eval/run-01.md) |
 | **02** | **AI THẬT** `gemini-3.1-flash-lite-preview` | **46** | **95%** (72/76) · **43/46 case** | ⬜ chưa chấm | ⬜ | [eval/run-02.md](eval/run-02.md) |
-| 03 | AI thật (sau khi sửa L12) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **03** | **AI THẬT** `gemini-3.1-flash-lite-preview` | **55** | **95%** (90/95) · **52/55 case** | ⬜ chưa chấm | ⬜ | [eval/run-03.md](eval/run-03.md) |
+| 04 | AI thật (sau khi sửa guardrail) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 **Lượt 01 — 9 case fail, tách hai loại:**
 
 - **2 fail thật của sản phẩm** (C04, C25, cùng gốc): guard ② *"vùng quá nhỏ thì hỏi lại"* chỉ được cài trong nhánh mock, nên khi bật AI thật thì một dải viền 40×196px vẫn được gửi đi và model mô tả nó rất tự tin. **Đúng lỗi mà lớp ② phải chặn — golden set bắt được, chạy mock thì không bao giờ thấy.** Đã sửa: chuyển guard lên `Explain.run()` để áp cho cả hai chế độ.
 - **7 nhiễu do quota 429** (23 lần gặp 429 trong một lượt): lời gọi lỗi → không có `disclosure`/`citation` để chấm. Đã sửa: giãn cách 7s, retry lùi dần 3 lần, và tách case `rateLimited` khỏi % để lỗi hạ tầng không bị đếm thành lỗi sản phẩm.
+
+**Lượt 03 — 52/55 case (95%), 0 lần 429, 48 trace.** Trước khi chạy đã soát và sửa **ba lỗi của chính bộ test**, trong đó một lỗi che mất bug thật: điều kiện `refused` chỉ kiểm `grounded === false`, mà *hỏi lại* cũng `grounded === false` — nên lượt 02 báo `C28` "đạt" trong khi output thực tế là câu hỏi lại, không phải câu từ chối. Siết điều kiện thành so đúng chuỗi thì `C28` fail và lộ ra guardrail có lỗ thật (thiếu *"hết tài liệu"*, *"tóm tắt ý chính trong tài liệu này"*). **Một phần con số 93% của lượt 02 là ảo.**
+
+Đã thay danh sách từ khoá bằng 3 nhánh regex bắt theo bản chất yêu cầu (8/8 câu phải chặn đều chặn, 10/10 câu hợp lệ không bị chặn oan), và chuyển guardrail lên chạy **trước** nhánh số trang — nếu không thì *"tóm tắt từ trang 1 đến trang 20"* sẽ trả lời về trang 1 và im lặng bỏ qua việc học viên đòi 20 trang.
+
+**Độ trễ lượt 03 xấu hơn hẳn:** median 4.465ms, p90 **14.971ms**, max 26.948ms. Giả thuyết "prompt dài thêm" bị số liệu bác bỏ — prompt +29% nhưng output token *giảm*, và cùng cỡ output (175 vs 176 token) cho ra 1.420ms vs 13.855ms. Là **biến động phía server của model `-preview`**. Đây là **rủi ro demo**: nên đo lại trên bản stable trước CP6.
 
 **Lượt 02 — 3 case fail:** 1 fail thật (`L12`: *"TẠO QUIZ… TOÀN BỘ SLIDE NÀY"*, nguyên văn từ chatlog `C0063/T0849` — sinh quiz là non-goal nhưng `OUT_OF_SCOPE_PATTERNS` không khớp từ khoá nào nên bị gửi thẳng cho model; đã mở rộng danh sách, cần lượt 03 xác nhận) + 2 lỗi soạn case (`L01`/`L02` toạ độ bấm rơi vào khoảng trắng; đã dò lưới 35 điểm chọn lại).
 

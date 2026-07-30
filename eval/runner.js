@@ -121,28 +121,38 @@ const Runner = {
     let question = c.question || "";
     let stayedOn = startPage.num;
 
+    // Phải BÁM ĐÚNG 4 bậc tìm căn cứ của App.askFromChat, nếu không thì
+    // runner đo một sản phẩm khác với sản phẩm thật:
+    //   số slide trong câu > vùng chọn > vùng vừa hỏi > TRANG ĐANG XEM
+    // Bậc 4 là đường mới; trước đây runner mô phỏng nhánh "hỏi lại slide nào"
+    // mà app đã bỏ — số đo sẽ nói về code chết.
     if (c.chat) {
       question = c.chat;
+      // Guardrail chạy TRƯỚC nhánh số trang — y như App.askFromChat. Nếu không
+      // thì "tóm tắt từ trang 1 đến trang 44" đi vào nhánh số trang và runner
+      // đo một hành vi khác với app.
+      if (Explain.isOutOfScope(question)) {
+        return {
+          id: c.id, cls: c.cls, expect: c.expect,
+          out: REPLIES.outOfScope, grounded: false,
+          mode: "-", region: null, disclosure: null, stayedOn,
+          auto: this.check(c, { grounded: false, text: REPLIES.outOfScope }, null, null, stayedOn),
+        };
+      }
       const m = c.chat.match(PAGE_IN_QUESTION);
-      if (!m) {
-        // ② không nêu slide và không có vùng chọn -> hỏi lại, chưa gọi AI
-        return {
-          id: c.id, cls: c.cls, expect: c.expect,
-          out: REPLIES.noPageInQuestion, grounded: false,
-          mode: "-", region: null, disclosure: null, stayedOn,
-          auto: this.check(c, { grounded: false, text: REPLIES.noPageInQuestion }, null, null, stayedOn),
-        };
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (!source.hasPage(n)) {
+          return {
+            id: c.id, cls: c.cls, expect: c.expect,
+            out: REPLIES.pageOutOfRange(n, source.rangeText()), grounded: false,
+            mode: "-", region: null, disclosure: null, stayedOn,
+            auto: this.check(c, { grounded: false }, null, null, stayedOn),
+          };
+        }
+        page = await source.getPage(n);
       }
-      const n = parseInt(m[1], 10);
-      if (!source.hasPage(n)) {
-        return {
-          id: c.id, cls: c.cls, expect: c.expect,
-          out: REPLIES.pageOutOfRange(n, source.rangeText()), grounded: false,
-          mode: "-", region: null, disclosure: null, stayedOn,
-          auto: this.check(c, { grounded: false }, null, null, stayedOn),
-        };
-      }
-      page = await source.getPage(n);
+      // Không nêu số slide -> bậc 4: giữ nguyên trang đang xem (startPage)
     }
 
     // Xác định vùng
@@ -169,7 +179,49 @@ const Runner = {
     }
 
     const mode = Explain.readMode(page);
-    const reply = await Explain.run({ question, page, region, mode });
+    let reply = await Explain.run({ question, page, region, mode });
+
+    // ---- Câu hỏi TIẾP: chạy thêm từng lượt, tích luỹ lịch sử như App làm ----
+    // Không có phần này thì F01-F03 báo "đạt" mà không test gì — một test báo
+    // đạt mà không kiểm gì còn tệ hơn không có test.
+    let turns = [];
+    let followUpReplies = [];
+    if (c.followUps && c.followUps.length) {
+      if (reply.grounded !== false) {
+        turns.push({ page: page.num, question: question || "(giải thích vùng này)", answer: reply.text });
+      }
+
+      // Chen một lượt hỏi trang khác vào giữa, để kiểm lịch sử KHÔNG trộn trang
+      if (c.switchPageThenFollowUp && source.hasPage(c.switchPageThenFollowUp)) {
+        const other = await source.getPage(c.switchPageThenFollowUp);
+        const oRegion = { ...ContentDetector.contentBounds(other), wholePage: true };
+        const oReply = await Explain.run({
+          question: "giải thích trang này", page: other, region: oRegion,
+          mode: Explain.readMode(other),
+        });
+        if (oReply.grounded !== false) {
+          turns.push({ page: other.num, question: "giải thích trang này", answer: oReply.text });
+        }
+        if (CONFIG.USE_REAL_AI) await sleep(CONFIG.REAL_AI_DELAY_MS);
+      }
+
+      for (const fq of c.followUps) {
+        // Lọc theo trang y như App.historyFor()
+        const hist = turns.filter((t) => t.page === page.num)
+          .slice(-CONFIG.HISTORY_MAX_TURNS)
+          .map((t) => ({ question: t.question.slice(0, 300),
+                         answer: (t.answer || "").slice(0, CONFIG.HISTORY_MAX_CHARS) }));
+        const fr = await Explain.run({ question: fq, page, region, mode, history: hist });
+        followUpReplies.push({ q: fq, reply: fr, histSent: hist.length });
+        if (fr.grounded !== false) {
+          turns.push({ page: page.num, question: fq, answer: fr.text });
+        }
+        if (CONFIG.USE_REAL_AI) await sleep(CONFIG.REAL_AI_DELAY_MS);
+      }
+      // Chấm trên lượt hỏi tiếp CUỐI — đó là thứ case này muốn kiểm
+      const last = followUpReplies[followUpReplies.length - 1];
+      if (last) reply = last.reply;
+    }
 
     return {
       id: c.id, cls: c.cls, expect: c.expect,
@@ -180,6 +232,8 @@ const Runner = {
       pageDims: { w: page.width, h: page.height },
       disclosure: reply.disclosure || null,
       trace: reply.trace || null,
+      followUps: followUpReplies.map((f) => ({ q: f.q, histSent: f.histSent,
+        histTurns: f.reply.disclosure ? f.reply.disclosure.historyTurns : null })),
       auto: this.check(c, reply, region, page, stayedOn),
       hFlag: this.flagH(c, reply.text),
     };
@@ -193,12 +247,21 @@ const Runner = {
 
     if (a.detected) add("dò được vùng", !!region);
     if (a.noContentPath) add("đi nhánh ① không đoán", reply.text === REPLIES.noContent);
+    // `grounded === false` đúng cho CẢ từ chối và hỏi lại — kiểm mỗi cờ đó là
+    // không phân biệt được hai thứ. Lượt 02 vì thế báo C28 "đạt" trong khi
+    // output thực tế là câu HỎI LẠI, không phải câu từ chối: một pass sai lý do
+    // che mất một bug thật của guardrail. Giờ so đúng chuỗi.
     if (a.asksBack) {
       add("hỏi lại thay vì đoán",
-        reply.grounded === false &&
-        [REPLIES.tooSmall, REPLIES.noPageInQuestion].includes(reply.text));
+        reply.grounded === false && reply.text === REPLIES.tooSmall,
+        reply.text === REPLIES.outOfScope ? "đây là câu TỪ CHỐI, không phải hỏi lại" : "");
     }
-    if (a.refused) add("từ chối", reply.grounded === false);
+    if (a.refused) {
+      add("từ chối vì ngoài phạm vi",
+        reply.grounded === false && reply.text === REPLIES.outOfScope,
+        reply.grounded === false && reply.text !== REPLIES.outOfScope
+          ? "grounded=false nhưng KHÔNG phải câu từ chối" : "");
+    }
     if (a.nothingSent) add("không gửi gì ra ngoài", !reply.disclosure);
     if (a.mode) add(`chế độ đọc = ${a.mode}`, (reply.mode || "") === a.mode, reply.mode || "-");
     if (a.maxPages) {
@@ -222,6 +285,15 @@ const Runner = {
     if (a.hasSuggestions) add("có gợi ý câu hỏi tiếp",
       !!(reply.suggestions && reply.suggestions.length),
       String((reply.suggestions || []).length));
+    if (a.hasHistory) add("lượt hỏi tiếp có gửi lịch sử",
+      !!(reply.disclosure && reply.disclosure.historyTurns > 0),
+      String(reply.disclosure ? reply.disclosure.historyTurns : "-"));
+    if (a.historyOnlySamePage) {
+      // Đã hỏi 1 lượt trang này + 1 lượt trang khác. Lịch sử gửi kèm chỉ được
+      // gồm lượt của trang đang bàn -> đúng 1 lượt, không phải 2.
+      const n = reply.disclosure ? reply.disclosure.historyTurns : -1;
+      add("lịch sử chỉ gồm lượt của đúng trang này", n === 1, String(n));
+    }
     if (a.regionDisplay && region && page) {
       const s = CONFIG.SLIDE_W / page.width; // trang -> hệ hiển thị 960
       const dw = Math.round(region.w * s), dh = Math.round(region.h * s);
@@ -314,6 +386,17 @@ const Runner = {
     const casesWithAuto = rows.filter((r) => (r.auto || []).length);
     const casesAllPass = casesWithAuto.filter((r) => r.auto.every((a) => a.ok));
 
+    // Chỉ số mức BỘ, không phải mức case — có những thứ không nên đòi ở từng
+    // lượt (vd gợi ý câu hỏi tiếp: prompt cho phép bỏ khi không có gợi ý hợp lý)
+    const tr = Explain.traces || [];
+    const corpus = tr.length
+      ? ` · <span class="k">toàn bộ: ${tr.filter((t) => (t.suggestions || []).length).length}/${tr.length} ` +
+        `lượt gọi có gợi ý · ${tr.filter((t) => t.outsideDoc).length}/${tr.length} lượt có khối ngoài tài liệu` +
+        (tr.some((t) => t.grounding_probe && t.grounding_probe.readFirst)
+          ? ` · <b class="warn">${tr.filter((t) => t.grounding_probe && t.grounding_probe.readFirst).length} lượt nên đọc trước khi chấm H</b>`
+          : "") + "</span>"
+      : "";
+
     document.getElementById("summary").innerHTML =
       `<b>${rows.length}</b> case đã chạy · ` +
       `chấm máy: <b>${passed}/${total}</b> điều kiện đạt ` +
@@ -324,6 +407,7 @@ const Runner = {
         ? `<br><span class="warn">${rl.length} case bị chặn quota (429) sau 3 lần thử — ` +
           `lỗi hạ tầng, đã tách khỏi % trên: ${rl.map((r) => r.id).join(", ")}</span>`
         : "") +
+      corpus +
       `<br><span class="warn">Bốn chiều G/S/H/C vẫn phải chấm bằng người — bảng markdown bên dưới đã để cột trống.</span>`;
 
     document.getElementById("md").value = this.toMarkdown();

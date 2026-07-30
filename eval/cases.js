@@ -44,10 +44,18 @@ const GOLDEN_CASES = [
     auto: { asksBack: true, nothingSent: true },
   },
   {
+    // Kỳ vọng ĐÃ ĐỔI có chủ ý. Bản trước: app tự đáp "bạn đang hỏi slide nào?"
+    // và không gửi gì đi. Nhưng hỏi vậy khi học viên đang mở slide trước mắt là
+    // hỏi một thứ hiển nhiên — nên giờ bậc 4 lấy trang đang xem làm căn cứ.
+    //
+    // Trách nhiệm hỏi-lại chuyển từ tầng app sang tầng MODEL: trang 12 có 2 sơ
+    // đồ, "cái sơ đồ đó" là mơ hồ thật, model phải hỏi lại là cái nào chứ
+    // không được tự chọn một cái. Chấm bằng người (chiều H), máy chỉ kiểm
+    // được là có gửi đi đúng 1 trang.
     id: "C05", cls: "②", src: "mock", page: 12,
     chat: "giải thích cái sơ đồ đó", // không nêu số slide
-    expect: "Hỏi lại đang nói slide nào",
-    auto: { asksBack: true, nothingSent: true },
+    expect: "Trang 12 có nhiều sơ đồ → model phải HỎI LẠI là sơ đồ nào, không tự chọn một cái rồi giải thích",
+    auto: { maxPages: 1 },
   },
   {
     id: "C06", cls: "②", src: "mock", page: 12,
@@ -378,11 +386,19 @@ const GOLDEN_CASES = [
     auto: { mode: "scan", maxPages: 1, hasOutsideDoc: true },
   },
   {
+    // Điều kiện máy chấm ĐÃ BỎ `hasSuggestions`. Lý do: prompt cố ý cho phép
+    // model bỏ dòng gợi ý khi không nghĩ ra gợi ý hợp lý — nên đòi mọi lượt
+    // phải có gợi ý là đòi trái với chính thiết kế. Lượt 03 fail case này vì
+    // vậy: lỗi của TEST, không phải của sản phẩm.
+    //
+    // Tỉ lệ có gợi ý là chỉ số mức BỘ, không phải mức case — runner báo trong
+    // phần tổng kết (lượt 03: 34/48 lượt gọi = 71%).
+    // Còn "gợi ý có đúng về phần tài liệu này không" là chấm bằng người.
     id: "T06", cls: "thường", src: "mock", page: 18, click: [0.292, 0.537],
     question: "",
     src_log: "tự dùng thử prototype",
-    expect: "Có ≥1 gợi ý câu hỏi tiếp, và gợi ý phải về đúng phần tài liệu này (trường follow_ups của tutor hiện tại chưa dùng lần nào)",
-    auto: { maxPages: 1, hasSuggestions: true },
+    expect: "Nếu có gợi ý thì phải về đúng phần tài liệu này, không gợi ý thứ tài liệu không nói tới (chấm bằng người)",
+    auto: { maxPages: 1 },
   },
 
   // ---------- Trên PDF THẬT (d1-slide-hackathon.pdf) ----------

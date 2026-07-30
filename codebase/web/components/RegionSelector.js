@@ -153,6 +153,31 @@ const RegionSelector = {
     if (this.ctx) this.ctx.clearRect(0, 0, CONFIG.SLIDE_W, CONFIG.SLIDE_H);
   },
 
+  // Nháy sáng một vùng (toạ độ TRANG) để học viên đối chiếu câu trả lời với
+  // đúng chỗ trên slide (G11). Chỉ vẽ, KHÔNG đổi vùng đang chọn — bấm xem lại
+  // một câu trả lời cũ không được làm mất vùng đang làm việc.
+  flash(rectPage, ms = 1600) {
+    const r = this.pageRectToDisplay(rectPage);
+    if (!r) return;
+    const keep = this.selection;
+    let on = true, n = 0;
+    const tick = () => {
+      this.ctx.clearRect(0, 0, CONFIG.SLIDE_W, CONFIG.SLIDE_H);
+      if (on) {
+        this.ctx.fillStyle = "rgba(79,70,229,0.16)";
+        this.ctx.fillRect(r.x, r.y, r.w, r.h);
+        this.ctx.strokeStyle = "#4f46e5";
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(r.x, r.y, r.w, r.h);
+      }
+      on = !on;
+      if (++n < 6) return setTimeout(tick, ms / 6);
+      this.selection = keep;   // trả lại đúng trạng thái trước khi nháy
+      this.draw();
+    };
+    tick();
+  },
+
   // Chọn trọn phần CÓ NỘI DUNG của trang (bỏ lề trống) — dùng khi học
   // viên hỏi cả một slide. Bỏ lề để không gửi đi phần trắng vô ích.
   selectWholePage() {

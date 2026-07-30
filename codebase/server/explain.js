@@ -59,7 +59,11 @@ const Explain = {
   // để nhận về một câu từ chối.
   isOutOfScope(question) {
     const q = (question || "").toLowerCase();
-    return OUT_OF_SCOPE_PATTERNS.some((p) => q.includes(p));
+    if (OUT_OF_SCOPE_PATTERNS.some((p) => q.includes(p))) return true;
+    // Mẫu "động từ yêu cầu + từ chỉ toàn bộ + đối tượng tài liệu" — bắt các
+    // cách nói mà danh sách từ khoá cố định không phủ hết (xem ghi chú ở
+    // OUT_OF_SCOPE_REGEX trong mock-data.js).
+    return OUT_OF_SCOPE_REGEX.test(q);
   },
 
   // --- Quyết định 3: đóng gói dữ liệu gửi đi ---
@@ -192,11 +196,29 @@ const Explain = {
     }
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      const hint = res.status === 404
-        ? ` — model \`${model}\` không dùng được với key này. Bấm **API key** để dò lại danh sách.`
-        : res.status === 429 ? " — vượt quota free tier, chờ một lát rồi thử lại." : "";
+      // Google nói rõ lý do trong body — không nuốt nó, vì "lỗi 403" trần
+      // trụi thì không ai biết phải sửa gì.
+      let reason = "";
+      try { reason = JSON.parse(body)?.error?.message || ""; } catch { reason = body.slice(0, 200); }
+
+      let hint = "";
+      if (res.status === 404) {
+        hint = ` — model \`${model}\` không dùng được với key này. Bấm **API key** để dò lại danh sách.`;
+      } else if (res.status === 429) {
+        hint = " — vượt quota free tier, chờ một lát rồi thử lại.";
+      } else if (res.status === 403) {
+        // 403 hầu như luôn là một trong ba nguyên nhân dưới đây.
+        hint =
+          " — key bị từ chối. Ba nguyên nhân thường gặp:\n" +
+          "1. Key đặt **giới hạn HTTP referrer** (Website restrictions) — Generative Language API **không nhận** key loại đó. Đổi key về *None* hoặc tạo key mới không giới hạn.\n" +
+          "2. Key giới hạn theo API nhưng **chưa tick Generative Language API**.\n" +
+          `3. Model \`${model}\` là bản preview/trả phí mà key free không được dùng — bấm **API key** chọn lại model khác.`;
+      }
       console.warn("[AI ERROR]", res.status, body.slice(0, 500));
-      return { text: `Gọi model lỗi (${res.status})${hint}`, mode, grounded: false };
+      return {
+        text: `Gọi model lỗi (${res.status})${hint}${reason ? `\n\n*Google trả về:* \`${reason}\`` : ""}`,
+        mode, grounded: false,
+      };
     }
     const data = await res.json();
     const raw = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") || "";
@@ -220,6 +242,9 @@ const Explain = {
       answer,
       outsideDoc: parsed.outsideDoc || null,
       suggestions: parsed.suggestions,
+      // Bộ lọc thứ tự đọc cho người chấm chiều H — không phải phán quyết
+      grounding_probe: this.groundingProbe({
+        answer: parsed.text, text, question, history, mode }),
     };
     console.log("[AI TRACE]", JSON.stringify(trace, null, 2));
     Explain.traces.push(trace);
@@ -236,6 +261,57 @@ const Explain = {
       suggestions: parsed.suggestions,    // gợi ý câu hỏi tiếp
       citation: `Trang ${page.num}${mode === "scan" ? " (quét ảnh)" : ""}`,
       mode, raw: data, trace,
+    };
+  },
+
+  // --- Tự kiểm grounding (chỉ ghi vào trace, KHÔNG hiện cho học viên) ---
+  //
+  // Ý tưởng: ở chế độ `text` ta biết chính xác đoạn text nào đã gửi đi. Đếm
+  // xem những từ mang nghĩa trong câu trả lời có bao nhiêu % KHÔNG xuất hiện
+  // trong text đó (cũng không có trong câu hỏi hay lịch sử).
+  //
+  // ĐÂY KHÔNG PHẢI PHÁN QUYẾT. Model diễn giải bằng lời của nó là đúng yêu
+  // cầu, nên tỉ lệ cao không đồng nghĩa với bịa. Mục đích duy nhất: cho hai
+  // người chấm chiều H một thứ tự đọc — case tỉ lệ cao đọc trước.
+  //
+  // Phần [NGOÀI TÀI LIỆU] bị loại khỏi phép đo, vì nó vốn dĩ nằm ngoài tài liệu.
+  groundingProbe({ answer, text, question, history, mode }) {
+    if (mode !== "text" || !text || !answer) return null;
+
+    const STOP = new Set(("và là của có trong cho khi thì mà này đó các những một " +
+      "được không với như để nên nếu vì sao nào bạn mình phần nội dung tài liệu " +
+      "slide trang bên trên dưới sau trước cũng rất hơn nhất tức nghĩa vậy " +
+      "chào nhé ạ hoặc hay còn về từ theo ra vào lại đang đã sẽ bị do bởi " +
+      "chỉ chưa vẫn nữa thêm cùng giữa mỗi nhiều ít lớn nhỏ đây kia ấy").split(/\s+/));
+
+    const words = (s) => (s || "").toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    const haystack = new Set([
+      ...words(text), ...words(question),
+      ...(history || []).flatMap((h) => [...words(h.question), ...words(h.answer)]),
+    ]);
+
+    const content = words(answer).filter((w) => w.length >= 4 && !STOP.has(w));
+    if (!content.length) return null;
+    const uniq = new Set(content);
+    const unsupported = [...new Set(content.filter((w) => !haystack.has(w)))];
+    const ratio = Math.round(unsupported.length * 100 / uniq.size);
+
+    // Chỉ gắn cờ khi câu trả lời ĐỦ DÀI mà vẫn lệch nhiều. Đo thử cho thấy
+    // một câu từ chối trung thực ("phần tài liệu này không đề cập...") cũng
+    // ra 100% vì chỉ có 2 từ nội dung — gắn cờ nó là báo động sai, và báo
+    // động sai nhiều thì người chấm bỏ luôn cái cờ.
+    const flag = uniq.size >= CONFIG.PROBE_MIN_WORDS && ratio >= CONFIG.PROBE_FLAG_RATIO;
+
+    return {
+      contentWords: content.length,
+      uniqueContentWords: uniq.size,
+      unsupportedRatio: ratio,
+      unsupportedSample: unsupported.slice(0, 12),
+      readFirst: flag,
+      note: "Bộ lọc THỨ TỰ ĐỌC cho người chấm chiều H, không phải phán quyết. " +
+            "Model diễn giải bằng lời của nó là đúng yêu cầu, nên tỉ lệ cao " +
+            "KHÔNG đồng nghĩa với bịa. Câu ngắn (dưới " + CONFIG.PROBE_MIN_WORDS +
+            " từ nội dung) không được gắn cờ vì dễ báo động sai.",
     };
   },
 
