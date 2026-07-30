@@ -1,0 +1,2072 @@
+[
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "Dòng này viết gì?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 5027,
+    "usage": {
+      "promptTokenCount": 1698,
+      "candidatesTokenCount": 101,
+      "totalTokenCount": 1799,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1075
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 623
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 404,
+      "imageH": 240,
+      "regionPctOfPage": 7,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, nội dung trên ảnh đề cập đến mục số 3 là \"Ngoài phạm vi\". Slide đang đặt ra tình huống khi người dùng yêu cầu thực hiện những việc không được phép, và gợi ý cách để chúng ta từ chối họ một cách khéo léo, vẫn giữ được sự hữu ích. Ví dụ cụ thể được đưa ra là việc \"làm hộ bài tập\".",
+    "outsideDoc": null,
+    "suggestions": [
+      "Cách từ chối hữu ích?",
+      "Thế nào là ngoài phạm vi?"
+    ]
+  },
+  {
+    "page": 18,
+    "mode": "text",
+    "question": "Số liệu này lấy từ đâu?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 4465,
+    "usage": {
+      "promptTokenCount": 1650,
+      "candidatesTokenCount": 76,
+      "totalTokenCount": 1726,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1032
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 618
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 18,
+      "imageW": 372,
+      "imageH": 56,
+      "regionPctOfPage": 2,
+      "textChars": 15,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, số liệu này được lấy từ dữ liệu nhật ký hội thoại (chatlog) với quy mô 1.261 lượt tương tác (turn), được thu thập trong khoảng thời gian từ ngày 22 đến ngày 29 tháng 07.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Chatlog là gì?",
+      "Dữ liệu này dùng làm gì?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "giải thích cái sơ đồ đó",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1644,
+    "usage": {
+      "promptTokenCount": 1701,
+      "candidatesTokenCount": 170,
+      "totalTokenCount": 1871,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 1536,
+      "imageH": 834,
+      "regionPctOfPage": 97,
+      "textChars": 45,
+      "textItems": 2,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": true
+    },
+    "answer": "Chào bạn, sơ đồ này thể hiện 3 mức độ tự động hóa dựa trên \"chi phí lỗi\" (cost-of-error) để bạn cân nhắc khi ứng dụng AI:\n\n* **Augment:** AI chỉ đóng vai trò gợi ý, còn con người là người đưa ra quyết định cuối cùng.\n* **Conditional:** AI sẽ tự động xử lý các tình huống rõ ràng, nhưng nếu gặp trường hợp mơ hồ thì sẽ chuyển sang cho con người xử lý.\n* **Automate:** AI tự đảm nhận toàn bộ quy trình.\n\nMức độ này giúp bạn kiểm soát rủi ro, ví dụ như với \"Automate\" thì lỗi sai thường rẻ và người dùng có thể tự nhận ra để sửa.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Chọn mức Augment khi nào?",
+      "Automate khác gì Conditional?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "Giải thích sơ đồ này",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 8582,
+    "usage": {
+      "promptTokenCount": 1676,
+      "candidatesTokenCount": 58,
+      "totalTokenCount": 1734,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 620
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1056
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 553,
+      "imageH": 259,
+      "regionPctOfPage": 11,
+      "textChars": 45,
+      "textItems": 2,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, tài liệu bạn cung cấp chỉ ghi tên sơ đồ là \"conditional automation 3 mức automation\" nhưng không chứa hình ảnh hay mô tả chi tiết nội dung của sơ đồ đó. Vì vậy, mình không thể giải thích cụ thể các thành phần trong hình cho bạn được.",
+    "outsideDoc": null,
+    "suggestions": []
+  },
+  {
+    "page": 18,
+    "mode": "text",
+    "question": "Con số này nghĩa là gì?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1420,
+    "usage": {
+      "promptTokenCount": 1706,
+      "candidatesTokenCount": 175,
+      "totalTokenCount": 1881,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1085
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 18,
+      "imageW": 648,
+      "imageH": 584,
+      "regionPctOfPage": 29,
+      "textChars": 23,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần tài liệu này chỉ cung cấp tiêu đề \"Biểu đồ tỷ lệ trích dẫn\" và hình ảnh cho thấy hai con số 53,8% (tương ứng với \"Có trích dẫn\") và 46,2% (tương ứng với \"Trích dẫn rỗng\"). Tài liệu không giải thích chi tiết ý nghĩa cụ thể của các khái niệm này trong ngữ cảnh bài giảng.",
+    "outsideDoc": "Thông thường, biểu đồ này thể hiện phân bố phần trăm của dữ liệu hoặc kết quả nghiên cứu liên quan đến việc sử dụng trích dẫn, trong đó \"trích dẫn rỗng\" có thể hiểu là các trường hợp không có trích dẫn đi kèm.",
+    "suggestions": [
+      "Ý nghĩa trích dẫn rỗng?",
+      "Giải thích biểu đồ?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "Nhánh này khi nào xảy ra?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 4520,
+    "usage": {
+      "promptTokenCount": 1699,
+      "candidatesTokenCount": 67,
+      "totalTokenCount": 1766,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 619
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần tài liệu bạn cung cấp chỉ ghi tên là \"Sơ đồ conditional automation\" chứ không mô tả chi tiết các nhánh trong sơ đồ. Do đó, tài liệu này không đề cập đến việc nhánh đó xảy ra khi nào.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Conditional automation là gì?",
+      "Cấu tạo sơ đồ này?"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "Hai cái này khác nhau chỗ nào?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 6384,
+    "usage": {
+      "promptTokenCount": 1717,
+      "candidatesTokenCount": 131,
+      "totalTokenCount": 1848,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 625
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1092
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 1413,
+      "imageH": 259,
+      "regionPctOfPage": 28,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, sự khác biệt giữa hai trường hợp này nằm ở bản chất vấn đề của dữ liệu đầu vào:\n\n\"Nguồn sự thật\" tập trung vào việc AI có thể tự ý bịa đặt thông tin hoặc không có căn cứ xác thực (ví dụ như trích dẫn sai số trang). Trong khi đó, \"Mơ hồ/thiếu thông tin\" là tình huống AI nhận được yêu cầu không rõ ràng khiến nó không hiểu rõ ý người dùng, cần phải hỏi lại hoặc từ chối thực hiện thay vì cố đoán mò.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Khi AI bịa đặt",
+      "Xử lý yêu cầu mơ hồ"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "Sơ đồ này nghĩa là gì?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 14971,
+    "usage": {
+      "promptTokenCount": 1699,
+      "candidatesTokenCount": 150,
+      "totalTokenCount": 1849,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 619
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, sơ đồ này mô tả quy trình thực hiện \"conditional automation\" (tự động hóa có điều kiện). Cụ thể, hệ thống sẽ kiểm tra xem câu hỏi của học viên có dựa trên tài liệu hay không. Nếu câu trả lời có trong tài liệu, hệ thống sẽ phản hồi dựa trên đó; ngược lại, hệ thống sẽ thông báo rõ giới hạn phạm vi kiến thức của mình.",
+    "outsideDoc": "Đây là dạng sơ đồ logic (flowchart) dùng để hướng dẫn AI đưa ra quyết định hoặc phản hồi một cách nhất quán dựa trên các điều kiện cho trước.",
+    "suggestions": [
+      "Conditional automation là gì?",
+      "Quy trình xử lý câu hỏi?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 12388,
+    "usage": {
+      "promptTokenCount": 1696,
+      "candidatesTokenCount": 136,
+      "totalTokenCount": 1832,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 616
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 584,
+      "imageH": 124,
+      "regionPctOfPage": 5,
+      "textChars": 16,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần tài liệu này đang đề cập đến \"Augment\" trong chuỗi 3 mức độ tự động hóa (automation). Ở mức độ này, AI đóng vai trò hỗ trợ bằng cách đưa ra các gợi ý, nhưng quyền quyết định cuối cùng vẫn thuộc về con người.",
+    "outsideDoc": "Trong thực tế, khái niệm Augmentation (tăng cường) thường được dùng để chỉ việc AI giúp con người làm việc hiệu quả và nhanh chóng hơn thay vì thay thế hoàn toàn vai trò của con người trong quy trình.",
+    "suggestions": [
+      "3 mức automation là gì?",
+      "Augment nghĩa là gì?"
+    ]
+  },
+  {
+    "page": 18,
+    "mode": "text",
+    "question": "Đọc giúp mình biểu đồ này",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 9925,
+    "usage": {
+      "promptTokenCount": 1706,
+      "candidatesTokenCount": 85,
+      "totalTokenCount": 1791,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1085
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 18,
+      "imageW": 648,
+      "imageH": 584,
+      "regionPctOfPage": 29,
+      "textChars": 23,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, biểu đồ này thể hiện tỷ lệ trích dẫn trong dữ liệu với hai nhóm: nhóm có trích dẫn chiếm 53,8% và nhóm trích dẫn rỗng chiếm 46,2%. Tài liệu không cung cấp thêm ngữ cảnh về tập dữ liệu này được thu thập từ đâu.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Ý nghĩa nhóm trích dẫn?",
+      "Dữ liệu là gì?"
+    ]
+  },
+  {
+    "page": 18,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 15613,
+    "usage": {
+      "promptTokenCount": 1718,
+      "candidatesTokenCount": 105,
+      "totalTokenCount": 1823,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 618
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 18,
+      "imageW": 444,
+      "imageH": 248,
+      "regionPctOfPage": 8,
+      "textChars": 15,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần này đang nhắc đến \"Ghi chú hậu quả\" khi AI cung cấp câu trả lời mà không dẫn kèm nguồn tài liệu cụ thể.\n\nKhi thiếu thông tin này, học viên sẽ khó xác minh tính chính xác của câu trả lời. Hệ quả là bạn có thể dễ dàng tin vào thông tin sai lệch, hoặc phải tốn thêm thời gian và công sức để tự kiểm chứng lại dữ liệu đó.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Hậu quả là gì?",
+      "Tại sao cần trích dẫn?"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "Giải thích bảng này",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 13855,
+    "usage": {
+      "promptTokenCount": 1713,
+      "candidatesTokenCount": 176,
+      "totalTokenCount": 1889,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1092
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 1398,
+      "imageH": 562,
+      "regionPctOfPage": 59,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, bảng này liệt kê 4 tình huống khó khi tương tác với AI mà chúng ta cần lưu ý xử lý:\n\n1. **Nguồn sự thật:** AI có thể bịa thông tin hoặc trích dẫn sai, nên cần xác định rõ căn cứ dữ liệu.\n2. **Mơ hồ:** Khi câu lệnh của bạn thiếu thông tin, hãy hỏi lại hoặc từ chối thay vì đoán mò.\n3. **Ngoài phạm vi:** Cần từ chối khéo léo và hữu ích khi nhận yêu cầu không phù hợp (ví dụ: làm hộ bài tập).\n4. **Đặc thù domain:** Tránh đưa thông tin sai trong các lĩnh vực chuyên môn vì sẽ làm người dùng mất niềm tin hoặc học sai kiến thức.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI bịa thông tin",
+      "Từ chối yêu cầu"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 9331,
+    "usage": {
+      "promptTokenCount": 1724,
+      "candidatesTokenCount": 97,
+      "totalTokenCount": 1821,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 624
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 332,
+      "imageH": 192,
+      "regionPctOfPage": 5,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần này nhắc nhở chúng ta cần chú ý đến \"Nguồn sự thật\" khi làm việc với AI. Nội dung này đặt ra hai câu hỏi quan trọng giúp bạn kiểm soát chất lượng câu trả lời: AI thường dễ bịa đặt thông tin ở những đâu và bạn nên xử lý ra sao khi AI trả lời mà thiếu tài liệu hoặc căn cứ xác thực.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI hay bịa ở đâu?",
+      "Không có căn cứ thì sao?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "cost-of-error là gì?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 17832,
+    "usage": {
+      "promptTokenCount": 1659,
+      "candidatesTokenCount": 147,
+      "totalTokenCount": 1806,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1040
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 619
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 1536,
+      "imageH": 158,
+      "regionPctOfPage": 18,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Tài liệu được cung cấp chỉ nhắc đến \"cost-of-error\" như một yếu tố để chọn mức độ tự động hóa, nhưng không định nghĩa cụ thể thuật ngữ này là gì.",
+    "outsideDoc": "Cost-of-error (chi phí của sai lầm) là tổng thiệt hại về tài chính, thời gian hoặc uy tín mà một tổ chức phải gánh chịu khi xảy ra lỗi trong quá trình vận hành hoặc tự động hóa. Khi chi phí này càng cao, người ta thường yêu cầu quy trình kiểm soát nghiêm ngặt hơn thay vì tự động hóa hoàn toàn.",
+    "suggestions": [
+      "Chọn mức automation thế nào?",
+      "Conditional automation là gì?"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "cho ví dụ đi",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 2054,
+    "usage": {
+      "promptTokenCount": 1696,
+      "candidatesTokenCount": 104,
+      "totalTokenCount": 1800,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1075
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 404,
+      "imageH": 240,
+      "regionPctOfPage": 7,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Dựa trên hình ảnh bạn cung cấp, slide đã đưa ra một ví dụ rất rõ ràng về trường hợp \"Ngoài phạm vi\" là khi người dùng yêu cầu AI \"làm hộ bài tập\".\n\nTrong tình huống này, AI cần từ chối yêu cầu nhưng vẫn phải giữ thái độ hữu ích, hỗ trợ người dùng theo hướng khác thay vì chỉ trả lời cộc lốc là không làm.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Cách từ chối hữu ích?",
+      "Thế nào là ngoài phạm vi?"
+    ]
+  },
+  {
+    "page": 1,
+    "mode": "text",
+    "question": "giải thích slide này",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 2330,
+    "usage": {
+      "promptTokenCount": 1741,
+      "candidatesTokenCount": 71,
+      "totalTokenCount": 1812,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 641
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 1,
+      "imageW": 888,
+      "imageH": 328,
+      "regionPctOfPage": 22,
+      "textChars": 108,
+      "textItems": 5,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": true
+    },
+    "answer": "Slide này giới thiệu buổi học đầu tiên của khóa AI Thực Chiến với chủ đề nền tảng về AI và LLM. Mục tiêu của phần này là giúp bạn hiểu rõ cách thức hoạt động thực sự của các công cụ AI mà bạn vẫn đang sử dụng hàng ngày.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI là gì?",
+      "LLM là gì?"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "cái này là gì?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 4085,
+    "usage": {
+      "promptTokenCount": 1702,
+      "candidatesTokenCount": 49,
+      "totalTokenCount": 1751,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 622
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 154,
+      "imageH": 173,
+      "regionPctOfPage": 2,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, hình ảnh bạn gửi chỉ bao gồm hai mảng màu trắng và xám, không có nội dung chữ hay hình vẽ cụ thể nào để mình có thể giải thích. Phần tài liệu này không thể hiện thông tin gì cả.",
+    "outsideDoc": null,
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "so do nay noi gi",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 4929,
+    "usage": {
+      "promptTokenCount": 1696,
+      "candidatesTokenCount": 143,
+      "totalTokenCount": 1839,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 616
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, dựa trên tài liệu bạn gửi thì đây là sơ đồ \"conditional automation\". Nó mô tả quy trình tự động hóa các phản hồi dựa trên các điều kiện kiểm tra thông tin có sẵn trong tài liệu hay không để đưa ra cách xử lý phù hợp.",
+    "outsideDoc": "Conditional automation (tự động hóa có điều kiện) là một kỹ thuật trong lập trình hoặc thiết kế hệ thống, nơi các hành động tiếp theo của hệ thống sẽ phụ thuộc vào việc dữ liệu đầu vào đáp ứng một hoặc nhiều điều kiện logic cụ thể nào đó.",
+    "suggestions": [
+      "conditional automation là gì?",
+      "Sơ đồ này dùng để làm gì?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 12116,
+    "usage": {
+      "promptTokenCount": 1698,
+      "candidatesTokenCount": 158,
+      "totalTokenCount": 1856,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 618
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, \"Sơ đồ conditional automation\" (tự động hóa có điều kiện) là mô hình minh họa quy trình xử lý thông tin dựa trên các điều kiện cụ thể. Trong đó, hệ thống sẽ kiểm tra xem một yêu cầu hoặc dữ liệu đầu vào có thỏa mãn các tiêu chí hay không để đưa ra phản hồi phù hợp.",
+    "outsideDoc": "Conditional automation là kỹ thuật thiết lập các quy tắc \"Nếu - Thì\" (If-Then) để máy tính tự động thực hiện hành động dựa trên kết quả kiểm tra điều kiện, giúp tối ưu hóa công việc mà không cần con người can thiệp thủ công.",
+    "suggestions": [
+      "Conditional automation là gì?",
+      "Ứng dụng của nó?"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1689,
+    "usage": {
+      "promptTokenCount": 1724,
+      "candidatesTokenCount": 75,
+      "totalTokenCount": 1799,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 624
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 332,
+      "imageH": 192,
+      "regionPctOfPage": 5,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần này hướng dẫn cách kiểm soát thông tin khi sử dụng AI. Slide đặt ra hai câu hỏi để bạn tự rà soát: nhận diện các trường hợp AI dễ bịa đặt thông tin và cách xử lý khi không có dữ liệu gốc để đối chứng.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI hay bịa khi nào?",
+      "Cách kiểm soát AI?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 3047,
+    "usage": {
+      "promptTokenCount": 1698,
+      "candidatesTokenCount": 155,
+      "totalTokenCount": 1853,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 618
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần tài liệu này giới thiệu \"Sơ đồ conditional automation\", đây là mô hình minh họa quy trình thực hiện công việc dựa trên các điều kiện cụ thể. Trong đó, hệ thống sẽ kiểm tra xem một tác vụ hay yêu cầu có thỏa mãn điều kiện thiết lập sẵn hay không để đưa ra các luồng xử lý khác nhau.",
+    "outsideDoc": "Conditional automation (tự động hóa có điều kiện) là kỹ thuật thiết lập các quy tắc \"Nếu - Thì\" (If-Then) để máy tính tự động thực hiện hành động dựa trên dữ liệu đầu vào. Nhờ đó, quy trình làm việc được tối ưu hóa mà không cần sự can thiệp thủ công liên tục của con người.",
+    "suggestions": []
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "giải thích slide 24",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 26948,
+    "usage": {
+      "promptTokenCount": 1723,
+      "candidatesTokenCount": 197,
+      "totalTokenCount": 1920,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 623
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 1534,
+      "imageH": 864,
+      "regionPctOfPage": 100,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": true
+    },
+    "answer": "Chào bạn, slide này liệt kê 4 nhóm thách thức chính khi xây dựng tính năng AI:\n\n1. **Nguồn sự thật:** AI có thể tự bịa thông tin khi thiếu căn cứ, ví dụ như dẫn sai nguồn hoặc số trang.\n2. **Mơ hồ/Thiếu thông tin:** Khi câu lệnh của người dùng không rõ ràng, AI cần quyết định giữa việc hỏi lại, đoán mò hay từ chối trả lời.\n3. **Ngoài phạm vi:** Xảy ra khi người dùng yêu cầu các tác vụ AI không được phép làm, lúc này cần từ chối một cách khéo léo và vẫn giữ sự hữu ích.\n4. **Đặc thù domain:** Trong một số lĩnh vực chuyên môn, nếu AI đưa ra kết quả sai sẽ gây hậu quả nghiêm trọng về kiến thức hoặc mất uy tín với người dùng.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Ví dụ mơ hồ",
+      "Thách thức domain là gì?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "đọc hết tài liệu rồi tóm tắt giúp mình",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 4601,
+    "usage": {
+      "promptTokenCount": 1705,
+      "candidatesTokenCount": 162,
+      "totalTokenCount": 1867,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 625
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 1536,
+      "imageH": 834,
+      "regionPctOfPage": 97,
+      "textChars": 45,
+      "textItems": 2,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": true
+    },
+    "answer": "Chào bạn, tài liệu này hướng dẫn cách lựa chọn mức độ tự động hóa (automation) dựa trên chi phí lỗi (cost-of-error) qua 3 cấp độ:\n\n1. **Augment**: AI chỉ gợi ý, người dùng giữ quyền quyết định. Cách này áp dụng khi lỗi có thể gây ra hậu quả nghiêm trọng về kiến thức.\n2. **Conditional**: AI tự thực hiện với các trường hợp chắc chắn, còn các trường hợp mơ hồ sẽ chuyển cho con người xử lý.\n3. **Automate**: AI tự làm toàn bộ quy trình. Phương án này phù hợp khi chi phí sai sót thấp, người dùng có thể dễ dàng nhận biết và tự sửa lỗi.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Augment là gì?",
+      "Thế nào là Conditional?"
+    ]
+  },
+  {
+    "page": 5,
+    "mode": "text",
+    "question": "là gì",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 3721,
+    "usage": {
+      "promptTokenCount": 1724,
+      "candidatesTokenCount": 80,
+      "totalTokenCount": 1804,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 624
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 5,
+      "imageW": 1438,
+      "imageH": 520,
+      "regionPctOfPage": 56,
+      "textChars": 45,
+      "textItems": 3,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, cụm từ này đánh dấu giai đoạn khởi đầu trong dòng thời gian 70 năm phát triển của AI. Nó gắn liền với sự kiện Dartmouth Workshop diễn ra vào năm 1956, khi những bước đi đầu tiên và kỳ vọng về lĩnh vực này bắt đầu hình thành.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI bắt đầu khi nào?",
+      "Dartmouth Workshop là gì?"
+    ]
+  },
+  {
+    "page": 7,
+    "mode": "text",
+    "question": "giai thich",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 2071,
+    "usage": {
+      "promptTokenCount": 1688,
+      "candidatesTokenCount": 78,
+      "totalTokenCount": 1766,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 628
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1060
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 7,
+      "imageW": 1340,
+      "imageH": 520,
+      "regionPctOfPage": 53,
+      "textChars": 57,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Dòng thông tin này đánh dấu cột mốc năm 2009, khi Fei-Fei Li giới thiệu ImageNet. Sự kiện này được xem là một bước ngoặt mang tính cách mạng nhờ tập trung vào sức mạnh của dữ liệu trong lĩnh vực AI.",
+    "outsideDoc": null,
+    "suggestions": [
+      "ImageNet là gì?",
+      "Tại sao lại là 2009?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "Giải thích đoạn bôi đen ở Trang 12.",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1388,
+    "usage": {
+      "promptTokenCount": 1701,
+      "candidatesTokenCount": 77,
+      "totalTokenCount": 1778,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 584,
+      "imageH": 124,
+      "regionPctOfPage": 5,
+      "textChars": 16,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần tài liệu bạn chọn giải thích rằng \"Augment\" là một trong 3 mức độ của tự động hóa (automation). Ở mức này, AI đóng vai trò hỗ trợ bằng cách đưa ra các gợi ý, còn quyền ra quyết định cuối cùng vẫn thuộc về con người.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Mức độ khác?",
+      "3 mức automation?"
+    ]
+  },
+  {
+    "page": 11,
+    "mode": "text",
+    "question": "Kĩ thuật viết prompt này",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 3420,
+    "usage": {
+      "promptTokenCount": 1771,
+      "candidatesTokenCount": 137,
+      "totalTokenCount": 1908,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1075
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 696
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 11,
+      "imageW": 1428,
+      "imageH": 858,
+      "regionPctOfPage": 92,
+      "textChars": 256,
+      "textItems": 10,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần tài liệu này không đề cập đến kỹ thuật viết prompt. Nội dung ở đây chỉ giải thích cơ chế hoạt động bên trong Transformer: model sẽ đánh giá tất cả các từ trong từ vựng dựa trên ngữ cảnh, gán cho mỗi từ một xác suất cụ thể rồi mới đưa ra lựa chọn.",
+    "outsideDoc": "Prompt engineering là kỹ thuật tối ưu hóa đầu vào (câu lệnh) để hướng dẫn AI tạo ra kết quả mong muốn, ví dụ như cung cấp ngữ cảnh, định dạng đầu ra hoặc đặt vai trò cho AI.",
+    "suggestions": [
+      "Transformer làm gì?",
+      "Xác suất là gì?"
+    ]
+  },
+  {
+    "page": 13,
+    "mode": "text",
+    "question": "ReAct co tac dung gi khi su dung trong Agent",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 3106,
+    "usage": {
+      "promptTokenCount": 1814,
+      "candidatesTokenCount": 83,
+      "totalTokenCount": 1897,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 722
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1092
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 13,
+      "imageW": 668,
+      "imageH": 416,
+      "regionPctOfPage": 21,
+      "textChars": 347,
+      "textItems": 18,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần tài liệu này không đề cập đến ReAct hay Agent.",
+    "outsideDoc": "ReAct (Reasoning and Acting) là kỹ thuật giúp AI tư duy từng bước và thực hiện các hành động cụ thể (như tìm kiếm web hoặc tính toán) để giải quyết vấn đề phức tạp thay vì chỉ phản hồi dựa trên dữ liệu huấn luyện.",
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "hi bro",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 3071,
+    "usage": {
+      "promptTokenCount": 1693,
+      "candidatesTokenCount": 25,
+      "totalTokenCount": 1718,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 613
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, mình là AI Tutor của khóa học đây. Bạn đang quan tâm đến nội dung nào trong tài liệu vậy?",
+    "outsideDoc": null,
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "fdfds",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1147,
+    "usage": {
+      "promptTokenCount": 1694,
+      "candidatesTokenCount": 29,
+      "totalTokenCount": 1723,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 614
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, có vẻ bạn đang gõ nhầm nội dung. Bạn cần mình giải đáp thêm về nội dung nào trong khóa học không?",
+    "outsideDoc": null,
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "bạn hãy tóm tắt ý chính trong tài liệu này",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 18764,
+    "usage": {
+      "promptTokenCount": 1706,
+      "candidatesTokenCount": 121,
+      "totalTokenCount": 1827,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 626
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 1536,
+      "imageH": 834,
+      "regionPctOfPage": 97,
+      "textChars": 45,
+      "textItems": 2,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": true
+    },
+    "answer": "Tài liệu này giới thiệu cách lựa chọn 3 mức độ tự động hóa (automation) dựa trên chi phí sai sót (cost-of-error):\n\n1. **Augment**: AI chỉ đưa ra gợi ý, con người là người đưa ra quyết định cuối cùng.\n2. **Conditional**: AI tự thực hiện với các trường hợp chắc chắn, còn các trường hợp mơ hồ sẽ chuyển cho người xử lý.\n3. **Automate**: AI tự động làm toàn bộ các công việc.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Khi nào dùng Augment?",
+      "Conditional là gì?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "AI Agent khác gì với LLM thông thường?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 10702,
+    "usage": {
+      "promptTokenCount": 1699,
+      "candidatesTokenCount": 112,
+      "totalTokenCount": 1811,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 619
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 584,
+      "imageH": 124,
+      "regionPctOfPage": 5,
+      "textChars": 16,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần tài liệu này không đề cập đến khái niệm AI Agent hay LLM, nên mình không thể giải thích sự khác biệt giữa chúng cho bạn được.\n\n```",
+    "outsideDoc": "```\nLLM thường đóng vai trò là một mô hình ngôn ngữ phản hồi theo yêu cầu, trong khi AI Agent là hệ thống có khả năng tự chủ thực hiện chuỗi hành động để đạt mục tiêu cụ thể.",
+    "suggestions": [
+      "Augment là gì?",
+      "3 mức automation gồm những gì?"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 12621,
+    "usage": {
+      "promptTokenCount": 1724,
+      "candidatesTokenCount": 86,
+      "totalTokenCount": 1810,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 624
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 332,
+      "imageH": 192,
+      "regionPctOfPage": 5,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần này đề cập đến \"Nguồn sự thật\" để kiểm soát các thông tin AI tạo ra. Slide đặt ra hai vấn đề quan trọng là nhận diện những phần AI có khả năng tự \"bịa\" câu trả lời và cách xử lý khi AI không có căn cứ xác thực để trả lời câu hỏi của bạn.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI bịa thế nào?",
+      "Khi nào thiếu căn cứ?"
+    ]
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "tôi muốn chi tiết hơn nữa",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 9516,
+    "usage": {
+      "promptTokenCount": 1852,
+      "candidatesTokenCount": 116,
+      "totalTokenCount": 1968,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 752
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 332,
+      "imageH": 192,
+      "regionPctOfPage": 5,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 1,
+      "historyChars": 263,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, slide này đặt ra hai câu hỏi then chốt để bạn kiểm soát đầu ra của AI. Cụ thể, bạn cần tự hỏi: \"Chỗ nào AI có khả năng bịa đặt thông tin?\" và \"Tôi nên làm gì nếu AI trả lời mà không có căn cứ xác thực?\". Việc đặt ra hai vấn đề này giúp bạn chủ động hơn trong việc kiểm chứng dữ liệu thay vì tin tưởng hoàn toàn vào kết quả từ AI.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI hay bịa ở đâu?",
+      "Cách xử lý khi không có căn cứ?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 8245,
+    "usage": {
+      "promptTokenCount": 1698,
+      "candidatesTokenCount": 155,
+      "totalTokenCount": 1853,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 618
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần này mô tả về \"Sơ đồ conditional automation\", tức là quy trình tự động hóa dựa trên các điều kiện cụ thể. Nó giống như một luồng xử lý thông minh, nơi hệ thống sẽ kiểm tra một điều kiện nào đó trước khi quyết định thực hiện bước tiếp theo.",
+    "outsideDoc": "Conditional automation (tự động hóa có điều kiện) là kỹ thuật cho phép các công cụ tự động thực hiện các hành động khác nhau tùy thuộc vào dữ liệu đầu vào hoặc kết quả của các bước trước đó. Thay vì làm một chuỗi cứng nhắc, hệ thống sẽ rẽ nhánh theo logic \"Nếu... thì...\" (If-Then) để tăng độ linh hoạt cho công việc.",
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "cho ví dụ đi",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 12816,
+    "usage": {
+      "promptTokenCount": 1821,
+      "candidatesTokenCount": 135,
+      "totalTokenCount": 1956,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 741
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 1,
+      "historyChars": 274,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Tài liệu hiện tại chỉ nêu tên \"Sơ đồ conditional automation\" mà không cung cấp ví dụ cụ thể cho quy trình này.",
+    "outsideDoc": "Bạn có thể hiểu đơn giản là: Nếu khách hàng click vào link trong email (điều kiện đúng), hệ thống sẽ tự động gửi tiếp tài liệu giới thiệu; nếu không click (điều kiện sai), hệ thống sẽ gửi một email nhắc nhở khác. Đây là cách thiết lập các nhánh hành động tùy thuộc vào hành vi người dùng.",
+    "suggestions": [
+      "Sơ đồ này hoạt động ra sao?",
+      "Ứng dụng là gì?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "còn nhánh kia thì sao",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 9299,
+    "usage": {
+      "promptTokenCount": 1867,
+      "candidatesTokenCount": 59,
+      "totalTokenCount": 1926,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 787
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 2,
+      "historyChars": 396,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Tài liệu cung cấp chỉ đề cập đến cụm từ \"Sơ đồ conditional automation\" mà không hiển thị hình ảnh chi tiết hay các nhánh cụ thể của quy trình này. Vì vậy, tôi không thể giải thích thêm về các nhánh trong sơ đồ dựa trên tài liệu hiện có.",
+    "outsideDoc": null,
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1733,
+    "usage": {
+      "promptTokenCount": 1698,
+      "candidatesTokenCount": 166,
+      "totalTokenCount": 1864,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 618
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần này mô tả về \"Sơ đồ conditional automation\", tức là quy trình tự động hóa dựa trên các điều kiện cụ thể. Nó thể hiện cách xử lý công việc theo các nhánh lựa chọn khác nhau tùy thuộc vào tình huống thực tế, giúp hệ thống vận hành linh hoạt hơn thay vì chỉ thực hiện một chuỗi thao tác cố định.",
+    "outsideDoc": "Conditional automation (tự động hóa có điều kiện) là kỹ thuật thiết lập các quy tắc \"Nếu - Thì\" (If-Then) để máy tính tự động đưa ra quyết định hoặc thực hiện hành động dựa trên dữ liệu đầu vào. Ví dụ, nếu khách hàng điền form, hệ thống sẽ tự gửi email xác nhận; nếu không, hệ thống sẽ gửi lời nhắc.",
+    "suggestions": []
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "giải thích trang này",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 3094,
+    "usage": {
+      "promptTokenCount": 1721,
+      "candidatesTokenCount": 172,
+      "totalTokenCount": 1893,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 1534,
+      "imageH": 864,
+      "regionPctOfPage": 100,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": true
+    },
+    "answer": "Chào bạn, slide này liệt kê 4 nhóm rào cản chính khi xây dựng tính năng AI:\n\n1. **Nguồn sự thật:** Rủi ro AI tự bịa đặt thông tin hoặc thiếu dẫn chứng cụ thể.\n2. **Mơ hồ/thiếu thông tin:** Khi câu lệnh của người dùng chưa rõ ý, AI phải chọn giữa việc hỏi lại, đoán mò hoặc từ chối.\n3. **Ngoài phạm vi:** Những yêu cầu vượt quá khả năng hoặc chức năng cho phép, đòi hỏi AI phải biết từ chối một cách khéo léo.\n4. **Đặc thù domain:** Các sai sót chuyên môn nghiêm trọng có thể làm giảm uy tín hoặc gây hại cho người dùng.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Nguồn sự thật là gì?",
+      "Thế nào là mơ hồ?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "chi tiết hơn",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1574,
+    "usage": {
+      "promptTokenCount": 1832,
+      "candidatesTokenCount": 150,
+      "totalTokenCount": 1982,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 752
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 1,
+      "historyChars": 328,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Tài liệu hiện tại chỉ cung cấp tên gọi \"Sơ đồ conditional automation\" mà không đi sâu vào các bước chi tiết bên trong sơ đồ đó. Vì vậy, mình chưa thể giải thích cụ thể hơn về các thành phần cấu tạo nên sơ đồ này dựa trên nội dung bạn cung cấp.",
+    "outsideDoc": "Thông thường, sơ đồ tự động hóa có điều kiện (conditional automation) sẽ sử dụng các hình thoi để đại diện cho các điểm quyết định (decision points). Tại đó, hệ thống sẽ kiểm tra một điều kiện logic (đúng/sai) để phân nhánh quy trình sang các hướng xử lý khác nhau, giúp tối ưu hóa luồng công việc tự động.",
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "cái này nói về gì",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 9804,
+    "usage": {
+      "promptTokenCount": 1700,
+      "candidatesTokenCount": 81,
+      "totalTokenCount": 1781,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 620
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 1536,
+      "imageH": 834,
+      "regionPctOfPage": 97,
+      "textChars": 45,
+      "textItems": 2,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": true
+    },
+    "answer": "Phần này giới thiệu về sơ đồ 3 mức độ tự động hóa (automation) khi áp dụng AI. Mỗi mức độ sẽ phụ thuộc vào chi phí nếu xảy ra sai sót (cost-of-error) để quyết định xem AI hay con người nên là bên xử lý chính.",
+    "outsideDoc": null,
+    "suggestions": [
+      "Các mức automation là gì?",
+      "Tại sao dùng cost-of-error?"
+    ]
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "RAG là gì?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1684,
+    "usage": {
+      "promptTokenCount": 1696,
+      "candidatesTokenCount": 96,
+      "totalTokenCount": 1792,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 616
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Phần tài liệu này không đề cập đến khái niệm RAG.",
+    "outsideDoc": "RAG (Retrieval-Augmented Generation) là kỹ thuật giúp AI truy xuất thông tin từ các nguồn dữ liệu bên ngoài trước khi tạo câu trả lời, nhằm tăng độ chính xác và cập nhật cho mô hình. Kỹ thuật này giúp AI hạn chế việc tự \"sáng tạo\" thông tin không có thật (ảo giác).",
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "tỷ lệ này là bao nhiêu phần trăm?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1375,
+    "usage": {
+      "promptTokenCount": 1700,
+      "candidatesTokenCount": 54,
+      "totalTokenCount": 1754,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 620
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần tài liệu bạn cung cấp chỉ đề cập đến tên gọi là \"Sơ đồ conditional automation\" và không chứa thông tin về bất kỳ tỷ lệ phần trăm nào. Do đó, mình không thể trả lời câu hỏi này dựa trên tài liệu được.",
+    "outsideDoc": null,
+    "suggestions": []
+  },
+  {
+    "page": 12,
+    "mode": "text",
+    "question": "hi bro",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1049,
+    "usage": {
+      "promptTokenCount": 1693,
+      "candidatesTokenCount": 29,
+      "totalTokenCount": 1722,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1080
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 613
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 12,
+      "imageW": 800,
+      "imageH": 540,
+      "regionPctOfPage": 33,
+      "textChars": 28,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, mình là AI Tutor của khóa học đây. Bạn đang cần hỗ trợ tìm hiểu về nội dung nào trong tài liệu này vậy?",
+    "outsideDoc": null,
+    "suggestions": []
+  },
+  {
+    "page": 24,
+    "mode": "scan",
+    "question": "lớp ① này liên quan gì tới hallucination?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1780,
+    "usage": {
+      "promptTokenCount": 1727,
+      "candidatesTokenCount": 155,
+      "totalTokenCount": 1882,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 627
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1100
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 24,
+      "imageW": 332,
+      "imageH": 192,
+      "regionPctOfPage": 5,
+      "textChars": 0,
+      "textItems": 0,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, tài liệu này chỉ đặt ra các câu hỏi để định hướng bạn xác định xem AI có khả năng bịa đặt (hallucination) ở đâu và cần làm gì khi không có căn cứ. Nó không giải thích trực tiếp khái niệm hallucination là gì.",
+    "outsideDoc": "Hallucination (ảo giác) là hiện tượng AI tự tin đưa ra thông tin sai lệch hoặc không có thực. Việc thiết lập \"Nguồn sự thật\" chính là cách để kiểm soát, buộc AI phải dựa vào dữ liệu đáng tin cậy thay vì tự suy diễn, từ đó giúp hạn chế lỗi này.",
+    "suggestions": [
+      "AI bịa được ở đâu?",
+      "Không có căn cứ làm gì?"
+    ]
+  },
+  {
+    "page": 18,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1645,
+    "usage": {
+      "promptTokenCount": 1706,
+      "candidatesTokenCount": 162,
+      "totalTokenCount": 1868,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1085
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 621
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 18,
+      "imageW": 648,
+      "imageH": 584,
+      "regionPctOfPage": 29,
+      "textChars": 23,
+      "textItems": 1,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần này trình bày biểu đồ tỷ lệ trích dẫn. Cụ thể, dữ liệu cho thấy có 53,8% trường hợp \"Có trích dẫn\" và 46,2% trường hợp là \"Trích dẫn rỗng\". Tài liệu không cung cấp thêm ngữ cảnh về dữ liệu này nên mình chỉ có thể mô tả các con số như trên hình.",
+    "outsideDoc": "\"Trích dẫn\" thường là việc sử dụng hoặc tham chiếu các nguồn thông tin, dữ liệu từ bên ngoài vào nội dung của mình. \"Trích dẫn rỗng\" (thường gọi là empty citation) là khái niệm chỉ các vị trí cần hoặc định dạng để trích dẫn nhưng không chứa thông tin nguồn cụ thể.",
+    "suggestions": []
+  },
+  {
+    "page": 1,
+    "mode": "text",
+    "question": "Phần này nói gì?",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 1328,
+    "usage": {
+      "promptTokenCount": 1738,
+      "candidatesTokenCount": 74,
+      "totalTokenCount": 1812,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 632
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1106
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 1,
+      "imageW": 904,
+      "imageH": 160,
+      "regionPctOfPage": 11,
+      "textChars": 87,
+      "textItems": 2,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, phần này đóng vai trò là tiêu đề giới thiệu cho chủ đề \"AI & LLM Foundation\". Nội dung này đặt vấn đề rằng dù chúng ta vẫn sử dụng AI thường xuyên, nhưng có thể chúng ta chưa thực sự hiểu cơ chế hoạt động bên trong của nó.",
+    "outsideDoc": null,
+    "suggestions": [
+      "AI là gì?",
+      "LLM là gì?"
+    ]
+  },
+  {
+    "page": 2,
+    "mode": "text",
+    "question": "(trống)",
+    "model": "gemini-3.1-flash-lite-preview",
+    "latency_ms": 3062,
+    "usage": {
+      "promptTokenCount": 1789,
+      "candidatesTokenCount": 117,
+      "totalTokenCount": 1906,
+      "promptTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1092
+        },
+        {
+          "modality": "TEXT",
+          "tokenCount": 697
+        }
+      ],
+      "serviceTier": "standard"
+    },
+    "finish_reason": "STOP",
+    "sent": {
+      "pages": 1,
+      "pageNum": 2,
+      "imageW": 640,
+      "imageH": 400,
+      "regionPctOfPage": 19,
+      "textChars": 270,
+      "textItems": 9,
+      "historyTurns": 0,
+      "historyChars": 0,
+      "sentFileName": false,
+      "sentOtherPages": false,
+      "wholePage": false
+    },
+    "answer": "Chào bạn, đây là mục lục tổng quan nội dung của buổi học. Phần này giúp bạn đi từ bức tranh toàn cảnh về lịch sử và các tầng của AI, tiến tới tìm hiểu sâu về cách hoạt động của LLM và cách nâng cấp lên AI Agent. Tiếp theo, khóa học sẽ cung cấp thông tin về thị trường model hiện nay, hướng dẫn bạn cách chọn model tối ưu chi phí token, cách gọi API thực tế và đúc kết lại những bài học chính.",
+    "outsideDoc": null,
+    "suggestions": [
+      "LLM vận hành thế nào?",
+      "Chọn model ra sao?"
+    ]
+  }
+]

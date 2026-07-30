@@ -1,3 +1,19 @@
 .DS_Store
 node_modules/
 *.env
+.env
+
+# LƯU Ý: `data/vlearn-pack/slides/*.pdf` ĐÃ được ban tổ chức commit vào repo
+# đề bài (commit 976c713, merge từ `main`). Dòng ignore cũ ở đây không còn tác
+# dụng với hai file đó — gitignore không untrack file đã track.
+#
+# Nó vẫn còn ích: chặn các file slide MỚI mình tự thêm vào thư mục đó.
+#
+# Nếu nhóm tách repo nộp bài riêng thì quy định "không commit data pack" vẫn
+# áp cho repo đó (README mục "Bảo mật dữ liệu được cung cấp", quy tắc 3).
+data/vlearn-pack/slides/*
+!data/vlearn-pack/slides/d1-slide-hackathon.pdf
+!data/vlearn-pack/slides/d2-slide-hackathon.pdf
+
+# Bản build để deploy — sinh lại bằng `python deploy/build.py`
+dist/

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Golden set runner — AI Tutor giải thích vùng slide</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; padding: 22px;
+           background: #f3f4f6; color: #111827; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 22px 0 8px; }
+    .sub { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            padding: 14px 16px; margin-bottom: 14px; }
+    .row { display: flex; gap: 22px; flex-wrap: wrap; font-size: 13px; }
+    .row > div { min-width: 240px; }
+    .k { color: #6b7280; }
+    .ok { color: #15803d; font-weight: 600; }
+    .warn { color: #b45309; font-weight: 600; }
+    .bad { color: #b91c1c; font-weight: 600; }
+    .good { color: #15803d; }
+    button { border: 1px solid #4f46e5; background: #4f46e5; color: #fff;
+             border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700;
+             cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    button.ghost { background: #fff; color: #4f46e5; }
+    #log { font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+           max-height: 320px; overflow-y: auto; background: #111827; color: #e5e7eb;
+           border-radius: 8px; padding: 10px; line-height: 1.6; }
+    #log .good { color: #86efac; }
+    #log .bad { color: #fca5a5; }
+    #log .warn { color: #fcd34d; }
+    table { border-collapse: collapse; font-size: 12.5px; }
+    th, td { border: 1px solid #e5e7eb; padding: 4px 10px; text-align: left; }
+    th { background: #f9fafb; }
+    textarea { width: 100%; height: 220px; font-family: ui-monospace, Consolas, monospace;
+               font-size: 11.5px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px; }
+    .btnrow { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+    code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Golden set runner</h1>
+  <p class="sub">
+    Chạy trọn bộ golden set một lượt → xuất bảng markdown dán vào <code>eval/run-NN.md</code> và file traces cho <code>codebase/server/traces/</code>.
+    Máy chấm phần cơ học; <b>bốn chiều G/S/H/C vẫn phải chấm bằng người</b> (rubric R4 yêu cầu hai người chấm độc lập rồi so).
+  </p>
+
+  <div class="card">
+    <div class="row">
+      <div><span class="k">Chế độ AI:</span> <span id="ai-mode">…</span></div>
+      <div><span class="k">PDF thật:</span> <span id="pdf-status">…</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Lớp text của PDF thật</h2>
+    <p class="sub" id="textlayer-summary" style="margin:0 0 8px">Chỉ đo được khi mở qua HTTP.</p>
+    <table id="textlayer">
+      <thead><tr><th>Trang</th><th>Ký tự text rút được</th><th>Chế độ đọc</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="btnrow">
+      <button id="btn-run">▶ Chạy trọn bộ golden set</button>
+    </div>
+    <div id="summary" style="font-size:13px; margin-bottom:10px"></div>
+    <div id="log"></div>
+  </div>
+
+  <div id="outputs" hidden>
+    <div class="card">
+      <h2 style="margin-top:0">Bảng kết quả (markdown)</h2>
+      <p class="sub" style="margin:0 0 8px">Dán vào <code>eval/run-NN.md</code>, rồi hai người chấm G/S/H/C độc lập.</p>
+      <div class="btnrow"><button class="ghost" id="btn-copy-md">Copy bảng</button></div>
+      <textarea id="md" readonly></textarea>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Traces lời gọi AI thật</h2>
+      <p class="sub" style="margin:0 0 8px">
+        Bằng chứng cho R5. Trống nếu đang chạy mock. Lưu vào <code>codebase/server/traces/</code>.
+      </p>
+      <div class="btnrow">
+        <button class="ghost" id="btn-copy-traces">Copy</button>
+        <button class="ghost" id="btn-dl-traces">Tải traces.json</button>
+      </div>
+      <textarea id="traces" readonly></textarea>
+    </div>
+  </div>
+
+  <!-- dùng đúng các module của prototype, không viết lại logic -->
+  <script src="../codebase/web/lib/config.js"></script>
+  <script src="../codebase/web/lib/mock-data.js"></script>
+  <script src="../codebase/web/lib/pdf-source.js"></script>
+  <script src="../codebase/web/lib/content-detector.js"></script>
+  <script src="../codebase/web/lib/mock-ai.js"></script>
+  <script src="../codebase/server/explain.js"></script>
+  <script src="cases.js"></script>
+  <script src="runner.js"></script>
+</body>
+</html>
