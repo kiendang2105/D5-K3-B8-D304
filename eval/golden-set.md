@@ -14,12 +14,13 @@
 | Case hiếm | 2–4 | 3 (C20–C22) |
 | Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
 | **Ôn tập cuối buổi** (C29–C31) | — | 3 |
+| Cách nói khác của số slide (C32) | — | 1 |
 | **Từ chatlog thật** (L01–L14) | ≥10 | **14** ✅ |
 | Hỏi tiếp / ký ức hội thoại (F01–F03) | — | 3 |
 | Hỏi bằng chat thuần, không khoanh vùng (T01–T06) | — | 6 |
 | Trên PDF thật (`d1-slide-hackathon.pdf`) | — | 4 (P01–P04) |
 | Phản ứng cảm xúc (E01) | — | 1 |
-| **Tổng** | ≥20 | **60** |
+| **Tổng** | ≥20 | **61** |
 
 Phủ 4 lớp chỗ khó: ① 5 · ② 7 · ③ 6 · ④ 4 — mỗi lớp ≥4, vượt yêu cầu ≥2.
 

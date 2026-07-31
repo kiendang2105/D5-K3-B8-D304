@@ -142,8 +142,16 @@ const CONFIG = {
   PDFJS_WORKER_URL: "vendor/pdf.worker.min.js",
 };
 
-// Nhận diện số slide trong câu hỏi: "giải thích slide 12", "trang 3 nói gì"
-const PAGE_IN_QUESTION = /(?:slide|trang|page)\s*(?:số\s*)?(\d{1,3})/i;
+// Nhận diện số slide trong câu hỏi: "giải thích slide 12", "trang 3 nói gì",
+// "slide thứ 10 nói gì", "trang số 3", "trang thứ tự 5".
+//
+// Bản đầu chỉ cho chèn chữ "số" giữa danh từ và con số, nên "slide THỨ 10"
+// không khớp — câu rơi xuống bậc cuối (trang đang xem) và tutor trả lời về
+// trang 1 kèm câu "phần tài liệu bạn đang xem không đề cập đến slide thứ 10".
+// Nhìn thì như model hiểu sai, thật ra nó chưa bao giờ được đưa trang 10.
+// Người Việt nói "thứ N" nhiều ngang "số N"; đây là lỗi bỏ sót cách nói.
+const PAGE_IN_QUESTION =
+  /(?:slide|trang|page)\s*(?:(?:số|thứ|thứ\s*tự|no\.?|#)\s*)*(\d{1,3})/i;
 
 // ============================================================
 // GIỚI HẠN DỮ LIỆU — ràng buộc cứng của tính năng này.

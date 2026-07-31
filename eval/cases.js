@@ -175,6 +175,18 @@ const GOLDEN_CASES = [
     auto: { answeredPage: 24, stayedOnPage: 12 },
   },
   {
+    // Cùng đường với C27 nhưng nói kiểu "slide THỨ N". Người dùng thật gặp
+    // 31/07: đang ở trang 1 của PDF, gõ "Slide thứ 10 nói gì" và nhận về câu
+    // "phần tài liệu bạn đang xem chỉ chứa nội dung trang 1, không đề cập
+    // đến slide thứ 10". Nhìn như model hiểu sai, thật ra PAGE_IN_QUESTION
+    // chỉ cho chèn chữ "số" nên "thứ" không khớp — trang 10 chưa bao giờ
+    // được nạp. C27 không bắt được vì nó dùng đúng cách nói mà regex biết.
+    id: "C32", cls: "②", src: "mock", page: 12,
+    chat: "Slide thứ 24 nói gì",
+    expect: 'Hiểu "slide thứ N" y như "slide N": đọc trang 24, không rời trang 12',
+    auto: { answeredPage: 24, stayedOnPage: 12, maxPages: 1 },
+  },
+  {
     // ĐỔI KỲ VỌNG 31/07. Trước đây case này kỳ vọng TỪ CHỐI ("chỉ đọc 1
     // trang/câu hỏi"). Từ khi có đường ôn tập, câu này là một yêu cầu hợp
     // lệ — nhưng phải ôn ĐÚNG những trang học viên đã tự mở.
