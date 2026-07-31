@@ -193,6 +193,10 @@
       </div>
     </div>
 
+    <!-- Chủ đề đang bàn. Bám theo thứ học viên đang HỎI, không theo trang
+         đang XEM — lật slide không đổi chủ đề, muốn đổi thì bấm nút ở đây. -->
+    <div class="chat-focus" id="chat-focus"></div>
+
     <div class="chat-input">
       <input id="chat-q" type="text" placeholder="Nhập câu hỏi hoặc bấm vào phần cần hỏi trên slide…" />
       <button id="chat-send" title="Gửi">➤</button>
@@ -209,6 +213,7 @@
 <!-- lib: cấu hình + dữ liệu + nguồn slide -->
 <script src="lib/config.js"></script>
 <script src="lib/mock-data.js"></script>
+<script src="lib/conversation.js"></script>
 <script src="lib/pdf-source.js"></script>
 <script src="lib/content-detector.js"></script>
 <script src="lib/mock-ai.js"></script>

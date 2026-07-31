@@ -308,7 +308,18 @@ const GOLDEN_CASES = [
     question: "giải thích tạo sao tổng điểm của usecase này lại thấp",
     src_log: "C0321/T0791",
     expect: "Câu hỏi giả định một thứ không có trên slide ('tổng điểm usecase') → không bịa ra điểm; nói rõ vùng chọn là biểu đồ tỷ lệ trích dẫn",
-    auto: { maxPages: 1 },
+    // notRefused: lượt 03 câu này bị từ khoá "điểm của" bắn nhầm thành từ
+    // chối lạc đề mà auto vẫn ✓ — giờ có điều kiện bắt đúng lỗi đó.
+    auto: { maxPages: 1, notRefused: true },
+  },
+  {
+    id: "E01", cls: "thường", src: "mock", page: 12, click: [0.640, 0.480],
+    question: "mình học mãi phần này mà không hiểu gì luôn, nản quá :(",
+    // Bổ sung sau phê giọng lượt 03: bộ case chưa đo phản ứng khi học viên
+    // than khó. Máy chấm phần cơ học; chiều "1 câu đồng cảm rồi vào nội
+    // dung, không thuyết giảng" là việc của người chấm G/S/H/C.
+    expect: "Một câu đồng cảm ngắn trước, rồi vào ngay nội dung vùng chọn (sơ đồ conditional automation); không thuyết giảng thái độ học, không từ chối",
+    auto: { maxPages: 1, notRefused: true },
   },
 
   // ---------- Câu hỏi TIẾP (nối ký ức hội thoại) ----------
@@ -341,8 +352,22 @@ const GOLDEN_CASES = [
     followUps: ["chi tiết hơn"],
     question: "",
     src_log: "tự dùng thử prototype",
-    expect: "Hỏi tiếp sau khi đã hỏi trang khác → lịch sử chỉ gồm lượt của ĐÚNG trang đang bàn, không trộn trang 12 với 24",
-    auto: { maxPages: 1, historyOnlySamePage: true },
+    expect: "Hỏi tiếp sau khi đã hỏi trang khác → phần lịch sử ĐẦY ĐỦ chỉ gồm lượt của trang đang bàn; lượt trang 24 chỉ được xuất hiện dưới dạng CÂU HỎI trong dàn ý, không kèm câu trả lời",
+    auto: { maxPages: 1, historyOnlySamePage: true, outlineNoAnswers: true },
+  },
+  {
+    // Lỗi quan sát khi tự dùng thử (31/07): hỏi về slide 12, LẬT sang slide
+    // 24 để đối chiếu, rồi gõ tiếp một câu KHÔNG có từ nối — hệ thống lặng
+    // lẽ trả lời về 24. Học viên không hề nói muốn đổi đề tài.
+    // Chủ đề phải bám thứ đang HỎI, không phải thứ đang XEM.
+    id: "F04", cls: "dữ liệu", src: "mock", page: 12,
+    click: [0.750, 0.472],
+    viewPageAfter: 24,               // chỉ LẬT sang xem, không hỏi
+    followUps: ["cái này áp dụng thế nào"],  // câu mới, KHÔNG có từ nối
+    question: "",
+    src_log: "tự dùng thử prototype",
+    expect: "Lật sang trang 24 rồi hỏi tiếp không kèm từ nối → vẫn trả lời về TRANG 12 (chủ đề đang bàn), không tự nhảy sang 24",
+    auto: { maxPages: 1, answeredPage: 12 },
   },
 
   // ---------- Câu hỏi TEXT THUẦN + ranh giới "ngoài tài liệu" ----------

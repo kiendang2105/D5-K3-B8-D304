@@ -43,9 +43,21 @@ const CONFIG = {
   TEXT_MARGIN_PX: 24,         // chỉ lấy text nằm trong vùng chọn + lề này
   MAX_TEXT_CHARS: 1200,       // trần ký tự text gửi kèm
 
-  // --- Ký ức hội thoại (chỉ dùng cho câu hỏi tiếp về ĐÚNG vùng đó) ---
+  // --- Ký ức hội thoại ---
+  // LƯU thì giữ toàn bộ (ConversationStore, có ghi localStorage). Các trần
+  // dưới đây chỉ quyết định phần nào được GỬI ĐI trong một request.
   HISTORY_MAX_TURNS: 3,       // gửi kèm tối đa 3 lượt gần nhất CỦA CÙNG TRANG
   HISTORY_MAX_CHARS: 700,     // trần ký tự mỗi câu trả lời cũ
+
+  // Lượt của TRANG KHÁC được gửi kèm thế nào:
+  //   "outline" — chỉ câu hỏi của học viên + số trang, KHÔNG kèm câu trả lời.
+  //               Model nối được mạch hội thoại mà không đọc thêm chữ nào
+  //               của trang khác → trần "1 trang/câu hỏi" vẫn nguyên.
+  //   "full"    — gửi cả câu trả lời cũ. PHÁ trần 1 trang/câu hỏi; để đây
+  //               làm nhánh đối chứng khi chạy golden set, không dùng thật.
+  //   "off"     — không gửi gì của trang khác (hành vi trước 31/07).
+  HISTORY_CROSS_PAGE: "outline",
+  HISTORY_OUTLINE_MAX: 12,    // trần số lượt trang khác đưa vào dàn ý
 
   // --- Tự kiểm grounding (ghi vào trace, KHÔNG hiện cho học viên) ---
   // Ngưỡng gắn cờ "đọc case này trước" khi chấm tay chiều H.

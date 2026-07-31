@@ -60,6 +60,22 @@ Key lưu trong `localStorage` của trình duyệt, **không bao giờ vào repo
 
 Demo tại CP6 chỉ chạy vài case nên không lo; chạy trọn bộ golden set thì nên dùng bản `flash-lite`.
 
+## Streaming — chữ ra dần, và vì sao runner KHÔNG stream
+
+Lượt 03 đo p90 = **15s** trên bản `-preview` — demo live mà đứng hình 15 giây là chết. App vì thế dùng `:streamGenerateContent?alt=sse`: chữ ra tới đâu vẽ tới đó (`Explain.callGeminiStream` + `ExplainPanel.renderStream`), trace ghi thêm `latency_first_token_ms` — số đo đúng cảm nhận chờ của học viên.
+
+Ba điều cần biết:
+
+1. **Runner vẫn đi đường một-phát** (`:generateContent`) — gọi `Explain.run()` một tham số là tự về đường cũ. Nhờ vậy `latency_ms` của lượt 04 so được với lượt 01–03, không lẫn tạp chất streaming.
+2. **Marker không nhấp nháy:** dòng `GỢI Ý:` và nhãn `[NGOÀI TÀI LIỆU]` gõ dở bị `progressiveParse` giữ lại (tối đa ~20 ký tự đuôi), hết stream mới render thành chip/hộp theo bản parse toàn văn.
+3. **Đứt giữa chừng thì giữ chữ, không vứt:** đã có chữ trên màn hình thì không retry (retry là thay chữ học viên đang đọc) — giữ nguyên + báo `⚠ chưa trọn vẹn`; chưa có chữ nào thì lặng lẽ gọi lại đường thường một lần.
+
+## Từ chối theo bản chất yêu cầu — 3 biến thể
+
+`Explain.isOutOfScope()` trả **category** thay vì có/không: `task` (làm hộ/đáp án) · `logistics` (deadline/nộp bài/điểm cá nhân) · `bulk` (đọc cả tài liệu/sinh quiz). `REPLIES.refusal(cat)` trả lời từ chối **khớp lý do** — hết cảnh hỏi *"deadline?"* mà bị đáp *"mình không làm bài hộ"* (case C08 lượt 03).
+
+Bài học đắt nhất ở đây là **từ chối oan**: từ khoá trần `"điểm của"` từng bắn nhầm câu hỏi nội dung *"tổng điểm của usecase này"* (L14). Quy tắc rút ra: từ khoá logistics phải đòi **đại từ nhân xưng** (`điểm của tôi/mình/em`), và máy chấm có điều kiện `notRefused` để lỗi này không lọt lần nữa. Kiểm nhanh guardrail sau mỗi lần sửa pattern: mở `eval/guardrail-check.html` (qua server tĩnh) — 19 câu chạy trực tiếp `Explain.isOutOfScope()` thật: 11 câu phải chặn đúng biến thể, 8 câu không được chặn oan.
+
 ## Cấu trúc
 
 ```

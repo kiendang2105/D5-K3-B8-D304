@@ -227,18 +227,33 @@ const MOCK_SLIDES = [
 // non-goal số 4 và đọc cả slide vượt giới hạn 1 trang/câu hỏi, nhưng không
 // từ khoá nào khớp nên nó được gửi thẳng cho model. Bộ case tự nghĩ không
 // bắt được lỗi này vì không ai nghĩ ra câu viết hoa kiểu đó.
-const OUT_OF_SCOPE_PATTERNS = [
+// Chia theo BẢN CHẤT yêu cầu để câu từ chối nêu đúng lý do — lượt 03 cho
+// thấy C08 hỏi "deadline nộp bài?" mà bị từ chối với lý do "không làm bài
+// hộ": đúng nhánh, sai lời, học viên thấy máy móc.
+const OUT_OF_SCOPE_GROUPS = {
   // làm hộ bài / đòi đáp án
-  "làm hộ", "làm giúp", "giải hộ", "giải giúp", "đáp án", "code hộ",
-  "làm bài tập", "làm bài lab", "nộp bài",
-  // logistics
-  "điểm của", "deadline", "bao giờ thi", "khi nào thi", "lịch học",
-  // non-goal: sinh quiz / ra đề
-  "tạo quiz", "làm quiz", "sinh quiz", "tạo câu hỏi", "ra đề", "tạo đề",
-  // vượt giới hạn 1 trang/câu hỏi: đòi đọc cả tài liệu
-  "toàn bộ slide", "toàn bộ tài liệu", "cả tài liệu", "cả bài giảng",
-  "tất cả các trang", "toàn bộ bài",
-];
+  task: [
+    "làm hộ", "làm giúp", "giải hộ", "giải giúp", "đáp án", "code hộ",
+    "làm bài tập", "làm bài lab",
+  ],
+  // logistics: deadline / nộp bài / thi cử / điểm CÁ NHÂN.
+  // "nộp bài" nằm ở đây chứ không phải task: "deadline nộp bài là bao giờ?"
+  // (C08) là câu hỏi THỦ TỤC — xếp vào task là trả lời "không làm bài hộ",
+  // đúng lỗi lệch-lý-do mà bản phê lượt 03 chỉ ra.
+  // "điểm của" trần từng bắn nhầm L14 ("tổng điểm của usecase này" — một câu
+  // hỏi nội dung hợp lệ) → siết thành mẫu điểm-của-người trong REGEX dưới.
+  logistics: ["deadline", "nộp bài", "bao giờ thi", "khi nào thi", "lịch học"],
+  // sinh quiz / ra đề + đòi đọc cả tài liệu (vượt trần 1 trang/câu hỏi)
+  bulk: [
+    "tạo quiz", "làm quiz", "sinh quiz", "tạo câu hỏi", "ra đề", "tạo đề",
+    "toàn bộ slide", "toàn bộ tài liệu", "cả tài liệu", "cả bài giảng",
+    "tất cả các trang", "toàn bộ bài",
+  ],
+};
+
+// Điểm số CÁ NHÂN ("điểm của tôi/mình/em/t") là logistics; "tổng điểm của
+// usecase" là câu hỏi nội dung — mẫu đòi đại từ nhân xưng ngay sau.
+const LOGISTICS_REGEX = /điểm\s*(số\s*)?(của\s*)?(tôi|mình|em|e|t)\b/i;
 
 // Khớp chuỗi con không đủ. Lượt 03 để lọt `C28` — "đọc **hết tài liệu** rồi
 // tóm tắt" — vì danh sách trên có "cả tài liệu" và "toàn bộ tài liệu" nhưng
@@ -253,8 +268,10 @@ const OUT_OF_SCOPE_PATTERNS = [
 // backlog thay vì thêm ngay (rubric: sau CP4 không thêm feature mới).
 // Ba nhánh, phân theo BẢN CHẤT của yêu cầu chứ không theo cách gõ:
 const OUT_OF_SCOPE_REGEX = new RegExp([
-  // 1. động từ yêu cầu + từ chỉ toàn bộ + đối tượng tài liệu
-  "(đọc|tóm tắt|tóm lược|summar|xem|giải thích|liệt kê)\\s*(hết|toàn bộ|tất cả|cả|nguyên)\\s*(các\\s*)?(tài liệu|slide|bài giảng|bài|trang|file|deck)",
+  // 1. động từ yêu cầu + từ chỉ toàn bộ + đối tượng tài liệu.
+  //    "trang" chỉ tính khi SỐ NHIỀU ("các/mọi trang") — "giải thích cả
+  //    trang này" là MỘT trang, hoàn toàn trong giới hạn, không được chặn.
+  "(đọc|tóm tắt|tóm lược|summar|xem|giải thích|liệt kê)\\s*(hết|toàn bộ|tất cả|cả|nguyên)\\s*(các\\s*)?(tài liệu|slide|bài giảng|bài|file|deck|(các|mọi)\\s*trang)",
   // 2. đòi tóm tắt mà đối tượng là CẢ TÀI LIỆU (không phải một trang).
   //    Cố ý KHÔNG chặn "tóm tắt slide này / trang này / vùng này" — đó là
   //    một trang, hoàn toàn nằm trong giới hạn.
@@ -305,6 +322,21 @@ const CURRENT_PAGE_REF = /\b(slide|trang|tài liệu|bài)\s*(này|hiện tại|
 const REPLIES = {
   outOfScope:
     "Phần này mình không hỗ trợ được: mình chỉ **giải thích nội dung trên slide** để bạn tự làm, chứ không làm bài / đưa đáp án thay bạn.\n\nThay vào đó, nếu bạn chỉ vùng nào trên slide đang khiến bạn kẹt, mình giải thích kỹ vùng đó — hoặc bạn nhắn TA trên Discord cho các câu hỏi về bài tập & deadline nhé.",
+
+  // Ba biến thể từ chối theo BẢN CHẤT yêu cầu — cùng ranh giới, khác lời:
+  // mỗi biến thể mở bằng một câu ghi nhận nhu cầu rồi mới nêu giới hạn,
+  // và lý do phải KHỚP câu hỏi (bài học C08/L12 lượt 03). Máy chấm không so
+  // câu chữ nữa (so kind) nên lời thoại tự do.
+  refusal(cat) {
+    if (cat === "logistics") {
+      return "Deadline, lịch thi hay điểm số thì mình **không nắm được** — mấy thông tin đó không nằm trong slide, và mình không đoán bừa cho bạn được.\n\nBạn hỏi TA trên Discord là chắc nhất nhé. Còn nội dung bài học thì cứ khoanh vùng trên slide, mình giải thích ngay.";
+    }
+    if (cat === "bulk") {
+      return "Mình hiểu bạn muốn ôn nhanh cả bài 👍 nhưng mình được thiết kế đọc đúng **một trang cho mỗi câu hỏi** — không đọc cả tài liệu, cũng không sinh quiz hay ra đề thay bạn.\n\nBạn mở đúng trang cần ôn rồi hỏi *\"giải thích trang này\"* — đi từng trang chậm hơn một chút nhưng chắc hơn nhiều.";
+    }
+    // task — làm hộ / đòi đáp án
+    return this.outOfScope;
+  },
   tooSmall:
     "Vùng bạn chọn hơi nhỏ, mình **chưa chắc** bạn đang muốn hỏi phần nào 🤔\n\nBạn kéo chọn rộng ra một chút — trọn sơ đồ hoặc trọn đoạn chữ — để mình không giải thích nhầm phần bạn không cần nhé.",
   noContent:

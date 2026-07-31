@@ -73,6 +73,43 @@ const ExplainPanel = {
   // kèm đúng thứ này: 99,3% câu hỏi trong chatlog mang tiền tố
   // `(Trang N, đoạn được chọn: "...")`. Hiện lại nó để học viên thấy chính xác
   // phần nào đang được hỏi, thay vì chỉ thấy một ảnh cắt.
+  // Vẽ lại hội thoại đã lưu (ConversationStore) khi mở lại tài liệu.
+  // Bắt buộc phải có: agent nhớ mà khung chat trống thì học viên thấy nó
+  // nhắc tới thứ "chưa từng nói", tưởng máy bịa. Nhớ thì phải cho thấy.
+  replay(turns) {
+    if (!turns || !turns.length) return;
+
+    const sep = el("div", "sys-note");
+    sep.textContent = `⤴ ${turns.length} lượt đã lưu trước đó`;
+    this.body.appendChild(sep);
+
+    for (const t of turns) {
+      const u = el("div", "msg user");
+      if (t.page != null) {
+        const tag = el("div", "user-page");
+        tag.textContent = `trang ${t.page}`;
+        u.appendChild(tag);
+      }
+      const ub = el("div", "bubble");
+      ub.textContent = t.question;
+      u.appendChild(ub);
+      this.body.appendChild(u);
+
+      const b = el("div", "msg bot");
+      const bb = el("div", "bubble");
+      bb.innerHTML = mdBold(t.answer || "");
+      b.appendChild(bb);
+      // Ảnh vùng không được lưu (chỉ lưu chữ) — nói rõ thay vì để trống
+      // khiến người xem tưởng lượt đó không có ảnh nào được gửi.
+      this.body.appendChild(b);
+    }
+
+    const now = el("div", "sys-note");
+    now.textContent = "— tiếp tục —";
+    this.body.appendChild(now);
+    this.scroll();
+  },
+
   addUser({ cropImage, question, excerpt, pageNum }) {
     this.clearEmpty();
     const div = el("div", "msg user");
@@ -143,6 +180,40 @@ const ExplainPanel = {
       if (w.trim()) await sleep(18);
     }
     bubble.innerHTML = mdBold(acc);
+  },
+
+  // ---- Stream THẬT từ model (khác stream() ở trên: chữ đến đâu vẽ đến đó) ----
+  //
+  // live = { div, bubble, outsideBody } — App tạo từ addBot() ở CHUNK ĐẦU,
+  // outsideBody khởi tạo null. progressiveParse giấu marker đang gõ dở nên
+  // không bao giờ thấy "GỢI Ý:" hay "[NGOÀI TÀI LI" nhấp nháy rồi biến mất.
+  renderStream(live, raw) {
+    const CUR = '<span class="cursor-blink">▌</span>';
+    const p = Explain.progressiveParse(raw);
+    live.bubble.innerHTML = mdBold(p.main) + (p.outside === null ? CUR : "");
+    if (p.outside !== null) {
+      // Nhãn [NGOÀI TÀI LIỆU] xuất hiện giữa stream: tạo hộp MỘT lần,
+      // chữ chảy tiếp vào đó, con trỏ ▌ chuyển theo phần đang mọc
+      if (!live.outsideBody) live.outsideBody = this.addOutsideDoc(live.div, "");
+      live.outsideBody.innerHTML = mdBold(p.outside) + CUR;
+    }
+    this.scroll();
+  },
+
+  // Vẽ lại lần cuối theo parseAnswer toàn văn — nguồn chân lý duy nhất.
+  // progressiveParse xấp xỉ parseAnswer nên lần vẽ này hầu như trùng khớp.
+  endStream(live, reply) {
+    live.bubble.innerHTML = mdBold(reply.text || "");
+    if (!reply.text) live.bubble.remove();
+    if (reply.outsideDoc) {
+      if (!live.outsideBody) live.outsideBody = this.addOutsideDoc(live.div, "");
+      live.outsideBody.innerHTML = mdBold(reply.outsideDoc);
+    } else if (live.outsideBody) {
+      // Nhãn "giả" giữa stream mà bản parse cuối không công nhận -> gỡ hộp
+      live.outsideBody.closest(".outside-doc").remove();
+      live.outsideBody = null;
+    }
+    this.scroll();
   },
 
   // Phần kiến thức chung — TÁCH KHỎI bong bóng chính, không trộn vào.
@@ -240,6 +311,17 @@ const ExplainPanel = {
       d.historyTurns
         ? `Hội thoại trước: <b>${d.historyTurns} lượt</b> (${d.historyChars} ký tự) — chỉ chữ, ` +
           "chỉ của đúng trang này; không có ảnh hay nội dung tài liệu mới nào"
+        : null,
+      // Dàn ý các lượt ở trang khác. Khai riêng chứ không gộp vào dòng trên:
+      // hai thứ có mức độ lộ dữ liệu KHÁC nhau, gộp lại là nói dối bằng cách
+      // nói thiếu.
+      d.historyOutline
+        ? (d.historyOutlineMode === "full"
+            ? `Lượt ở trang khác: <b>${d.historyOutline} lượt kèm CẢ câu trả lời</b> ` +
+              `(${d.historyOutlineChars} ký tự) — chế độ <b>full</b>, có nội dung trang khác`
+            : `Lượt ở trang khác: <b>${d.historyOutline} câu hỏi của bạn</b> ` +
+              `(${d.historyOutlineChars} ký tự) — <b>chỉ câu hỏi</b>, không kèm câu trả lời ` +
+              "nên không có nội dung trang khác đi kèm")
         : null,
       d.wholePage
         ? `Ảnh: <b>cả phần có nội dung của trang</b> — ${d.imageW}×${d.imageH}px. ` +

@@ -104,6 +104,24 @@ Bấm thử theo thứ tự này là thấy hết:
 
 ---
 
+## 5b. Nâng cấp giao tiếp agent (31/07 — CHƯA có số đo, cần lượt 04)
+
+Sau bản phê 55 output thật của lượt 03 (27/43 lượt vẫn mở "Chào bạn," · từ chối canned lặp 6 lần · giọng tả thay giọng dạy), một đợt sửa lớn đã vào code:
+
+| Đổi gì | Ở đâu |
+|---|---|
+| **Streaming thật** — chữ ra dần thay vì đợi 5–15s; đứt giữa chừng thì giữ phần đã hiện + báo "chưa trọn vẹn" | [server/explain.js](codebase/server/explain.js) (`callGeminiStream`, `progressiveParse`) · [ExplainPanel.js](codebase/web/components/ExplainPanel.js) (`renderStream/endStream`) |
+| **Từ chối 3 biến thể theo bản chất** (làm hộ · logistics · đòi đọc cả tài liệu/quiz) — lý do khớp câu hỏi, mở bằng câu ghi nhận nhu cầu | `REPLIES.refusal()` trong [mock-data.js](codebase/web/lib/mock-data.js) · `isOutOfScope` trả category |
+| **Sửa bug từ chối oan L14** — bỏ từ khoá trần `"điểm của"`, thay bằng regex đòi đại từ nhân xưng | [mock-data.js](codebase/web/lib/mock-data.js) (`LOGISTICS_REGEX`) |
+| **Prompt v2** — cấm "Chào bạn," bằng ví dụ dương tính · từ vựng người thật · cấm "tôi/chúng ta" · giọng dạy · cấm định nghĩa rỗng · câu cầu nối sau "không đề cập" · quy tắc hội thoại nhiều lượt | [server/prompts/explain-region.md](codebase/server/prompts/explain-region.md) |
+| **Máy chấm so marker `kind` thay vì so nguyên câu** — đổi lời REPLIES thoải mái không vỡ test; 429 nhận diện bằng `status` | [eval/runner.js](eval/runner.js) + 3 producer |
+| **2 điều kiện test mới**: `notRefused` (bắt từ chối oan) · case **E01** (học viên than nản) | [eval/cases.js](eval/cases.js) — bộ case giờ **56** |
+| `temperature: 0.2` + trần 512 token output — hai người chấm G/S/H/C mới chấm trên cùng một đáp án | [server/explain.js](codebase/server/explain.js) |
+
+⚠️ **Runner KHÔNG stream** (gọi đường một-phát như cũ) nên số đo lượt 04 vẫn so được với lượt 03. Trace thêm `latency_first_token_ms` để đo cảm nhận chờ của app thật.
+
+---
+
 ## 6. Sửa phần nào thì mở file nào
 
 | Muốn đổi | File |
@@ -122,10 +140,10 @@ Bấm thử theo thứ tự này là thấy hết:
 | Việc | Vì sao gấp |
 |---|---|
 | **Điền bảng phân công** trong [README.md](README.md) | R7 cho 1 điểm cho việc có tên người cho từng phần; CP5 sẽ hỏi từng người về phần mang tên mình |
-| **Chấm 4 chiều G/S/H/C** cho [eval/run-02.md](eval/run-02.md) | Runner đã sinh bảng 46 dòng với output thật; cần **2 người chấm độc lập rồi so** — 4/15 điểm R4. **Việc còn thiếu lớn nhất.** |
+| **Chạy lượt 04 — trọn bộ 56 case** | Toàn bộ nâng cấp mục 5b (prompt v2, refusal variants, temp 0.2) **chưa có số**; lượt 03 đã lỗi thời so với code hiện tại. Cần key Gemini |
+| **Chấm 4 chiều G/S/H/C** trên lượt 04 | **2 người chấm độc lập rồi so** — 4/15 điểm R4. **Việc còn thiếu lớn nhất.** Chấm trên lượt 04 (temp 0.2 — hai người cùng một đáp án), đừng chấm lượt cũ |
 | **Xác nhận quality bar** → spec §7 | Đề xuất **≥80% + không bịa lần nào**; nhóm phải chốt trước **23:59 N1**, sau đó không hạ được |
 | ~~≥10 golden case từ chatlog thật~~ | ✅ **xong — 14 case** (L01–L14), mỗi case kèm mã hội thoại |
-| **Chạy lượt 03** sau khi sửa L12 + toạ độ L01/L02 | Xác nhận 46/46; cần key Gemini |
 | **Log nguyên văn 23 người khảo sát** → [docs/survey-log.md](docs/survey-log.md) | Đang chặn 6/15 điểm R1 — có số 13/23 rồi nhưng thiếu log thì không được tính |
 | **Spec §3** (giải pháp tương tự) → [spec.md](spec.md) | Mỗi người thử 1 sản phẩm, 15 phút |
 | **User test + feedback log** → [validation/feedback-log.md](validation/feedback-log.md) | CP5 |
