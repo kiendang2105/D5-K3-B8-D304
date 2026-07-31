@@ -32,7 +32,7 @@ const MockAI = {
     const best = this.hitZone(region, page.zones);
 
     // ① Không có căn cứ: không trúng nội dung nào -> nói thật, không bịa
-    if (!best) return { text: REPLIES.noContent, mode, grounded: false };
+    if (!best) return { text: REPLIES.noContent, kind: "noContent", mode, grounded: false };
 
     // Mô phỏng nhánh "câu hỏi khái niệm tài liệu không nói" — nhãn tách bạch
     // giữa nội dung slide và kiến thức chung.

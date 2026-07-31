@@ -15,10 +15,16 @@
 | Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
 | **Từ chatlog thật** (L01–L14) | ≥10 | **14** ✅ |
 | Hỏi tiếp / ký ức hội thoại (F01–F03) | — | 3 |
+| Hỏi bằng chat thuần, không khoanh vùng (T01–T06) | — | 6 |
 | Trên PDF thật (`d1-slide-hackathon.pdf`) | — | 4 (P01–P04) |
-| **Tổng** | ≥20 | **49** |
+| Phản ứng cảm xúc (E01) | — | 1 |
+| **Tổng** | ≥20 | **56** |
 
 Phủ 4 lớp chỗ khó: ① 5 · ② 7 · ③ 6 · ④ 4 — mỗi lớp ≥4, vượt yêu cầu ≥2.
+
+**E01 bổ sung sau phê giọng lượt 03** (bản phê 55 output thật): bộ case chưa đo phản ứng khi học viên **than nản** (*"mình học mãi phần này mà không hiểu gì luôn, nản quá :("*). Hành vi mong muốn: một câu đồng cảm ngắn rồi vào ngay nội dung — không thuyết giảng thái độ học, không từ chối. Máy chấm phần cơ học (`notRefused`, `maxPages`); chiều đồng cảm là việc của người chấm.
+
+Cũng từ lượt 03: **L14 thêm điều kiện `notRefused`** — câu *"tổng điểm của usecase này"* từng bị từ khoá `"điểm của"` bắn nhầm thành từ chối lạc đề mà máy chấm vẫn ✓ vì không có điều kiện nào bắt lỗi từ chối oan.
 
 **F01–F03 đến từ việc tự dùng thử prototype**, không phải từ chatlog: sau khi được trả lời về ô ① slide 24, gõ *"tôi muốn chi tiết hơn nữa"* thì hệ thống hỏi lại *"bạn đang hỏi slide nào?"* — bắt học viên nhắc lại thứ vừa nói. Đây là nguồn hợp lệ thứ tư trong form CP3 (*"tình huống nhóm gặp khi tự dùng thử sản phẩm"*). `F03` là chốt chặn: lịch sử **không được** kéo nội dung trang khác vào.
 

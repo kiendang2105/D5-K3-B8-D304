@@ -394,6 +394,11 @@ kbd {
 .msg.user { align-self: flex-end; max-width: 92%; }
 .msg.user .bubble { background: var(--indigo); color: #fff; border-bottom-right-radius: 5px; }
 body.dark .msg.user .bubble { color: #0b1020; }
+/* Nhãn trang trên lượt cũ được vẽ lại — cho biết lượt đó hỏi về trang nào,
+   vì bản lưu chỉ có chữ, không có ảnh vùng để nhìn ra */
+.msg.user .user-page {
+  font-size: 10.5px; color: var(--faint); text-align: right; margin-bottom: 3px;
+}
 .msg.user img.crop {
   max-width: 100%; border-radius: 10px; margin-bottom: 7px;
   border: 1px solid var(--border); display: block; margin-left: auto;
@@ -526,6 +531,25 @@ body.dark .msg.bot.greet .bubble { background: var(--indigo-soft); }
   font-size: 11px; color: var(--faint); margin-top: 6px; padding-left: 2px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+/* Chip "đang hỏi về trang N" — cầu nối giữa trang đang XEM và trang đang HỎI */
+.chat-focus {
+  flex: none; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 0 12px;
+}
+.chat-focus:empty { display: none; }
+.focus-tag {
+  font-size: 11px; font-weight: 600; color: var(--indigo);
+  background: var(--indigo-soft); border: 1px solid var(--indigo);
+  padding: 4px 10px; border-radius: 999px;
+}
+.focus-switch {
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  color: var(--muted); background: var(--panel);
+  border: 1px dashed var(--border); padding: 4px 10px; border-radius: 999px;
+  font-family: inherit;
+}
+.focus-switch:hover { border-color: var(--indigo); color: var(--indigo); border-style: solid; }
 
 /* ô nhập chat */
 .chat-input {

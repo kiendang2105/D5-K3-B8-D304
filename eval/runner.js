@@ -131,12 +131,14 @@ const Runner = {
       // Guardrail chạy TRƯỚC nhánh số trang — y như App.askFromChat. Nếu không
       // thì "tóm tắt từ trang 1 đến trang 44" đi vào nhánh số trang và runner
       // đo một hành vi khác với app.
-      if (Explain.isOutOfScope(question)) {
+      const scopeCat = Explain.isOutOfScope(question);
+      if (scopeCat) {
+        const refusalText = REPLIES.refusal(scopeCat);
         return {
           id: c.id, cls: c.cls, expect: c.expect,
-          out: REPLIES.outOfScope, grounded: false,
+          out: refusalText, grounded: false,
           mode: "-", region: null, disclosure: null, stayedOn,
-          auto: this.check(c, { grounded: false, text: REPLIES.outOfScope }, null, null, stayedOn),
+          auto: this.check(c, { grounded: false, kind: "outOfScope", text: refusalText }, null, null, stayedOn),
         };
       }
       const m = c.chat.match(PAGE_IN_QUESTION);
@@ -147,7 +149,7 @@ const Runner = {
             id: c.id, cls: c.cls, expect: c.expect,
             out: REPLIES.pageOutOfRange(n, source.rangeText()), grounded: false,
             mode: "-", region: null, disclosure: null, stayedOn,
-            auto: this.check(c, { grounded: false }, null, null, stayedOn),
+            auto: this.check(c, { grounded: false, kind: "pageOutOfRange" }, null, null, stayedOn),
           };
         }
         page = await source.getPage(n);
@@ -174,7 +176,7 @@ const Runner = {
         id: c.id, cls: c.cls, expect: c.expect,
         out: REPLIES.noContent, grounded: false,
         mode: "-", region: null, disclosure: null, stayedOn,
-        auto: this.check(c, { grounded: false, text: REPLIES.noContent }, null, null, stayedOn),
+        auto: this.check(c, { grounded: false, kind: "noContent", text: REPLIES.noContent }, null, null, stayedOn),
       };
     }
 
@@ -205,14 +207,23 @@ const Runner = {
         if (CONFIG.USE_REAL_AI) await sleep(CONFIG.REAL_AI_DELAY_MS);
       }
 
+      // Chỉ LẬT sang xem trang khác, KHÔNG hỏi gì về nó. Mô phỏng đúng thao
+      // tác thật: học viên lật slide để đối chiếu rồi gõ tiếp câu hỏi về
+      // trang cũ. `page`/`region` giữ nguyên trang đang bàn — đó chính là
+      // hành vi đang được kiểm: chủ đề bám thứ đang HỎI, không theo đang XEM.
+      if (c.viewPageAfter && source.hasPage(c.viewPageAfter)) {
+        await source.getPage(c.viewPageAfter); // nạp vào bộ nhớ, không gửi đi
+      }
+
       for (const fq of c.followUps) {
-        // Lọc theo trang y như App.historyFor()
-        const hist = turns.filter((t) => t.page === page.num)
-          .slice(-CONFIG.HISTORY_MAX_TURNS)
-          .map((t) => ({ question: t.question.slice(0, 300),
-                         answer: (t.answer || "").slice(0, CONFIG.HISTORY_MAX_CHARS) }));
-        const fr = await Explain.run({ question: fq, page, region, mode, history: hist });
-        followUpReplies.push({ q: fq, reply: fr, histSent: hist.length });
+        // Dùng ĐÚNG hàm chọn ngữ cảnh của app (ConversationStore.select) chứ
+        // không viết lại một bản na ná — runner phải đo cùng một sản phẩm.
+        const ctx = ConversationStore.select(turns, page.num);
+        const fr = await Explain.run({
+          question: fq, page, region, mode,
+          history: ctx.full, historyOutline: ctx.outline,
+        });
+        followUpReplies.push({ q: fq, reply: fr, histSent: ctx.full.length });
         if (fr.grounded !== false) {
           turns.push({ page: page.num, question: fq, answer: fr.text });
         }
@@ -226,6 +237,7 @@ const Runner = {
     return {
       id: c.id, cls: c.cls, expect: c.expect,
       out: reply.text, grounded: reply.grounded, mode: reply.mode || mode,
+      status: reply.status || null, // HTTP status khi lời gọi lỗi (429...)
       answeredPage: page.num, stayedOn,
       region: { w: Math.round(region.w), h: Math.round(region.h),
                 pct: Math.round(region.w * region.h * 100 / (page.width * page.height)) },
@@ -246,22 +258,31 @@ const Runner = {
     const add = (name, ok, detail) => out.push({ name, ok, detail: detail || "" });
 
     if (a.detected) add("dò được vùng", !!region);
-    if (a.noContentPath) add("đi nhánh ① không đoán", reply.text === REPLIES.noContent);
+    if (a.noContentPath) add("đi nhánh ① không đoán", reply.kind === "noContent");
     // `grounded === false` đúng cho CẢ từ chối và hỏi lại — kiểm mỗi cờ đó là
     // không phân biệt được hai thứ. Lượt 02 vì thế báo C28 "đạt" trong khi
     // output thực tế là câu HỎI LẠI, không phải câu từ chối: một pass sai lý do
-    // che mất một bug thật của guardrail. Giờ so đúng chuỗi.
+    // che mất một bug thật của guardrail.
+    // Từ lượt 04: so marker `kind` do TỪNG producer gắn — vẫn phân biệt được
+    // từ-chối/hỏi-lại như so chuỗi, nhưng câu chữ REPLIES đổi thoải mái
+    // (kể cả nhiều biến thể câu) mà máy chấm không vỡ.
     if (a.asksBack) {
       add("hỏi lại thay vì đoán",
-        reply.grounded === false && reply.text === REPLIES.tooSmall,
-        reply.text === REPLIES.outOfScope ? "đây là câu TỪ CHỐI, không phải hỏi lại" : "");
+        reply.grounded === false && reply.kind === "tooSmall",
+        reply.kind === "outOfScope" ? "đây là câu TỪ CHỐI, không phải hỏi lại" : "");
     }
     if (a.refused) {
       add("từ chối vì ngoài phạm vi",
-        reply.grounded === false && reply.text === REPLIES.outOfScope,
-        reply.grounded === false && reply.text !== REPLIES.outOfScope
+        reply.grounded === false && reply.kind === "outOfScope",
+        reply.grounded === false && reply.kind !== "outOfScope"
           ? "grounded=false nhưng KHÔNG phải câu từ chối" : "");
     }
+    // Chiều ngược của refused: câu hỏi NỘI DUNG hợp lệ không được từ chối
+    // oan. Bài học L14 lượt 03: "tổng điểm của usecase này" bị từ khoá
+    // "điểm của" bắn nhầm → trả câu từ chối lạc đề mà auto vẫn ✓ vì không
+    // có điều kiện nào bắt.
+    if (a.notRefused) add("không từ chối oan", reply.kind !== "outOfScope",
+      reply.kind === "outOfScope" ? "guardrail bắn nhầm câu hỏi nội dung" : "");
     if (a.nothingSent) add("không gửi gì ra ngoài", !reply.disclosure);
     if (a.mode) add(`chế độ đọc = ${a.mode}`, (reply.mode || "") === a.mode, reply.mode || "-");
     if (a.maxPages) {
@@ -289,10 +310,19 @@ const Runner = {
       !!(reply.disclosure && reply.disclosure.historyTurns > 0),
       String(reply.disclosure ? reply.disclosure.historyTurns : "-"));
     if (a.historyOnlySamePage) {
-      // Đã hỏi 1 lượt trang này + 1 lượt trang khác. Lịch sử gửi kèm chỉ được
-      // gồm lượt của trang đang bàn -> đúng 1 lượt, không phải 2.
+      // Đã hỏi 1 lượt trang này + 1 lượt trang khác. Phần lịch sử gửi ĐẦY ĐỦ
+      // (hỏi + đáp) chỉ được gồm lượt của trang đang bàn -> đúng 1, không phải 2.
       const n = reply.disclosure ? reply.disclosure.historyTurns : -1;
-      add("lịch sử chỉ gồm lượt của đúng trang này", n === 1, String(n));
+      add("lịch sử đầy đủ chỉ gồm lượt của đúng trang này", n === 1, String(n));
+    }
+    // Dàn ý lượt trang khác được phép có (để nối mạch hội thoại) nhưng
+    // TUYỆT ĐỐI không được mang theo câu trả lời của trang khác — đó mới là
+    // thứ phá trần "1 trang/câu hỏi".
+    if (a.outlineNoAnswers) {
+      const d = reply.disclosure;
+      add("dàn ý trang khác không kèm câu trả lời",
+        !!d && d.historyOutlineHasAnswers === false,
+        d ? `${d.historyOutline} câu hỏi · chế độ ${d.historyOutlineMode}` : "-");
     }
     if (a.regionDisplay && region && page) {
       const s = CONFIG.SLIDE_W / page.width; // trang -> hệ hiển thị 960
@@ -348,14 +378,14 @@ const Runner = {
         // Thử một lần là không đủ: đo thật thấy lần hai vẫn 429, và case bị
         // ghi nhận fail vì lý do hạ tầng chứ không phải vì sản phẩm sai.
         for (let attempt = 1; attempt <= 3; attempt++) {
-          if (!CONFIG.USE_REAL_AI || !/\(429\)/.test(r.out || "")) break;
+          if (!CONFIG.USE_REAL_AI || r.status !== 429) break;
           const backoff = 30000 * attempt;
           this.log(`${c.id} bị 429 (lần ${attempt}) — chờ ${backoff / 1000}s rồi thử lại`, "warn");
           await sleep(backoff);
           r = await this.runCase(c);
         }
         // Vẫn 429 sau 3 lần -> đánh dấu là lỗi hạ tầng, KHÔNG lẫn với fail sản phẩm
-        if (CONFIG.USE_REAL_AI && /\(429\)/.test(r.out || "")) r.rateLimited = true;
+        if (CONFIG.USE_REAL_AI && r.status === 429) r.rateLimited = true;
         this.results.push(r);
         const auto = r.auto || [];
         const fail = auto.filter((x) => !x.ok);

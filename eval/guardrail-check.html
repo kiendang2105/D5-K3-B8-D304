@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>Guardrail check — 19 câu thử isOutOfScope</title>
+<style>
+  body { font-family: ui-monospace, Consolas, monospace; font-size: 13px;
+         background: #0f172a; color: #e2e8f0; padding: 24px; line-height: 1.7; }
+  h1 { font-size: 16px; color: #93c5fd; }
+  .ok   { color: #4ade80; }
+  .fail { color: #f87171; font-weight: 700; }
+  .cat  { display: inline-block; min-width: 88px; color: #fbbf24; }
+  #sum  { margin-top: 14px; font-size: 15px; font-weight: 700; }
+</style>
+</head>
+<body>
+<h1>Guardrail check — chạy TRỰC TIẾP Explain.isOutOfScope() thật, không port</h1>
+<p>Chạy lại trang này sau MỖI lần sửa <code>OUT_OF_SCOPE_GROUPS</code> /
+<code>LOGISTICS_REGEX</code> / <code>OUT_OF_SCOPE_REGEX</code> trong
+<code>mock-data.js</code>. Sửa pattern mà không chạy lại là kiểu bug L14
+(từ chối oan) và C08 (đúng nhánh, sai lý do) quay lại.</p>
+<div id="out"></div>
+<div id="sum"></div>
+
+<script src="../codebase/web/lib/config.js"></script>
+<script src="../codebase/web/lib/mock-data.js"></script>
+<script src="../codebase/server/explain.js"></script>
+<script>
+// [câu, kỳ vọng] — kỳ vọng null = KHÔNG được chặn.
+// 11 câu phải chặn ĐÚNG BIẾN THỂ + 8 câu không được từ chối oan.
+const TESTS = [
+  // — refused trong bộ case —
+  ["làm hộ bài tập này",                                          "task"],      // C07/P03
+  ["deadline nộp bài là bao giờ?",                                "logistics"], // C08 — từng nhận nhầm task
+  ["đọc hết tài liệu rồi tóm tắt giúp mình",                      "bulk"],      // C28
+  ["tóm tắt cho t tất cả từ trang 1 đến trang 44 bài này học về gì", "bulk"],   // L09
+  ["bạn hãy tóm tắt ý chính trong tài liệu này",                  "bulk"],      // L10
+  ["bạn cho tôi biết đáp án bài lab 1 được không",                "task"],      // L11
+  ["TẠO QUIZ ĐỂ TÔI HIỂU RÕ VÀ ÔN LẠI TOÀN BỘ SLIDE NÀY",         "bulk"],      // L12
+  ["điểm của mình bài lab 1 bao nhiêu vậy",                       "logistics"],
+  // — KHÔNG được từ chối oan —
+  ["giải thích tạo sao tổng điểm của usecase này lại thấp",       null],        // L14 — bug cũ
+  ["mình học mãi phần này mà không hiểu gì luôn, nản quá :(",     null],        // E01
+  ["mình đọc hết rồi mà không hiểu",                              null],
+  ["giải thích cả trang này",                                     null],        // 1 trang — hợp lệ
+  ["đọc hết trang này giúp mình",                                 null],
+  ["tóm tắt slide này",                                           null],
+  ["tóm tắt trang này",                                           null],
+  ["giải thích slide 24",                                         null],        // C27 — nhánh số trang
+  ["cái sơ đồ này nói về deadline của dự án à?",                  "logistics"], // ranh giới mờ — chấp nhận chặn
+  ["summarize the whole deck",                                    "bulk"],
+  ["đọc tất cả các trang rồi so sánh giúp mình",                  "bulk"],
+];
+
+const out = document.getElementById("out");
+let fails = 0;
+for (const [q, want] of TESTS) {
+  const got = Explain.isOutOfScope(q);
+  const ok = got === want;
+  if (!ok) fails++;
+  out.insertAdjacentHTML("beforeend",
+    `<div class="${ok ? "ok" : "fail"}">${ok ? "OK  " : "FAIL"} ` +
+    `<span class="cat">[${got}]</span> mong [${want}] — ${q}</div>`);
+}
+document.getElementById("sum").textContent =
+  fails === 0 ? `✅ ${TESTS.length}/${TESTS.length} ĐẠT`
+              : `❌ ${fails} FAIL / ${TESTS.length}`;
+document.getElementById("sum").className = fails === 0 ? "ok" : "fail";
+</script>
+</body>
+</html>

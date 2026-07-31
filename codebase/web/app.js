@@ -22,8 +22,28 @@ const App = {
   paging: false,    // đang lật trang — chặn giữ phím ← → dồn hàng chục lượt vẽ
   pendingStep: null,// lần nhấn đến trong lúc đang vẽ, chạy nốt khi vẽ xong
   lastAsk: null,    // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
-  turns: [],        // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
   chitchatTurn: 0,  // đổi câu đáp qua lại cho đỡ máy móc
+  // Lịch sử hội thoại KHÔNG nằm ở đây nữa — xem lib/conversation.js
+  // (ConversationStore): giữ toàn bộ, ghi localStorage, tự chọn phần được gửi.
+
+  // Ký ức là tính năng PHỤ TRỢ, không phải điều kiện để trả lời. Thiếu
+  // lib/conversation.js (quên thẻ script, cache HTML cũ, chặn mạng...) thì
+  // hệ thống phải mất trí nhớ chứ KHÔNG được câm: trước khi có hàm này,
+  // thiếu một file là mọi câu hỏi chết kèm "ConversationStore is not
+  // defined" — giữa lúc demo thì hỏng cả buổi.
+  mem() {
+    if (typeof ConversationStore !== "undefined") return ConversationStore;
+    if (!this._memWarned) {
+      this._memWarned = true;
+      console.warn("[chat] Thiếu lib/conversation.js — chạy KHÔNG có ký ức hội thoại. " +
+        "Kiểm thẻ <script src=\"lib/conversation.js\"> trong index.html, rồi Ctrl+F5.");
+    }
+    // Null-object: đủ mọi hàm app gọi, không nhớ gì cả
+    return {
+      openDoc: () => 0, add: () => null, all: () => [], count: () => 0,
+      contextFor: () => ({ full: [], outline: [] }),
+    };
+  },
 
   async init() {
     SlideViewer.init();
@@ -129,18 +149,21 @@ const App = {
     this.resetConversation();
   },
 
-  // Đổi tài liệu = bắt đầu lại. Xoá cả hội thoại lẫn ký ức, vì:
-  //   1. Hội thoại về tài liệu cũ không còn nghĩa gì ở tài liệu mới.
-  //   2. Quan trọng hơn: `turns` chỉ ghi số trang, không ghi tài liệu. Giữ
-  //      lại thì mở d1 hỏi trang 3, đổi sang d2 hỏi tiếp trang 3, lịch sử
-  //      của d1 sẽ bị trộn vào request — đúng thứ giới hạn dữ liệu cấm.
-  //      (historyFor() giờ lọc thêm theo docId, đây là lớp chặn thứ hai.)
+  // Đổi tài liệu = đổi ký ức, KHÔNG phải xoá ký ức.
+  // ConversationStore khoá lịch sử theo từng tài liệu và ghi xuống
+  // localStorage, nên mở lại d1 là hội thoại cũ của d1 còn nguyên — kể cả
+  // sau khi tải lại trang. Cái phải tránh là TRỘN: d1 và d2 đều có "trang
+  // 3", nạp chung là lịch sử tài liệu này chui vào request của tài liệu kia.
   resetConversation() {
-    this.turns = [];
+    const n = this.mem().openDoc(this.docId());
     this.lastAsk = null;
     this.chitchatTurn = 0;
     RegionSelector.clear();
+    this.renderFocus();
     this.renderGreeting();
+    // Vẽ lại hội thoại cũ lên khung chat. Không vẽ thì agent nhớ mà màn hình
+    // trống — học viên thấy nó nhắc tới thứ "chưa từng nói" là mất tin ngay.
+    if (n) ExplainPanel.replay(this.mem().all());
   },
 
   renderGreeting() {
@@ -341,10 +364,58 @@ const App = {
       b.classList && b.classList.toggle("active", Number(b.dataset.page) === num));
     this.renderPageMeta(page);
     this.renderPager();
+    // Lật trang KHÔNG đổi chủ đề hội thoại — chỉ cập nhật chip để học viên
+    // thấy mình đang hỏi về trang nào và đổi được bằng một chạm nếu muốn.
+    this.renderFocus();
     // Chưa hỏi gì mà lật trang thì gợi ý phải theo trang mới, không đứng yên
     // ở trang cũ. Đã có hội thoại rồi thì để nguyên, không phá dòng chat.
-    if (!this.turns.length) this.renderGreeting();
+    if (!this.mem().count()) this.renderGreeting();
     return page;
+  },
+
+  // ---------- chủ đề đang bàn ----------
+
+  // Chip dưới ô chat: "đang hỏi về trang N". Bắt buộc phải hiện, vì từ nay
+  // chủ đề KHÔNG tự chạy theo trang đang xem — không hiện thì học viên lật
+  // slide, gõ câu hỏi, rồi ngơ ngác không hiểu sao tutor nói chuyện trang cũ.
+  renderFocus() {
+    const box = document.getElementById("chat-focus");
+    if (!box) return;
+    box.innerHTML = "";
+
+    const focusPage = this.lastAsk && this.lastAsk.page;
+    if (!focusPage) return; // chưa hỏi gì -> câu đầu tiên bám trang đang xem
+
+    const cur = this.currentPage;
+    const same = cur && focusPage.num === cur.num;
+
+    const tag = document.createElement("span");
+    tag.className = "focus-tag";
+    tag.textContent = `Đang hỏi về trang ${focusPage.num}`;
+    box.appendChild(tag);
+
+    if (!same && cur) {
+      const btn = document.createElement("button");
+      btn.className = "focus-switch";
+      btn.textContent = `↪ Hỏi về trang ${cur.num} (đang xem)`;
+      btn.onclick = () => this.focusCurrentPage();
+      box.appendChild(btn);
+    }
+  },
+
+  // Chuyển chủ đề sang trang đang xem — một chạm, do học viên tự quyết.
+  focusCurrentPage() {
+    const page = this.currentPage;
+    if (!page) return;
+    this.lastAsk = {
+      question: "",
+      region: { ...ContentDetector.contentBounds(page), wholePage: true },
+      page,
+    };
+    RegionSelector.clear();
+    this.renderFocus();
+    ExplainPanel.addSystemNote(
+      `Đã chuyển sang hỏi về **trang ${page.num}**. Hội thoại cũ vẫn được giữ.`);
   },
 
   // Băng thông tin trạng thái trang: có text hay phải quét ảnh (G2 — nói rõ
@@ -398,10 +469,17 @@ const App = {
   // Bấm vào chỗ trống -> không đoán (lớp ①)
   async onEmptyClick() {
     if (this.busy) return;
-    this.hidePopover();
-    ExplainPanel.addUser({ question: "(bấm vào một chỗ trên slide)" });
-    const { bubble } = ExplainPanel.addBot();
-    await ExplainPanel.stream(bubble, REPLIES.noContent);
+    // Giữ busy suốt animation gõ chữ (~1s) — không giữ thì một câu hỏi chat
+    // gửi ngay lúc đó sẽ chạy animation CHỒNG lên: hai con trỏ ▌ song song
+    this.busy = true;
+    try {
+      this.hidePopover();
+      ExplainPanel.addUser({ question: "(bấm vào một chỗ trên slide)" });
+      const { bubble } = ExplainPanel.addBot();
+      await ExplainPanel.stream(bubble, REPLIES.noContent);
+    } finally {
+      this.busy = false;
+    }
   },
 
   // (B) hỏi bằng chat, có thể nhắc tới slide KHÁC slide đang xem.
@@ -410,7 +488,20 @@ const App = {
   async askFromChat() {
     const input = document.getElementById("chat-q");
     const question = input.value.trim();
-    if (!question || this.busy) return;
+    if (!question) return;
+    // `routing` đóng cái cửa sổ mà `busy` không che được: busy chỉ bật bên
+    // trong ask(), còn đường "hỏi trang N" phải await getPage (render PDF
+    // >100ms) TRƯỚC khi tới ask(). Hai lần Enter liên tiếp trong cửa sổ đó
+    // → câu thứ hai lọt qua busy-check, input đã bị xoá, rồi ask() của nó
+    // im lặng return vì busy — tin nhắn bốc hơi không dấu vết.
+    // routing bật ĐỒNG BỘ ngay tại đây nên không có cửa sổ nào nữa.
+    if (this.routing || this.busy) {
+      ExplainPanel.addSystemNote(
+        "⏳ Mình đang trả lời câu trước — chờ xong rồi gửi lại giúp mình nhé. " +
+        "(Tin nhắn của bạn vẫn còn nguyên trong ô chat.)");
+      return; // KHÔNG xoá input — tin nhắn còn nguyên để gửi lại
+    }
+    this.routing = true;
     input.value = "";
     try {
       await this.routeChat(question);
@@ -421,6 +512,8 @@ const App = {
       ExplainPanel.addUser({ question });
       ExplainPanel.addSystemNote(
         `Có lỗi khi xử lý tin nhắn: **${err && err.message ? err.message : err}**.`);
+    } finally {
+      this.routing = false; // nhả cả khi lỗi — kẹt true là chat câm vĩnh viễn
     }
   },
 
@@ -429,22 +522,24 @@ const App = {
     // Thứ tự ưu tiên khi tìm CĂN CỨ cho câu hỏi — từ cụ thể nhất tới rộng nhất.
     // Không còn nhánh nào bỏ mặc học viên: gõ câu gì cũng được trả lời.
     //
-    //   1. Câu nêu rõ số slide       -> đọc trang đó
-    //   2. Đang có vùng chọn         -> vùng đó
-    //   3. Vừa hỏi xong một vùng     -> nối tiếp vùng đó (G12)
-    //   4. Không có gì cả            -> TRANG ĐANG XEM
+    //   1. Câu nêu rõ số slide       -> đọc trang đó (và ĐỔI chủ đề sang đó)
+    //   2. Đang có vùng chọn         -> vùng đó (ĐỔI chủ đề)
+    //   3. Đã có chủ đề đang bàn     -> GIỮ NGUYÊN, kể cả khi đang xem trang khác
+    //   4. Chưa hỏi gì bao giờ       -> trang đang xem
     //
-    // Bậc 4 là đường mới. Trước đây nó đáp "bạn đang hỏi slide nào?" ngay cả
-    // khi học viên đang mở một slide trước mắt — hỏi một thứ hiển nhiên.
+    // Bậc 4 chỉ dùng cho câu hỏi ĐẦU TIÊN. Trước đây nó đáp "bạn đang hỏi
+    // slide nào?" ngay cả khi học viên đang mở một slide trước mắt — hỏi một
+    // thứ hiển nhiên.
     // Guardrail phải chạy TRƯỚC nhánh số trang. Nếu không thì câu "tóm tắt từ
     // trang 1 đến trang 20" sẽ đi vào nhánh số trang, trả lời về trang 1 và
     // IM LẶNG BỎ QUA việc học viên đòi 20 trang — tệ hơn là từ chối thẳng.
-    if (Explain.isOutOfScope(question)) {
+    const scopeCat = Explain.isOutOfScope(question);
+    if (scopeCat) {
       ExplainPanel.addUser({ question });
       ExplainPanel.addSystemNote(
         "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
       const { bubble } = ExplainPanel.addBot();
-      await ExplainPanel.stream(bubble, REPLIES.outOfScope);
+      await ExplainPanel.stream(bubble, REPLIES.refusal(scopeCat));
       return;
     }
 
@@ -477,10 +572,20 @@ const App = {
         question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
     }
 
-    // Chỉ nối tiếp vùng cũ khi câu hỏi thật sự có ý nối tiếp ("chi tiết hơn",
-    // "còn cái kia", "ví dụ"...). Câu hỏi mới thì bám TRANG ĐANG XEM cho dễ
-    // đoán, chứ không kéo lại vùng đã bấm từ mười tin nhắn trước.
-    if (kind === "followup" && this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
+    // GIỮ CHỦ ĐỀ ĐANG BÀN — kể cả khi học viên đã lật sang trang khác.
+    //
+    // Bản trước chỉ giữ khi câu hỏi có từ nối ("chi tiết hơn", "còn cái
+    // kia"), còn lại thì rơi xuống TRANG ĐANG XEM. Hậu quả thật: hỏi xong
+    // về slide A, lật sang B để đối chiếu, rồi gõ tiếp một câu về A —
+    // hệ thống lặng lẽ trả lời về B. Học viên không hề nói muốn đổi đề tài;
+    // chính hệ thống tự đổi vì nhìn nhầm "đang xem" thành "đang hỏi".
+    //
+    // Nguyên tắc đúng: chủ đề bám theo thứ học viên đang HỎI, không theo
+    // thứ đang XEM. Lật slide chỉ nạp trang đó vào bộ nhớ, không đụng vào
+    // mạch hội thoại. Muốn đổi đề tài thì có ba cách RÕ RÀNG, đều do học
+    // viên chủ động: nói tên slide ("slide 24 nói gì"), bấm/khoanh một vùng
+    // trên slide mới, hoặc bấm nút "Hỏi về trang đang xem" ở chip dưới ô chat.
+    if (this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
       return this.ask({
         question,
         region: this.lastAsk.region,
@@ -490,6 +595,7 @@ const App = {
       });
     }
 
+    // Chưa hỏi gì bao giờ -> mới lấy trang đang xem làm căn cứ
     return this.askAboutCurrentPage(question);
   },
 
@@ -556,12 +662,18 @@ const App = {
 
   // Khi user báo "không phải trang này" -> đọc lại trang khác, giữ câu hỏi cũ
   async rescanPage(n) {
+    if (this.routing || this.busy) return; // cùng cửa sổ race với askFromChat
     if (!this.source.hasPage(n)) {
       const { bubble } = ExplainPanel.addBot();
       await ExplainPanel.stream(bubble, REPLIES.pageOutOfRange(n, this.source.rangeText()));
       return;
     }
-    this.askAboutPage(n, this.lastAsk?.question || "", true);
+    this.routing = true;
+    try {
+      await this.askAboutPage(n, this.lastAsk?.question || "", true);
+    } finally {
+      this.routing = false;
+    }
   },
 
   // ---------- lõi: một lượt hỏi ----------
@@ -569,7 +681,15 @@ const App = {
   // region: toạ độ TRANG · page: trang được hỏi (có thể khác trang đang xem)
   // followUp: câu hỏi tiếp về đúng vùng của lượt trước
   async ask(req) {
-    if (this.busy || !req || !req.region) return;
+    if (!req || !req.region) return;
+    if (this.busy) {
+      // Chốt chặn cuối: mọi đường tới đây khi đang bận đều phải HIỆN RA,
+      // không được nuốt im lặng — tin nhắn biến mất còn tệ hơn phải chờ.
+      ExplainPanel.addSystemNote(
+        "⏳ Mình đang trả lời câu trước" +
+        (req.question ? ` — câu *"${req.question}"* chưa được gửi, bạn gửi lại sau nhé.` : "."));
+      return;
+    }
     this.busy = true;
     RegionSelector.locked = true;
     try {
@@ -646,23 +766,68 @@ const App = {
     // lượt trước (câu hỏi của học viên + câu trả lời của model) — không có
     // ảnh hay text mới nào của tài liệu rời máy vì thế.
     const typing = blocked ? null : ExplainPanel.addTyping();
-    const reply = await Explain.run({
-      question, page, region, mode,
-      history: followUp ? this.historyFor(page.num, region) : null,
-    });
-    if (typing) typing.remove();
 
-    const { div, bubble } = ExplainPanel.addBot();
-    if (reply.text) {
-      await ExplainPanel.stream(bubble, reply.text);
-    } else {
-      bubble.remove(); // chỉ có phần kiến thức chung, không có phần từ tài liệu
+    // Đường stream: bong bóng bot chỉ được tạo ở CHUNK ĐẦU TIÊN (lazy) —
+    // mock/guardrail/lỗi không phát chunk nào thì typing đứng đó tới khi
+    // run resolve, rồi đi nhánh render cũ ở dưới.
+    let live = null;
+    const onChunk = (delta, raw) => {
+      if (!live) {
+        if (typing && typing.parentNode) typing.remove();
+        live = { ...ExplainPanel.addBot(), outsideBody: null };
+      }
+      ExplainPanel.renderStream(live, raw);
+    };
+
+    // Ký ức gửi kèm ở MỌI lượt, không chỉ lượt được phân loại "hỏi tiếp":
+    // học viên hỏi câu mới vẫn mong tutor nhớ vừa nói gì với mình. Phần nào
+    // được gửi thì ConversationStore.contextFor() quyết (xem file đó).
+    const ctx = this.historyFor(page.num);
+    let reply;
+    try {
+      reply = await Explain.run({
+        question, page, region, mode,
+        history: ctx.full,
+        historyOutline: ctx.outline,
+      }, { onChunk });
+    } finally {
+      // typing phải biến mất CẢ khi run() ném lỗi — không thì bong bóng ba
+      // chấm đứng nhấp nháy vĩnh viễn phía trên dòng báo lỗi của ask().
+      if (typing && typing.parentNode) typing.remove();
     }
 
-    // Kiến thức chung hiện trong khối riêng, có nhãn — không trộn vào trên
-    if (reply.outsideDoc) {
-      const body = ExplainPanel.addOutsideDoc(div, "");
-      await ExplainPanel.stream(body, reply.outsideDoc);
+    let div, bubble;
+    if (live) {
+      // Đã stream: vẽ lại lần cuối theo bản parse toàn văn
+      ({ div, bubble } = live);
+      ExplainPanel.endStream(live, reply);
+    } else {
+      ({ div, bubble } = ExplainPanel.addBot());
+      if (reply.text) {
+        await ExplainPanel.stream(bubble, reply.text);
+      } else {
+        bubble.remove(); // chỉ có phần kiến thức chung, không có phần từ tài liệu
+      }
+
+      // Kiến thức chung hiện trong khối riêng, có nhãn — không trộn vào trên
+      if (reply.outsideDoc) {
+        const body = ExplainPanel.addOutsideDoc(div, "");
+        await ExplainPanel.stream(body, reply.outsideDoc);
+      }
+    }
+
+    // Đứt kết nối giữa chừng: giữ phần đã nhận nhưng nói thẳng là chưa trọn
+    if (reply.streamInterrupted) {
+      ExplainPanel.addSystemNote(
+        "⚠ Kết nối tới model bị ngắt giữa chừng — câu trả lời phía trên có thể " +
+        "**chưa trọn vẹn**. Bạn có thể hỏi lại câu này.");
+    }
+    // Chạm trần độ dài: câu cụt KHÔNG được đội lốt câu trọn vẹn (G2).
+    // Không báo thì học viên tưởng phần cuối không tồn tại.
+    if (reply.truncated) {
+      ExplainPanel.addSystemNote(
+        "✂ Câu trả lời **chạm trần độ dài** nên có thể thiếu phần cuối — " +
+        'gõ *"nói tiếp"* nếu bạn muốn nghe nốt.');
     }
 
     // Chỉ khoe "đọc bằng gì" khi thực sự có đọc nội dung. Câu từ chối
@@ -705,10 +870,17 @@ const App = {
     // không được thành "vùng đang bàn", nếu không thì học viên gõ tiếp một
     // câu vô thưởng vô phạt lại kéo cả vùng cũ ra trả lời.
     if (reply.grounded !== false) {
-      this.turns.push({ doc: this.docId(), page: page.num,
-                        question: question || "(giải thích vùng này)", answer: reply.text });
-      if (this.turns.length > CONFIG.HISTORY_MAX_TURNS) this.turns.shift();
+      // Lưu TOÀN BỘ, không cắt. Trước đây mảng bị shift() khi quá 3 phần tử
+      // nên app quên sạch sau 3 lượt — hỏi 10 câu rồi nhắc "cái lúc nãy bạn
+      // nói ấy" là chịu. Cắt là việc của lúc GỬI, không phải lúc NHỚ.
+      this.mem().add({
+        page: page.num,
+        question: question || "(giải thích vùng này)",
+        answer: reply.text,
+        mode: reply.mode || mode,
+      });
       this.lastAsk = { question, region, page };
+      this.renderFocus(); // chủ đề vừa đổi -> chip phải đổi theo ngay
     }
     // busy và locked được nhả trong `finally` của ask()
   },
@@ -724,15 +896,12 @@ const App = {
     return this.source ? this.source.kind + ":" + this.source.name : "?";
   },
 
+  // Ký ức nằm trong ConversationStore (giữ TOÀN BỘ, có ghi localStorage).
+  // Hàm này chỉ chọn phần được GỬI ĐI: lượt cùng trang gửi đủ hỏi+đáp, lượt
+  // trang khác gửi dàn ý (mặc định chỉ câu hỏi). Khoá theo tài liệu đã nằm
+  // trong store — mở tài liệu khác là nạp ký ức khác.
   historyFor(pageNum) {
-    const doc = this.docId();
-    return this.turns
-      .filter((t) => t.page === pageNum && t.doc === doc)
-      .slice(-CONFIG.HISTORY_MAX_TURNS)
-      .map((t) => ({
-        question: t.question.slice(0, 300),
-        answer: t.answer.slice(0, CONFIG.HISTORY_MAX_CHARS),
-      }));
+    return this.mem().contextFor(pageNum);
   },
 
   // ---------- API key (CP3) ----------
