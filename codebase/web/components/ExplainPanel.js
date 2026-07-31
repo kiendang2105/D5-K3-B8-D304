@@ -15,9 +15,53 @@ const ExplainPanel = {
     this.body = document.getElementById("chat-body");
   },
 
+  // Đổi tài liệu thì xoá sạch hội thoại và dựng lại trạng thái mở đầu.
+  // Trước đây mỗi lần mở một PDF lại NỐI THÊM một dòng thông báo, đổi qua
+  // lại bốn lần là bốn dòng chồng nhau; mà hội thoại về tài liệu cũ cũng
+  // chẳng còn nghĩa gì khi đã sang tài liệu khác.
+  // Trạng thái mở đầu = tutor chào một câu, kèm vài câu hỏi bấm được.
+  //
+  // Bản trước là một khối thông tin khô: tên file, số trang, ba gạch đầu dòng
+  // hướng dẫn — mà hướng dẫn đó đã có nguyên một dòng ngay trên slide rồi.
+  // Một màn hình nói cùng một việc hai lần.
+  //
+  // Lời chào này là của GIAO DIỆN, không phải model sinh ra: không tốn lời gọi
+  // AI, không gửi gì ra ngoài, và hiện ra tức thì. Prompt vẫn cấm model chào
+  // trong câu trả lời — bấm vào sơ đồ mà bị chào lại là phiền.
+  resetFor(source, page, suggestions, onPick) {
+    this.body.innerHTML = "";
+
+    const div = el("div", "msg bot greet");
+    const bubble = el("div", "bubble");
+    bubble.innerHTML = mdBold(
+      "Xin chào! Mình là **VLearn Tutor** 👋\n" +
+      "Mình có thể giúp gì cho bạn về slide này?");
+    div.appendChild(bubble);
+
+    if (source) {
+      const meta = el("div", "greet-doc");
+      meta.textContent = `${source.name} · ${source.pageCount} trang` +
+        (page ? ` · đang ở trang ${page.num}` : "");
+      div.appendChild(meta);
+    }
+
+    if (suggestions && suggestions.length) {
+      this.addSuggestions(div, suggestions, onPick);
+    }
+
+    this.body.appendChild(div);
+    this.scroll();
+  },
+
+  // Hội thoại bắt đầu thì bỏ chip gợi ý mở đầu, nhưng GIỮ lời chào lại —
+  // như mọi khung chat, câu chào là tin nhắn đầu tiên chứ không phải một
+  // trạng thái rỗng bị thay thế. Chip thì đã dùng xong, để lại là gợi ý cũ
+  // nằm lẫn giữa dòng hội thoại.
   clearEmpty() {
-    const el = this.body.querySelector(".empty-chat");
-    if (el) el.remove();
+    const old = this.body.querySelector(".empty-chat");
+    if (old) old.remove();
+    const chips = this.body.querySelector(".msg.bot.greet .suggestions");
+    if (chips) chips.remove();
   },
 
   scroll() {
@@ -25,19 +69,48 @@ const ExplainPanel = {
   },
 
   // ---- tin nhắn của học viên ----
-  addUser({ cropImage, question }) {
+  // `excerpt` là đoạn text nằm trong vùng đã chọn. Tutor thật của VLearn gửi
+  // kèm đúng thứ này: 99,3% câu hỏi trong chatlog mang tiền tố
+  // `(Trang N, đoạn được chọn: "...")`. Hiện lại nó để học viên thấy chính xác
+  // phần nào đang được hỏi, thay vì chỉ thấy một ảnh cắt.
+  addUser({ cropImage, question, excerpt, pageNum }) {
     this.clearEmpty();
     const div = el("div", "msg user");
+
     if (cropImage) {
       const img = el("img", "crop");
       img.src = cropImage;
       div.appendChild(img);
     }
+
+    if (excerpt) {
+      const q = el("div", "excerpt");
+      const cap = el("span", "cap");
+      cap.textContent = pageNum ? `Trang ${pageNum} · đoạn đã chọn` : "Đoạn đã chọn";
+      q.appendChild(cap);
+      const t = el("span", "txt");
+      t.textContent = excerpt.length > 160 ? excerpt.slice(0, 160) + "…" : excerpt;
+      q.appendChild(t);
+      div.appendChild(q);
+    }
+
     const bubble = el("div", "bubble");
     bubble.textContent = question || "Giải thích vùng này giúp mình";
     div.appendChild(bubble);
     this.body.appendChild(div);
     this.scroll();
+  },
+
+  // Chấm gõ trong lúc chờ model. Con trỏ nhấp nháy trước đây trông như
+  // ô nhập bị treo chứ không như ai đó đang soạn câu trả lời.
+  addTyping() {
+    const div = el("div", "msg bot typing");
+    const b = el("div", "bubble");
+    b.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    div.appendChild(b);
+    this.body.appendChild(div);
+    this.scroll();
+    return div;
   },
 
   // ---- tin nhắn của tutor ----

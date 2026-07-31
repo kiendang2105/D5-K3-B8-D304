@@ -18,8 +18,12 @@ const App = {
   source: null,
   currentPage: null,
   busy: false,
-  lastAsk: null, // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
-  turns: [],     // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
+  routing: false,   // đang trong routeChat (kể cả đoạn await getPage TRƯỚC ask) — chống double-submit
+  paging: false,    // đang lật trang — chặn giữ phím ← → dồn hàng chục lượt vẽ
+  pendingStep: null,// lần nhấn đến trong lúc đang vẽ, chạy nốt khi vẽ xong
+  lastAsk: null,    // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
+  turns: [],        // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
+  chitchatTurn: 0,  // đổi câu đáp qua lại cho đỡ máy móc
 
   async init() {
     SlideViewer.init();
@@ -50,6 +54,21 @@ const App = {
     const theme = document.getElementById("btn-theme");
     if (theme) theme.onclick = () => this.toggleTheme();
     this.restoreTheme();
+
+    document.getElementById("pg-first").onclick = () => this.step(-Infinity);
+    document.getElementById("pg-prev").onclick = () => this.step(-1);
+    document.getElementById("pg-next").onclick = () => this.step(1);
+    document.getElementById("pg-last").onclick = () => this.step(Infinity);
+    const pgInput = document.getElementById("pg-input");
+    pgInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") this.jumpToTyped();
+    });
+    pgInput.addEventListener("blur", () => this.renderPager());
+
+    // Bắt phím ở tầng document chứ không gắn vào canvas: học viên không bấm
+    // vào slide trước rồi mới bấm phím, họ chỉ bấm phím. Gắn vào canvas thì
+    // phải focus đúng chỗ mới ăn — đọc tài liệu không ai làm vậy.
+    document.addEventListener("keydown", (ev) => this.onKeyNav(ev));
 
     this.buildDeckButtons();
     this.restoreKey();
@@ -107,6 +126,54 @@ const App = {
     document.getElementById("doc-name").textContent = this.source.name;
     await this.buildTabs();
     await this.goToPage(MOCK_SLIDES[0].num);
+    this.resetConversation();
+  },
+
+  // Đổi tài liệu = bắt đầu lại. Xoá cả hội thoại lẫn ký ức, vì:
+  //   1. Hội thoại về tài liệu cũ không còn nghĩa gì ở tài liệu mới.
+  //   2. Quan trọng hơn: `turns` chỉ ghi số trang, không ghi tài liệu. Giữ
+  //      lại thì mở d1 hỏi trang 3, đổi sang d2 hỏi tiếp trang 3, lịch sử
+  //      của d1 sẽ bị trộn vào request — đúng thứ giới hạn dữ liệu cấm.
+  //      (historyFor() giờ lọc thêm theo docId, đây là lớp chặn thứ hai.)
+  resetConversation() {
+    this.turns = [];
+    this.lastAsk = null;
+    this.chitchatTurn = 0;
+    RegionSelector.clear();
+    this.renderGreeting();
+  },
+
+  renderGreeting() {
+    ExplainPanel.resetFor(this.source, this.currentPage,
+      this.suggestFor(this.currentPage),
+      (q) => { document.getElementById("chat-q").value = q; this.askFromChat(); });
+  },
+
+  // Câu hỏi gợi ý mở đầu, suy ra TẠI CHỖ từ nội dung trang đang xem.
+  // Không gọi AI: hiện tức thì, không tốn quota, không gửi gì ra ngoài.
+  suggestFor(page) {
+    if (!page) return [];
+
+    // Trang không đọc được text thì chỉ gợi ý chung được
+    if (page.textLen < CONFIG.MIN_TEXT_CHARS) {
+      return ["Trang này có gì?", "Giải thích hình trên trang"];
+    }
+
+    const out = [];
+
+    // Slide mock có sẵn tên vùng — gợi ý thẳng theo tên đó
+    if (page.zones && page.zones.length) {
+      for (const z of page.zones.slice(0, 2)) out.push(`Giải thích ${z.label.toLowerCase()}`);
+    } else {
+      // PDF thật: lấy dòng chữ TO NHẤT ở nửa trên làm tiêu đề
+      const items = (page.textItems || []).filter((t) => t.y < page.height * 0.5);
+      const title = items.sort((a, b) => b.h - a.h)[0];
+      const s = title ? title.str.trim() : "";
+      if (s.length >= 4 && s.length <= 60) out.push(`"${s}" nghĩa là gì?`);
+    }
+
+    out.push("Trang này nói về gì?");
+    return out.slice(0, 3);
   },
 
   // Mở PDF do user tự chọn
@@ -128,9 +195,9 @@ const App = {
         `${this.source.name} · ${this.source.pageCount} trang`;
       await this.buildTabs();
       await this.goToPage(1);
-      note.innerHTML = mdBold(
-        `Đã mở **${this.source.name}** (${this.source.pageCount} trang). ` +
-        `Bấm vào một phần trên slide để hỏi, hoặc gõ *"giải thích trang 3"*.`);
+      // Không nối thêm dòng thông báo nữa — dựng lại hẳn trạng thái mở đầu
+      // cho tài liệu mới. Dòng "Đang mở…" ở trên bị xoá cùng.
+      this.resetConversation();
     } catch (err) {
       const fileProto = location.protocol === "file:";
       note.innerHTML = mdBold(
@@ -144,24 +211,124 @@ const App = {
     }
   },
 
+  // Chip tên trang chỉ có nghĩa khi tài liệu ít trang và trang có tên riêng
+  // (slide mẫu: "Slide 12 · Automation"). Với PDF 29 trang thì đổ 12 nút rồi
+  // ghi "và 17 trang nữa" không phải là trình đọc tài liệu — dùng thanh
+  // ‹ số trang › như mọi trình đọc.
   async buildTabs() {
     const tabs = document.getElementById("page-tabs");
     tabs.innerHTML = "";
     const labels = this.source.pageLabels();
-    // PDF dài thì chỉ hiện 12 trang đầu cho gọn — vẫn hỏi được trang khác qua chat
-    for (const p of labels.slice(0, 12)) {
-      const b = document.createElement("button");
-      b.textContent = p.label;
-      b.dataset.page = p.index;
-      b.onclick = () => this.goToPage(p.index);
-      tabs.appendChild(b);
+    const dungChip = this.source.kind === "mock" && labels.length <= 6;
+
+    tabs.hidden = !dungChip;
+    if (dungChip) {
+      for (const p of labels) {
+        const b = document.createElement("button");
+        b.textContent = p.label;
+        b.dataset.page = p.index;
+        b.onclick = () => this.goToPage(p.index);
+        tabs.appendChild(b);
+      }
     }
-    if (labels.length > 12) {
-      const more = document.createElement("span");
-      more.className = "tabs-more";
-      more.textContent = `… và ${labels.length - 12} trang nữa — hỏi qua chat`;
-      tabs.appendChild(more);
+
+    // Ô nhảy trang chỉ có nghĩa với tài liệu đánh số LIÊN TỤC 1..N. Slide mẫu
+    // đánh số 12/18/24 (cố ý, để mô phỏng bẫy số trang lệch) nên hiện
+    // "12 / 3" là vô nghĩa — với nguồn đó thì chip tên slide đã đủ.
+    const lienTuc = this.source.kind === "pdf";
+    document.getElementById("pg-jump").hidden = !lienTuc;
+    if (lienTuc) document.getElementById("pg-total").textContent = labels.length;
+    this.renderPager();
+  },
+
+  // ---------- thanh trang ----------
+
+  pageList() {
+    return this.source ? this.source.pageLabels().map((p) => p.index) : [];
+  },
+
+  renderPager() {
+    const list = this.pageList();
+    const cur = this.currentPage ? this.currentPage.num : null;
+    const i = list.indexOf(cur);
+    const input = document.getElementById("pg-input");
+    if (input && document.activeElement !== input) input.value = cur == null ? "" : cur;
+
+    for (const [id, off] of [["pg-first", -Infinity], ["pg-prev", -1],
+                             ["pg-next", 1], ["pg-last", Infinity]]) {
+      const b = document.getElementById(id);
+      if (!b) continue;
+      b.disabled = i < 0 || (off < 0 ? i === 0 : i === list.length - 1);
     }
+  },
+
+  async step(delta) {
+    // Giữ phím ← hoặc bấm nút liên tục thì mỗi lần nhấn lại gọi goToPage, mà
+    // vẽ một trang PDF mất một lúc — không chặn thì hàng chục lượt vẽ chồng
+    // lên nhau và cuối cùng dừng ở trang nào là hên xui.
+    //
+    // Chặn thì phải GỘP chứ không được vứt: vứt thì nhấn nhanh mấy cái chỉ ăn
+    // một cái, người dùng tưởng bàn phím lag. Gộp = nhớ lần nhấn cuối, vẽ xong
+    // trang này thì đi tiếp — cùng lắm là chạy sau tay người một nhịp, nhưng
+    // không mất lần nhấn nào.
+    if (this.paging) { this.pendingStep = delta; return; }
+
+    const list = this.pageList();
+    const i = list.indexOf(this.currentPage ? this.currentPage.num : -1);
+    if (i < 0) return;
+    const j = delta === -Infinity ? 0
+      : delta === Infinity ? list.length - 1
+      : Math.max(0, Math.min(list.length - 1, i + delta));
+    if (list[j] === list[i]) return;
+
+    this.paging = true;
+    try {
+      await this.goToPage(list[j]);
+    } finally {
+      this.paging = false;
+      const cho = this.pendingStep;
+      this.pendingStep = null;
+      if (cho != null) this.step(cho);
+    }
+  },
+
+  // Lật trang bằng phím mũi tên — thao tác mặc định của mọi trình đọc tài liệu.
+  //
+  // Ba chỗ phải chừa ra, nếu không là cướp phím của người dùng:
+  //   1. Đang gõ trong ô chat / ô hỏi vùng / ô số trang: ← → là để di con trỏ
+  //      trong câu đang viết, lật trang giữa lúc soạn câu hỏi là mất chỗ.
+  //   2. Có Ctrl / Alt / Cmd: Alt+← là "quay lại" của trình duyệt.
+  //   3. ↑ ↓ để nguyên cho việc cuộn trang.
+  onKeyNav(ev) {
+    if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.isComposing) return;
+
+    const t = ev.target;
+    if (t && t.closest &&
+        t.closest("input, textarea, select, [contenteditable='true']")) return;
+
+    const delta = {
+      ArrowLeft: -1, PageUp: -1,
+      ArrowRight: 1, PageDown: 1,
+      Home: -Infinity, End: Infinity,
+    }[ev.key];
+    if (delta === undefined) return;
+
+    ev.preventDefault(); // ← → không kéo thanh cuộn ngang nữa
+    this.step(delta);
+  },
+
+  async jumpToTyped() {
+    const input = document.getElementById("pg-input");
+    const n = parseInt((input.value || "").replace(/\D/g, ""), 10);
+    if (!n || !this.source.hasPage(n)) {
+      // Gõ số không có thì trả input về trang hiện tại, không im lặng nuốt
+      ExplainPanel.addSystemNote(
+        `Không có trang ${input.value || "(trống)"} — tài liệu này có ${this.source.rangeText()}.`);
+      this.renderPager();
+      return;
+    }
+    await this.goToPage(n);
+    input.blur();
   },
 
   async goToPage(num) {
@@ -173,6 +340,10 @@ const App = {
     [...document.getElementById("page-tabs").children].forEach((b) =>
       b.classList && b.classList.toggle("active", Number(b.dataset.page) === num));
     this.renderPageMeta(page);
+    this.renderPager();
+    // Chưa hỏi gì mà lật trang thì gợi ý phải theo trang mới, không đứng yên
+    // ở trang cũ. Đã có hội thoại rồi thì để nguyên, không phá dòng chat.
+    if (!this.turns.length) this.renderGreeting();
     return page;
   },
 
@@ -241,6 +412,19 @@ const App = {
     const question = input.value.trim();
     if (!question || this.busy) return;
     input.value = "";
+    try {
+      await this.routeChat(question);
+    } catch (err) {
+      // Lỗi ngoài ask() (phân loại, tra trang, dò vùng) cũng phải hiện ra.
+      // Im lặng nuốt lỗi ở đây là học viên gõ mãi mà màn hình không đổi gì.
+      console.error("[askFromChat] lỗi:", err);
+      ExplainPanel.addUser({ question });
+      ExplainPanel.addSystemNote(
+        `Có lỗi khi xử lý tin nhắn: **${err && err.message ? err.message : err}**.`);
+    }
+  },
+
+  async routeChat(question) {
 
     // Thứ tự ưu tiên khi tìm CĂN CỨ cho câu hỏi — từ cụ thể nhất tới rộng nhất.
     // Không còn nhánh nào bỏ mặc học viên: gõ câu gì cũng được trả lời.
@@ -278,12 +462,25 @@ const App = {
       return this.askAboutPage(n, question);
     }
 
+    // Phân loại TRƯỚC MỌI THỨ. Bản trước để nhánh "đang có vùng chọn" chạy
+    // trước, nên vừa bấm chọn một vùng rồi gõ "lo" thì vẫn gửi cả ảnh vùng
+    // đi kèm. Chào hỏi hay gõ nhầm thì không được gửi gì, dù đang chọn gì.
+    const kind = this.classify(question);
+
+    if (kind === "chitchat") {
+      return this.chitchat(question);
+    }
+
+    // Đang có vùng chọn thì học viên đã chỉ rõ, khỏi đoán
     if (RegionSelector.regionPage) {
       return this.ask({
         question, region: { ...RegionSelector.regionPage }, page: this.currentPage });
     }
 
-    if (this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
+    // Chỉ nối tiếp vùng cũ khi câu hỏi thật sự có ý nối tiếp ("chi tiết hơn",
+    // "còn cái kia", "ví dụ"...). Câu hỏi mới thì bám TRANG ĐANG XEM cho dễ
+    // đoán, chứ không kéo lại vùng đã bấm từ mười tin nhắn trước.
+    if (kind === "followup" && this.lastAsk && this.lastAsk.region && this.lastAsk.page) {
       return this.ask({
         question,
         region: this.lastAsk.region,
@@ -293,8 +490,43 @@ const App = {
       });
     }
 
-    // Bậc 4 — câu hỏi text thuần, lấy trang đang xem làm căn cứ
     return this.askAboutCurrentPage(question);
+  },
+
+  // Phân loại tin nhắn: 'chitchat' | 'followup' | 'document'
+  classify(q) {
+    const s = (q || "").trim();
+    if (CHITCHAT_GREET.test(s) || CHITCHAT_ACK.test(s)) return "chitchat";
+
+    // Một "từ" cụt lủn -> gõ nhầm hoặc chưa nói gì. Hỏi lại rẻ hơn nhiều so
+    // với đoán rồi trả lời sai (lớp ②). Dấu "?" chỉ được tính là câu hỏi khi
+    // có kèm chữ; mỗi dấu "?" trơ trọi thì vẫn là chưa nói gì.
+    const tokens = s.split(/\s+/).filter((t) => t.length >= 2);
+    const hasWord = /\p{L}{2,}/u.test(s);
+    if (tokens.length <= 1 && !/\d/.test(s) && !(hasWord && /\?/.test(s)) && s.length < 8) {
+      return "chitchat";
+    }
+
+    // "slide này" / "trang này" trỏ tới TRANG ĐANG XEM, không phải vùng vừa
+    // hỏi. Phải xét trước FOLLOWUP_HINT vì chữ "này" nằm trong cả hai.
+    if (CURRENT_PAGE_REF.test(s)) return "document";
+
+    if (FOLLOWUP_HINT.test(s)) return "followup";
+    return "document";
+  },
+
+  async chitchat(question) {
+    const s = question.trim();
+    const bucket = CHITCHAT_GREET.test(s) ? "greeting"
+      : CHITCHAT_ACK.test(s) ? "ack" : "unclear";
+    const list = CHITCHAT[bucket];
+    // Đổi câu qua lại cho đỡ máy móc khi học viên nhắn mấy lần
+    const text = list[this.chitchatTurn++ % list.length];
+
+    ExplainPanel.addUser({ question });
+    const { bubble } = ExplainPanel.addBot();
+    await ExplainPanel.stream(bubble, text);
+    ExplainPanel.scroll();
   },
 
   // Câu hỏi text thuần: không chọn vùng, không nêu slide.
@@ -336,19 +568,48 @@ const App = {
 
   // region: toạ độ TRANG · page: trang được hỏi (có thể khác trang đang xem)
   // followUp: câu hỏi tiếp về đúng vùng của lượt trước
-  async ask({ question, region, page, offScreen, redo, followUp }) {
-    if (this.busy || !region) return;
-    page = page || this.currentPage;
+  async ask(req) {
+    if (this.busy || !req || !req.region) return;
     this.busy = true;
     RegionSelector.locked = true;
+    try {
+      await this.askInner(req);
+    } catch (err) {
+      // Trước đây không có try/finally: bất kỳ lỗi nào giữa chừng là `busy`
+      // kẹt ở true vĩnh viễn, và vì askFromChat mở đầu bằng
+      // `if (!question || this.busy) return;` nên MỌI tin nhắn sau đó im lặng
+      // thoát, không hiện gì. Chat chết mà không báo một chữ.
+      console.error("[ask] lỗi:", err);
+      ExplainPanel.addSystemNote(
+        `Có lỗi khi xử lý câu hỏi: **${err && err.message ? err.message : err}**. ` +
+        "Bạn thử lại; nếu lặp lại thì mở Console (F12) xem chi tiết.");
+    } finally {
+      this.busy = false;
+      RegionSelector.locked = false;
+      ExplainPanel.scroll();
+    }
+  },
+
+  async askInner({ question, region, page, offScreen, redo, followUp }) {
+    page = page || this.currentPage;
 
     const mode = Explain.readMode(page);
     // Ảnh hiện trong bong bóng chat CHÍNH LÀ ảnh sẽ gửi đi — không có
     // ảnh nào khác rời máy. Học viên nhìn bong bóng là biết đã gửi gì.
     const cropImage = ContentDetector.cropPage(page, region);
 
+    // Đoạn text nằm trong vùng chọn — đúng thứ tutor thật gửi kèm câu hỏi.
+    // Lấy qua buildPayload để hiện đúng cái sẽ gửi, không tự tính lại một kiểu
+    // khác rồi lệch với bảng công khai.
+    let excerpt = "";
+    if (mode === "text") {
+      try {
+        excerpt = (Explain.buildPayload({ page, region, mode }).text || "").trim();
+      } catch (e) { /* chỉ để hiển thị, hỏng thì bỏ qua */ }
+    }
+
     ExplainPanel.addUser({
-      cropImage,
+      cropImage, excerpt, pageNum: page.num,
       question: redo ? `(đọc lại) ${question || "Giải thích phần này"}` : question,
     });
 
@@ -361,11 +622,12 @@ const App = {
       ExplainPanel.addSystemNote(
         "Câu này ngoài phạm vi → **không có dữ liệu nào được gửi ra ngoài**.");
     } else {
-      // Nói rõ đang nối tiếp vùng nào, để học viên không tưởng máy đoán bừa
-      if (followUp) {
+      // Chỉ báo khi vùng được nối tiếp nằm ở TRANG KHÁC trang đang xem. Nối
+      // tiếp một vùng ngay trước mắt thì học viên tự biết, báo mỗi tin nhắn
+      // chỉ làm khung chat đầy chữ thừa.
+      if (followUp && page !== this.currentPage) {
         ExplainPanel.addSystemNote(
-          `Hiểu là bạn hỏi tiếp về **vùng vừa rồi ở trang ${page.num}** — ` +
-          "muốn hỏi phần khác thì bấm vào đúng phần đó trên slide.");
+          `Đang hỏi tiếp về vùng ở **trang ${page.num}**, bạn vẫn đang xem trang ${this.currentPage.num}.`);
       }
       if (offScreen && !followUp) {
         ExplainPanel.addSystemNote(
@@ -383,13 +645,14 @@ const App = {
     // Lịch sử chỉ gửi khi hỏi tiếp về ĐÚNG vùng đó, và chỉ gửi CHỮ của các
     // lượt trước (câu hỏi của học viên + câu trả lời của model) — không có
     // ảnh hay text mới nào của tài liệu rời máy vì thế.
+    const typing = blocked ? null : ExplainPanel.addTyping();
     const reply = await Explain.run({
       question, page, region, mode,
       history: followUp ? this.historyFor(page.num, region) : null,
     });
+    if (typing) typing.remove();
 
     const { div, bubble } = ExplainPanel.addBot();
-    bubble.innerHTML = '<span class="cursor-blink">▌</span>';
     if (reply.text) {
       await ExplainPanel.stream(bubble, reply.text);
     } else {
@@ -442,21 +705,29 @@ const App = {
     // không được thành "vùng đang bàn", nếu không thì học viên gõ tiếp một
     // câu vô thưởng vô phạt lại kéo cả vùng cũ ra trả lời.
     if (reply.grounded !== false) {
-      this.turns.push({ page: page.num, question: question || "(giải thích vùng này)", answer: reply.text });
+      this.turns.push({ doc: this.docId(), page: page.num,
+                        question: question || "(giải thích vùng này)", answer: reply.text });
       if (this.turns.length > CONFIG.HISTORY_MAX_TURNS) this.turns.shift();
       this.lastAsk = { question, region, page };
     }
-
-    this.busy = false;
-    RegionSelector.locked = false;
+    // busy và locked được nhả trong `finally` của ask()
   },
 
   // Lịch sử hội thoại cho câu hỏi tiếp — CHỈ các lượt về đúng trang này.
   // Không trộn lượt của trang khác vào: làm vậy là gián tiếp gửi nội dung
   // nhiều trang trong một request, phá giới hạn 1 trang/câu hỏi.
+  // Khoá theo CẢ tài liệu lẫn trang. Lọc mỗi số trang là chưa đủ: d1 và d2
+  // đều có trang 3, nên đổi tài liệu rồi hỏi tiếp sẽ kéo lượt của tài liệu
+  // cũ vào request. resetConversation() đã xoá turns khi đổi tài liệu, đây
+  // là lớp chặn thứ hai phòng khi có đường nào đó quên gọi reset.
+  docId() {
+    return this.source ? this.source.kind + ":" + this.source.name : "?";
+  },
+
   historyFor(pageNum) {
+    const doc = this.docId();
     return this.turns
-      .filter((t) => t.page === pageNum)
+      .filter((t) => t.page === pageNum && t.doc === doc)
       .slice(-CONFIG.HISTORY_MAX_TURNS)
       .map((t) => ({
         question: t.question.slice(0, 300),
