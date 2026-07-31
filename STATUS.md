@@ -122,6 +122,27 @@ Sau bản phê 55 output thật của lượt 03 (27/43 lượt vẫn mở "Chà
 
 ---
 
+## 5c. Ôn tập cuối buổi — tóm tắt cả buổi + quiz (31/07 — CHƯA có số đo)
+
+Học viên lướt hết slide trong buổi thì tutor tóm tắt lại cả buổi và ra quiz. Nguồn của bản ôn **không phải file PDF** mà là ghi chú nhặt dần từ những trang học viên đã tự mở.
+
+| Đổi gì | Ở đâu |
+|---|---|
+| **Kho ghi chú theo trang đã xem** — nhặt lúc học viên lật tới trang, từ lớp text sẵn có (không gọi AI); trang đã hỏi tutor thì nâng cấp bằng chính câu trả lời | [web/lib/deck-notes.js](codebase/web/lib/deck-notes.js) (file mới) |
+| **Đường dữ liệu thứ hai** `Explain.review()` + `buildDeckPayload()` — chỉ chữ, 0 ảnh, ≤240 ký tự/trang | [server/explain.js](codebase/server/explain.js) |
+| **Quiz 10 câu**: 5 câu bám chỗ học viên đã hỏi trong buổi + 5 câu từ nội dung; đáp án giấu tới khi tự chọn | `parseQuiz` + `ExplainPanel.addQuiz` |
+| **Băng tiến độ** "đã ghi chú N/M trang bạn đi qua" + nút ôn khi đi đủ | `App.renderCoverage` · [index.html](codebase/web/index.html) |
+| **Bảng công khai riêng** cho đường ôn tập: khai đúng số trang, khai 0 ảnh, khai còn bao nhiêu trang chưa xem | `ExplainPanel.addDeckDisclosure` |
+| 4 case đổi kỳ vọng (`C28` `L09` `L10` `L12`) + 3 case mới (`C29`–`C31`) — bộ case giờ **60** | [eval/cases.js](eval/cases.js), xem [golden-set.md](eval/golden-set.md) |
+
+**Bất biến thay thế cho trần 1 trang**: không bao giờ đọc trang học viên chưa tự mở. Kiểm được bằng `onlySeenPages` / `noImages` / `quizFromSeenPages` trong máy chấm.
+
+Đã chạy: trọn bộ 60 case ở chế độ mock — **114/114 điều kiện máy chấm đạt**, 0 lỗi JS. Đã thử đường ôn tập với **AI thật** (`gemini-3.1-flash-lite-preview`): tóm tắt 2,0s đúng bố cục và tự nói rõ trang 24 chỉ có ảnh nên không tóm được; quiz 3,0s, `parseQuiz` đọc ra 5 câu, mọi câu dẫn nguồn về trang đã xem.
+
+⚠️ **Chưa có số chất lượng**: lượt 04 vẫn chưa chạy, và bốn chiều G/S/H/C chưa ai chấm cho đường ôn tập.
+
+---
+
 ## 6. Sửa phần nào thì mở file nào
 
 | Muốn đổi | File |
@@ -140,7 +161,7 @@ Sau bản phê 55 output thật của lượt 03 (27/43 lượt vẫn mở "Chà
 | Việc | Vì sao gấp |
 |---|---|
 | **Điền bảng phân công** trong [README.md](README.md) | R7 cho 1 điểm cho việc có tên người cho từng phần; CP5 sẽ hỏi từng người về phần mang tên mình |
-| **Chạy lượt 04 — trọn bộ 56 case** | Toàn bộ nâng cấp mục 5b (prompt v2, refusal variants, temp 0.2) **chưa có số**; lượt 03 đã lỗi thời so với code hiện tại. Cần key Gemini |
+| **Chạy lượt 04 — trọn bộ 60 case** | Toàn bộ nâng cấp mục 5b (prompt v2, refusal variants, temp 0.2) **và 5c (ôn tập cuối buổi)** chưa có số; lượt 03 đã lỗi thời so với code hiện tại. Cần key Gemini |
 | **Chấm 4 chiều G/S/H/C** trên lượt 04 | **2 người chấm độc lập rồi so** — 4/15 điểm R4. **Việc còn thiếu lớn nhất.** Chấm trên lượt 04 (temp 0.2 — hai người cùng một đáp án), đừng chấm lượt cũ |
 | **Xác nhận quality bar** → spec §7 | Đề xuất **≥80% + không bịa lần nào**; nhóm phải chốt trước **23:59 N1**, sau đó không hạ được |
 | ~~≥10 golden case từ chatlog thật~~ | ✅ **xong — 14 case** (L01–L14), mỗi case kèm mã hội thoại |

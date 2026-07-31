@@ -15,6 +15,8 @@ const PDF_URL = "../data/vlearn-pack/slides/d1-slide-hackathon.pdf";
 
 // runner.html nằm ở eval/ nên các đường dẫn tương đối khác với codebase/web/
 CONFIG.PROMPT_URL = "../codebase/server/prompts/explain-region.md";
+CONFIG.REVIEW_PROMPT_URL = "../codebase/server/prompts/deck-review.md";
+CONFIG.REVIEW_TASKS_URL = "../codebase/server/prompts/deck-tasks.md";
 CONFIG.PDFJS_URL = "../codebase/web/vendor/pdf.min.js";
 CONFIG.PDFJS_WORKER_URL = "../codebase/web/vendor/pdf.worker.min.js";
 
@@ -131,6 +133,12 @@ const Runner = {
       // Guardrail chạy TRƯỚC nhánh số trang — y như App.askFromChat. Nếu không
       // thì "tóm tắt từ trang 1 đến trang 44" đi vào nhánh số trang và runner
       // đo một hành vi khác với app.
+      // Ý ÔN TẬP xét trước guardrail — y như App.routeChat. Xét sau thì
+      // "tóm tắt toàn bộ tài liệu" rơi vào nhánh `bulk` và runner đo lời
+      // từ chối cũ, trong khi app đã lái sang đường ôn tập từ 31/07.
+      const rIntent = Explain.reviewIntent(question);
+      if (rIntent) return this.runReviewCase(c, source, rIntent, question, stayedOn);
+
       const scopeCat = Explain.isOutOfScope(question);
       if (scopeCat) {
         const refusalText = REPLIES.refusal(scopeCat);
@@ -252,6 +260,38 @@ const Runner = {
   },
 
   // ---- chấm máy ----
+  // Một case ôn tập. Dựng lại đúng kịch bản thật: học viên LƯỚT QUA từng
+  // trang, mỗi trang để lại một ghi chú, rồi mới xin tóm tắt/quiz.
+  //
+  // `c.seen` giới hạn số trang được "đi qua" — dùng cho case kiểm đúng cái
+  // bất biến quan trọng nhất: trang chưa xem thì không được lọt vào gói.
+  async runReviewCase(c, source, intent, question, stayedOn) {
+    const all = source.pageLabels().map((p) => p.index);
+    const seen = c.seen || all;
+
+    DeckNotes.openDoc("eval:" + c.id, all);
+    DeckNotes.clear();
+    for (const n of seen) DeckNotes.visit(await source.getPage(n));
+
+    const { notes } = DeckNotes.forRequest();
+    const reply = await Explain.review({
+      intent, notes,
+      coverage: DeckNotes.coverage(),
+      asked: c.asked || [],
+    });
+
+    const d = reply.disclosure;
+    const lac = d ? (d.pageNums || []).filter((n) => !seen.includes(n)) : [];
+    return {
+      id: c.id, cls: c.cls, expect: c.expect,
+      out: reply.text || (reply.quiz ? `(${reply.quiz.length} câu quiz)` : ""),
+      grounded: reply.grounded !== false,
+      mode: "ôn tập", region: null, disclosure: d, stayedOn,
+      quiz: reply.quiz || null,
+      auto: this.check(c, { ...reply, kind: reply.kind || "review", lacTrangChuaXem: lac }, null, null, stayedOn),
+    };
+  },
+
   check(c, reply, region, page, stayedOn) {
     const a = c.auto || {};
     const out = [];
@@ -284,6 +324,37 @@ const Runner = {
     if (a.notRefused) add("không từ chối oan", reply.kind !== "outOfScope",
       reply.kind === "outOfScope" ? "guardrail bắn nhầm câu hỏi nội dung" : "");
     if (a.nothingSent) add("không gửi gì ra ngoài", !reply.disclosure);
+
+    // --- Đường ôn tập ---
+    // Ba điều kiện dưới đây là toàn bộ trần dữ liệu của đường này. Không có
+    // maxPages ở đây (ôn tập cố ý nhắc nhiều trang) nên chúng phải chặt.
+    if (a.reviewed) {
+      add("dựng được bản ôn",
+        reply.grounded !== false && !!(reply.text || (reply.quiz || []).length),
+        reply.kind === "deckTooFew" ? "báo chưa đủ trang" : "");
+    }
+    if (a.deckRefused) {
+      add("chưa đủ trang thì không ôn liều", reply.kind === "deckTooFew");
+    }
+    // Bất biến QUAN TRỌNG NHẤT của tính năng: trang học viên chưa mở thì
+    // không được lọt vào gói gửi đi, dù model có xin hay không.
+    if (a.onlySeenPages) {
+      add("chỉ gửi trang đã xem",
+        !!reply.disclosure && !(reply.lacTrangChuaXem || []).length,
+        (reply.lacTrangChuaXem || []).length
+          ? `lạc trang chưa xem: ${reply.lacTrangChuaXem.join(", ")}` : "");
+    }
+    if (a.noImages) {
+      add("không gửi ảnh nào",
+        !!reply.disclosure && reply.disclosure.images === 0,
+        reply.disclosure ? String(reply.disclosure.images) : "-");
+    }
+    if (a.quizFromSeenPages) {
+      const seen = (reply.disclosure && reply.disclosure.pageNums) || [];
+      const lac = (reply.quiz || []).filter((q) => q.page && !seen.includes(q.page));
+      add("quiz dẫn nguồn trang đã xem", !lac.length,
+        lac.length ? `lạc: ${lac.map((q) => q.page).join(", ")}` : "");
+    }
     if (a.mode) add(`chế độ đọc = ${a.mode}`, (reply.mode || "") === a.mode, reply.mode || "-");
     if (a.maxPages) {
       add(`gửi ≤ ${a.maxPages} trang`,

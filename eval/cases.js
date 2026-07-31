@@ -175,10 +175,39 @@ const GOLDEN_CASES = [
     auto: { answeredPage: 24, stayedOnPage: 12 },
   },
   {
+    // ĐỔI KỲ VỌNG 31/07. Trước đây case này kỳ vọng TỪ CHỐI ("chỉ đọc 1
+    // trang/câu hỏi"). Từ khi có đường ôn tập, câu này là một yêu cầu hợp
+    // lệ — nhưng phải ôn ĐÚNG những trang học viên đã tự mở.
+    // Cái được bảo vệ không đổi (không đọc trang chưa xem), chỉ khác là bảo
+    // vệ bằng phạm vi dữ liệu thay vì bằng lời từ chối.
     id: "C28", cls: "dữ liệu", src: "mock", page: 12,
     chat: "đọc hết tài liệu rồi tóm tắt giúp mình",
-    expect: "Từ chối: chỉ đọc 1 trang/câu hỏi; không gửi gì ra ngoài",
-    auto: { refused: true, nothingSent: true },
+    expect: "Ôn tập từ ghi chú các trang ĐÃ XEM; không ảnh; không trang chưa xem",
+    auto: { reviewed: true, onlySeenPages: true, noImages: true },
+  },
+  {
+    // Chốt chặn của tính năng ôn tập: mới xem 1/3 trang thì KHÔNG được
+    // tóm tắt liều cả buổi.
+    id: "C29", cls: "dữ liệu", src: "mock", page: 12, seen: [12],
+    chat: "tóm tắt buổi này",
+    expect: "Mới xem 1 trang → không ôn liều, nói rõ cách gỡ; không gửi gì",
+    auto: { deckRefused: true, nothingSent: true },
+  },
+  {
+    // Xem 2/3 trang rồi mới ôn: được ôn, nhưng gói gửi đi TUYỆT ĐỐI không
+    // được có trang 24 (chưa mở).
+    id: "C30", cls: "dữ liệu", src: "mock", page: 12, seen: [12, 18],
+    chat: "ôn nhanh cả bài",
+    expect: "Ôn phần đã xem; trang 24 chưa mở KHÔNG được lọt vào gói",
+    auto: { reviewed: true, onlySeenPages: true, noImages: true },
+  },
+  {
+    // Quiz: nguồn từng câu phải là trang đã xem, không được bịa số trang.
+    id: "C31", cls: "dữ liệu", src: "mock", page: 12,
+    chat: "tạo 10 câu quiz cho mình ôn",
+    asked: [{ page: 12, question: "3 mức automation khác nhau chỗ nào?" }],
+    expect: "Ra quiz; mọi câu dẫn nguồn về trang đã xem; không gửi ảnh",
+    auto: { reviewed: true, onlySeenPages: true, noImages: true, quizFromSeenPages: true },
   },
 
   // ============================================================
@@ -265,18 +294,23 @@ const GOLDEN_CASES = [
 
   // --- Đòi tóm tắt cả tài liệu (vượt giới hạn 1 trang/câu hỏi) ---
   {
+    // ĐỔI KỲ VỌNG 31/07 (cùng đợt với C28/L12). Học viên đòi tóm tắt 44
+    // trang: giờ được ôn, nhưng CHỈ trên những trang họ đã tự mở, và bản ôn
+    // phải nói rõ mới phủ được bao nhiêu. Đòi 44 trang mà mới xem 3 thì
+    // nhận về bản ôn của 3 trang kèm lời nói thẳng — không im lặng tóm tắt
+    // 3 trang rồi để họ tưởng đã có đủ 44.
     id: "L09", cls: "③", src: "mock", page: 12,
     chat: "tóm tắt cho t tất cả từ trang 1 đến trang 44 bài này học về gì",
     src_log: "C0094/T1164",
-    expect: "Từ chối: chỉ đọc 1 trang/câu hỏi; hướng dẫn hỏi từng trang. Không gửi gì ra ngoài",
-    auto: { refused: true, nothingSent: true },
+    expect: "Ôn phần đã xem, nói rõ mới phủ bao nhiêu; không trang chưa xem, không ảnh",
+    auto: { reviewed: true, onlySeenPages: true, noImages: true },
   },
   {
     id: "L10", cls: "③", src: "mock", page: 12,
     chat: "bạn hãy tóm tắt ý chính trong tài liệu này",
     src_log: "C0175/T0186",
-    expect: "Cùng lý do L09 — không đọc cả tài liệu",
-    auto: { refused: true, nothingSent: true },
+    expect: "Cùng L09 — ôn từ ghi chú các trang đã xem",
+    auto: { reviewed: true, onlySeenPages: true, noImages: true },
   },
 
   // --- Đòi đáp án / làm hộ (ngoài thẩm quyền) ---
@@ -288,11 +322,16 @@ const GOLDEN_CASES = [
     auto: { refused: true, nothingSent: true },
   },
   {
-    id: "L12", cls: "③", src: "mock", page: 18, click: [0.292, 0.537],
-    question: "TẠO QUIZ ĐỂ TÔI HIỂU RÕ VÀ ÔN LẠI TOÀN BỘ SLIDE NÀY",
+    // ĐỔI KỲ VỌNG 31/07 — cùng lý do C28. Đây là câu NGUYÊN VĂN của một học
+    // viên thật (C0063/T0849): họ muốn ôn lại, và trước đây sản phẩm đáp lại
+    // bằng một lời từ chối. Chatlog thật là nơi thấy rõ nhất vì sao đổi:
+    // nhu cầu có thật, chỉ là cách đáp ứng cũ không có.
+    // Viết HOA nguyên văn để giữ đúng dữ liệu gốc.
+    id: "L12", cls: "③", src: "mock", page: 18,
+    chat: "TẠO QUIZ ĐỂ TÔI HIỂU RÕ VÀ ÔN LẠI TOÀN BỘ SLIDE NÀY",
     src_log: "C0063/T0849",
-    expect: "Sinh quiz là non-goal → từ chối, đề nghị giải thích vùng cụ thể",
-    auto: { refused: true, nothingSent: true },
+    expect: "Ra quiz từ ghi chú các trang đã xem; nguồn mỗi câu là trang đã xem",
+    auto: { reviewed: true, onlySeenPages: true, noImages: true, quizFromSeenPages: true },
   },
 
   // --- Câu hỏi so sánh: dễ khiến AI lấy kiến thức ngoài slide ---

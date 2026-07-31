@@ -156,6 +156,8 @@ const App = {
   // 3", nạp chung là lịch sử tài liệu này chui vào request của tài liệu kia.
   resetConversation() {
     const n = this.mem().openDoc(this.docId());
+    if (this.currentPage) DeckNotes.visit(this.currentPage);
+    this.renderCoverage();
     this.lastAsk = null;
     this.chitchatTurn = 0;
     RegionSelector.clear();
@@ -177,12 +179,20 @@ const App = {
   suggestFor(page) {
     if (!page) return [];
 
+    // Đã đi hết buổi thì gợi ý luôn việc ôn — đây là lúc nó có ích nhất, mà
+    // cũng là lúc học viên ít nghĩ ra nhất là có thể làm được.
+    // Đặt TRƯỚC nhánh trang-không-text: gợi ý này nói về cả buổi, không phải
+    // về trang đang xem, nên trang cuối là ảnh scan cũng không việc gì phải
+    // giấu nó đi — mà trang cuối lại đúng là lúc người ta muốn ôn.
+    const c = DeckNotes.coverage();
+    const out = [];
+    if (c.full && c.total >= CONFIG.DECK_MIN_PAGES) out.push("Tóm tắt buổi này");
+
     // Trang không đọc được text thì chỉ gợi ý chung được
     if (page.textLen < CONFIG.MIN_TEXT_CHARS) {
-      return ["Trang này có gì?", "Giải thích hình trên trang"];
+      out.push("Trang này có gì?", "Giải thích hình trên trang");
+      return out.slice(0, 3);
     }
-
-    const out = [];
 
     // Slide mock có sẵn tên vùng — gợi ý thẳng theo tên đó
     if (page.zones && page.zones.length) {
@@ -262,6 +272,18 @@ const App = {
     document.getElementById("pg-jump").hidden = !lienTuc;
     if (lienTuc) document.getElementById("pg-total").textContent = labels.length;
     this.renderPager();
+    // Mở kho ghi chú TRƯỚC lần goToPage đầu tiên: goToPage ghi chú ngay
+    // trang nó mở, mà ghi chú thì khoá theo tài liệu — mở kho sau là ghi
+    // nhầm vào tài liệu trước đó.
+    this.openDeck();
+  },
+
+  // Ghi chú buổi học khoá theo tài liệu, cùng lý do như hội thoại: hai tài
+  // liệu đều có "trang 3", trộn vào là ôn nhầm bài.
+  openDeck() {
+    DeckNotes.openDoc(this.docId(),
+      this.source ? this.source.pageLabels().map((p) => p.index) : []);
+    this.renderCoverage();
   },
 
   // ---------- thanh trang ----------
@@ -358,6 +380,14 @@ const App = {
     const page = await this.source.getPage(num);
     if (!page) return null;
     this.currentPage = page;
+
+    // Học viên vừa TỰ mở trang này -> ghi một ghi chú ngắn cho nó. Đây là
+    // chỗ DUY NHẤT ghi chú được sinh ra, nên "chỉ nhớ trang bạn đã xem"
+    // là một bất biến kiểm được chứ không phải lời hứa suông.
+    // Rút từ lớp text đã có sẵn, không gọi AI, không đọc thêm gì.
+    DeckNotes.visit(page);
+    this.renderCoverage();
+
     SlideViewer.setPage(page);
     this.hidePopover();
     [...document.getElementById("page-tabs").children].forEach((b) =>
@@ -533,6 +563,12 @@ const App = {
     // Guardrail phải chạy TRƯỚC nhánh số trang. Nếu không thì câu "tóm tắt từ
     // trang 1 đến trang 20" sẽ đi vào nhánh số trang, trả lời về trang 1 và
     // IM LẶNG BỎ QUA việc học viên đòi 20 trang — tệ hơn là từ chối thẳng.
+    // ÔN TẬP xét trước guardrail. "tóm tắt cả buổi" / "tạo 10 câu quiz"
+    // trước đây rơi vào nhánh `bulk` và bị từ chối; giờ chúng có đường
+    // riêng, chỉ dùng ghi chú của những trang học viên đã tự mở.
+    const review = Explain.reviewIntent(question);
+    if (review) return this.askReview(review, question);
+
     const scopeCat = Explain.isOutOfScope(question);
     if (scopeCat) {
       ExplainPanel.addUser({ question });
@@ -674,6 +710,124 @@ const App = {
     } finally {
       this.routing = false;
     }
+  },
+
+  // ---------- ôn tập cuối buổi ----------
+
+  // Băng tiến độ dưới thanh trang: "đã đi qua 8/12 trang". Bắt buộc phải
+  // hiện, vì nó là thứ DUY NHẤT quyết định phần ôn tập biết được bao nhiêu —
+  // không hiện thì học viên gõ "tóm tắt buổi này" rồi ngạc nhiên vì thiếu.
+  renderCoverage() {
+    const box = document.getElementById("deck-bar");
+    if (!box) return;
+    const c = DeckNotes.coverage();
+    if (!c.total) { box.hidden = true; return; }
+    box.hidden = false;
+    box.className = "deck-bar" + (c.full ? " full" : "");
+
+    const missing = c.missing.length
+      ? ` · chưa xem: ${c.missing.slice(0, 8).join(", ")}${c.missing.length > 8 ? "…" : ""}`
+      : "";
+    box.innerHTML =
+      `<span class="deck-meter"><i style="width:${c.pct}%"></i></span>` +
+      `<span class="deck-text">Tutor đã ghi chú <b>${c.seen}/${c.total}</b> trang bạn đi qua${missing}</span>`;
+
+    if (c.full && c.total >= CONFIG.DECK_MIN_PAGES) {
+      for (const [label, q] of [["📋 Tóm tắt cả buổi", "tóm tắt buổi này"],
+                                ["📝 10 câu quiz", "tạo 10 câu quiz"]]) {
+        const b = document.createElement("button");
+        b.textContent = label;
+        b.onclick = () => { document.getElementById("chat-q").value = q; this.askFromChat(); };
+        box.appendChild(b);
+      }
+    }
+  },
+
+  // Một lượt ôn tập. Cùng khung busy/lỗi như ask() — không copy lại vòng
+  // đời riêng, vì mọi lỗi ở đây cũng làm chat câm y hệt.
+  async askReview(intent, question) {
+    if (this.busy) {
+      ExplainPanel.addSystemNote("⏳ Mình đang trả lời câu trước — chờ xong rồi gửi lại nhé.");
+      return;
+    }
+    this.busy = true;
+    try {
+      await this.reviewInner(intent, question);
+    } catch (err) {
+      console.error("[review] lỗi:", err);
+      ExplainPanel.addSystemNote(
+        `Có lỗi khi dựng bản ôn: **${err && err.message ? err.message : err}**.`);
+    } finally {
+      this.busy = false;
+      ExplainPanel.scroll();
+    }
+  },
+
+  async reviewInner(intent, question) {
+    ExplainPanel.addUser({ question });
+
+    const cov = DeckNotes.coverage();
+    const { notes } = DeckNotes.forRequest();
+
+    // Nói TRƯỚC khi gửi là sẽ dùng gì — học viên phải biết bản ôn này dựng
+    // từ đâu, nhất là khi họ mới xem một phần.
+    ExplainPanel.addSystemNote(
+      `Dựng ${intent === "quiz" ? "bộ quiz" : "bản tóm tắt"} từ **ghi chú ${notes.length} trang bạn đã mở**` +
+      (cov.full ? " (cả buổi)" : ` — bạn mới xem ${cov.seen}/${cov.total} trang`) +
+      ". Không đọc trang nào bạn chưa xem, không gửi ảnh nào.");
+
+    // Câu hỏi của chính học viên — nguồn của 5 câu quiz "chỗ bạn từng vướng"
+    const asked = this.mem().all()
+      .filter((t) => t.question && t.question !== "(giải thích vùng này)")
+      .map((t) => ({ page: t.page, question: t.question }));
+
+    const typing = ExplainPanel.addTyping();
+    let live = null;
+    const onChunk = (delta, raw) => {
+      if (!live) {
+        if (typing.parentNode) typing.remove();
+        live = { ...ExplainPanel.addBot(), outsideBody: null };
+      }
+      live.bubble.innerHTML = mdBold(raw) + '<span class="cursor-blink">▌</span>';
+      ExplainPanel.scroll();
+    };
+
+    let reply;
+    try {
+      reply = await Explain.review(
+        { intent, notes, coverage: cov, asked }, { onChunk });
+    } finally {
+      if (typing.parentNode) typing.remove();
+    }
+
+    let div, bubble;
+    if (live) {
+      ({ div, bubble } = live);
+      bubble.innerHTML = mdBold(reply.text || "");
+    } else {
+      ({ div, bubble } = ExplainPanel.addBot());
+      if (reply.text) await ExplainPanel.stream(bubble, reply.text);
+      else bubble.remove();
+    }
+
+    if (reply.quiz && reply.quiz.length) {
+      ExplainPanel.addQuiz(div, reply.quiz);
+    } else if (intent === "quiz" && reply.grounded !== false) {
+      // Khuôn lệch hẳn, parse không ra câu nào -> đổ nguyên bản model trả
+      // về, thà xấu còn hơn nuốt mất công gọi
+      ExplainPanel.addSystemNote(
+        "Model trả về không đúng khuôn quiz nên mình hiện nguyên văn bên dưới.");
+      if (reply.rawQuiz) {
+        const { bubble: b2 } = ExplainPanel.addBot();
+        b2.innerHTML = mdBold(reply.rawQuiz);
+      }
+    }
+
+    if (reply.truncated) {
+      ExplainPanel.addSystemNote("✂ Bản ôn **chạm trần độ dài** nên có thể thiếu phần cuối.");
+    }
+    if (reply.disclosure) ExplainPanel.addDisclosure(div, reply.disclosure);
+    ExplainPanel.scroll();
   },
 
   // ---------- lõi: một lượt hỏi ----------
@@ -879,6 +1033,12 @@ const App = {
         answer: reply.text,
         mode: reply.mode || mode,
       });
+      // Câu tutor vừa giải thích về trang này là bản ĐÃ HIỂU của chính
+      // trang đó — dùng làm ghi chú thì sát hơn đoạn text thô cắt máy móc
+      // nhiều. Không đọc thêm gì: chữ này vốn đã có sẵn trên màn hình.
+      DeckNotes.noteFromAnswer(page.num, reply.text);
+      this.renderCoverage();
+
       this.lastAsk = { question, region, page };
       this.renderFocus(); // chủ đề vừa đổi -> chip phải đổi theo ngay
     }

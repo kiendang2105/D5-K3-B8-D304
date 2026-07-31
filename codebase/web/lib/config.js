@@ -43,6 +43,22 @@ const CONFIG = {
   TEXT_MARGIN_PX: 24,         // chỉ lấy text nằm trong vùng chọn + lề này
   MAX_TEXT_CHARS: 1200,       // trần ký tự text gửi kèm
 
+  // --- Ôn tập cuối buổi (tóm tắt cả buổi + quiz) ---
+  // Đường DUY NHẤT trong sản phẩm không bám trần 1 trang/câu hỏi. Đổi lại
+  // nó bị buộc chặt bởi một trần khác, chặt hơn về mặt riêng tư:
+  //
+  //   KHÔNG BAO GIỜ đọc một trang học viên chưa tự mở.
+  //
+  // Ghi chú của mỗi trang được nhặt DẦN trong lúc học viên đi qua trang đó
+  // (xem lib/deck-notes.js), không phải quét sẵn cả file lúc mở. Chưa lật
+  // tới trang nào thì trang đó không tồn tại với phần ôn tập.
+  // Và ôn tập chỉ gửi GHI CHÚ (chữ đã rút gọn) — không gửi ảnh trang nào.
+  DECK_NOTE_CHARS: 240,       // trần ký tự ghi chú MỖI trang
+  DECK_MAX_CHARS: 6000,       // trần ký tự cả gói ghi chú gửi đi một lượt
+  DECK_QUIZ_TOTAL: 10,        // số câu quiz sinh ra
+  DECK_QUIZ_FROM_HISTORY: 5,  // trong đó bao nhiêu câu bám câu học viên đã hỏi
+  DECK_MIN_PAGES: 2,          // dưới ngần này trang đã xem thì ôn tập vô nghĩa
+
   // --- Ký ức hội thoại ---
   // LƯU thì giữ toàn bộ (ConversationStore, có ghi localStorage). Các trần
   // dưới đây chỉ quyết định phần nào được GỬI ĐI trong một request.
@@ -98,6 +114,8 @@ const CONFIG = {
   // Đường dẫn file prompt, tính từ trang đang mở. eval/runner.html ghi đè
   // giá trị này vì nó nằm ở thư mục khác.
   PROMPT_URL: "../server/prompts/explain-region.md",
+  REVIEW_PROMPT_URL: "../server/prompts/deck-review.md",
+  REVIEW_TASKS_URL: "../server/prompts/deck-tasks.md",
 
   // --- Slide deck có sẵn trong data pack ---
   // Hiện thành nút trên header, bấm là mở luôn — không phải tự chọn file.
@@ -130,6 +148,10 @@ const PAGE_IN_QUESTION = /(?:slide|trang|page)\s*(?:số\s*)?(\d{1,3})/i;
 // ============================================================
 // GIỚI HẠN DỮ LIỆU — ràng buộc cứng của tính năng này.
 //
+// Có HAI đường dữ liệu, mỗi đường một trần riêng. Đừng đọc nhầm sang nhau.
+//
+// ── ĐƯỜNG 1: hỏi–đáp một vùng (mọi câu hỏi thường) ───────────────────
+//
 // AI Tutor KHÔNG được đọc hay chuyển đi toàn bộ tài liệu. Mỗi câu hỏi
 // chỉ được mang đi đúng phần học viên đang hỏi:
 //
@@ -148,6 +170,27 @@ const PAGE_IN_QUESTION = /(?:slide|trang|page)\s*(?:số\s*)?(\d{1,3})/i;
 //      vậy là gián tiếp gửi nội dung nhiều trang trong một request.
 //      Bảng công khai ghi rõ số lượt và số ký tự lịch sử đã gửi.
 //
-// Kiểm lại: Explain.buildPayload() là chỗ duy nhất đóng gói dữ liệu ra
-// ngoài — soát hàm đó là soát được toàn bộ đường dữ liệu rời máy.
+// ── ĐƯỜNG 2: ôn tập cuối buổi (tóm tắt cả buổi + quiz) ───────────────
+//
+// Đường này CÓ nhắc tới nhiều trang trong một request — nói thẳng ra như
+// vậy, đừng khai là vẫn 1 trang. Đổi lại nó chịu một trần khác, và về mặt
+// riêng tư thì trần đó chặt hơn:
+//
+//   A. KHÔNG BAO GIỜ đọc một trang học viên chưa tự mở. Không có bước
+//      "quét sẵn cả file" nào — kể cả lúc mở tài liệu.
+//   B. Ghi chú từng trang được nhặt DẦN, ngay lúc học viên đi qua trang
+//      đó, từ đúng thứ app đã đọc để phục vụ trang ấy (lớp text trong
+//      trang, hoặc câu tutor đã trả lời về trang ấy). Không đọc thêm lần
+//      nào chỉ để làm ghi chú.
+//   C. Gói ôn tập chỉ mang CHỮ ĐÃ RÚT GỌN: tối đa DECK_NOTE_CHARS ký tự
+//      mỗi trang, DECK_MAX_CHARS cho cả gói. KHÔNG kèm ảnh trang nào.
+//   D. Bảng công khai ghi rõ: đã gửi ghi chú của những trang SỐ MẤY, mỗi
+//      trang bao nhiêu ký tự, và học viên mới xem bao nhiêu phần tài liệu.
+//
+// Nói gọn: trần của đường 1 là "một trang"; trần của đường 2 là "chỉ
+// những gì bạn đã tự xem, và chỉ ở dạng ghi chú".
+//
+// Kiểm lại: Explain.buildPayload() (đường 1) và Explain.buildDeckPayload()
+// (đường 2) là HAI chỗ duy nhất đóng gói dữ liệu ra ngoài — soát hai hàm
+// đó là soát được toàn bộ đường dữ liệu rời máy.
 // ============================================================

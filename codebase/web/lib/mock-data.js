@@ -243,13 +243,36 @@ const OUT_OF_SCOPE_GROUPS = {
   // "điểm của" trần từng bắn nhầm L14 ("tổng điểm của usecase này" — một câu
   // hỏi nội dung hợp lệ) → siết thành mẫu điểm-của-người trong REGEX dưới.
   logistics: ["deadline", "nộp bài", "bao giờ thi", "khi nào thi", "lịch học"],
-  // sinh quiz / ra đề + đòi đọc cả tài liệu (vượt trần 1 trang/câu hỏi)
+  // Đòi đọc cả tài liệu. TỪ 31/07 NHÓM NÀY KHÔNG CÒN LÀ LỜI TỪ CHỐI:
+  // Explain.reviewIntent() bắt nó trước và lái sang đường ôn tập, nơi chỉ
+  // ghi chú của những trang học viên ĐÃ TỰ MỞ được gửi đi. Danh sách giữ
+  // nguyên vì nó vẫn là bộ nhận diện tốt cho ý "muốn ôn cả bài"; chỉ có
+  // hành động phía sau đổi. Bỏ khỏi đây thì mất luôn khả năng nhận diện.
   bulk: [
-    "tạo quiz", "làm quiz", "sinh quiz", "tạo câu hỏi", "ra đề", "tạo đề",
     "toàn bộ slide", "toàn bộ tài liệu", "cả tài liệu", "cả bài giảng",
     "tất cả các trang", "toàn bộ bài",
   ],
 };
+
+// --- Nhận diện ý ÔN TẬP (chạy trước guardrail) ---
+// "tạo quiz / ra đề" trước đây nằm trong OUT_OF_SCOPE_GROUPS.bulk và bị từ
+// chối. Giờ chúng có đường đi riêng nên phải nhận diện RIÊNG, không lẫn vào
+// danh sách từ chối nữa.
+const DECK_QUIZ_REGEX = new RegExp([
+  "(tạo|làm|sinh|ra|cho|đặt)\\s*(mình|tôi|em|t)?\\s*\\d*\\s*(câu\\s*)?(quiz|trắc nghiệm|câu hỏi ôn|đề ôn|đề)",
+  "\\bquiz\\b",
+  "(kiểm tra|test)\\s*(lại\\s*)?(kiến thức|xem.*hiểu)",
+  "(\\d+)\\s*câu\\s*(hỏi|trắc nghiệm)",
+].join("|"), "i");
+
+// Tóm tắt / ôn nhanh CẢ BUỔI. Cố ý KHÔNG khớp "tóm tắt trang này" — đó là
+// một trang, vẫn đi đường hỏi–đáp thường với trần 1 trang.
+const DECK_SUMMARY_REGEX = new RegExp([
+  "(tóm tắt|tóm lược|ôn lại|ôn nhanh|điểm lại|tổng kết|summar)[^.!?]{0,25}" +
+    "(buổi|bài giảng|bài học|cả bài|toàn bộ|tất cả|hôm nay|deck|tài liệu)",
+  "^\\s*(ôn tập|ôn bài|ôn nhanh|tổng kết buổi|tóm tắt buổi)\\b",
+  "(buổi|bài)\\s*(học\\s*)?(này|hôm nay)[^.!?]{0,15}(nói|dạy|có)\\s*(về\\s*)?gì",
+].join("|"), "i");
 
 // Điểm số CÁ NHÂN ("điểm của tôi/mình/em/t") là logistics; "tổng điểm của
 // usecase" là câu hỏi nội dung — mẫu đòi đại từ nhân xưng ngay sau.
@@ -332,11 +355,20 @@ const REPLIES = {
       return "Deadline, lịch thi hay điểm số thì mình **không nắm được** — mấy thông tin đó không nằm trong slide, và mình không đoán bừa cho bạn được.\n\nBạn hỏi TA trên Discord là chắc nhất nhé. Còn nội dung bài học thì cứ khoanh vùng trên slide, mình giải thích ngay.";
     }
     if (cat === "bulk") {
-      return "Mình hiểu bạn muốn ôn nhanh cả bài 👍 nhưng mình được thiết kế đọc đúng **một trang cho mỗi câu hỏi** — không đọc cả tài liệu, cũng không sinh quiz hay ra đề thay bạn.\n\nBạn mở đúng trang cần ôn rồi hỏi *\"giải thích trang này\"* — đi từng trang chậm hơn một chút nhưng chắc hơn nhiều.";
+      // Còn giữ để phòng khi có đường nào tới đây mà không qua reviewIntent.
+      // Đường chính giờ là ôn tập, không phải từ chối.
+      return "Mình chỉ ôn lại được **những trang bạn đã tự mở trong buổi** — phần chưa lật tới thì mình chưa đọc nên không dám nói bừa.\n\nBạn lướt qua các trang còn lại rồi gõ *\"tóm tắt buổi này\"* nhé.";
     }
     // task — làm hộ / đòi đáp án
     return this.outOfScope;
   },
+
+  // Ôn tập mà chưa đi qua đủ trang. Nói rõ CÁCH GỠ chứ không chỉ nói không.
+  deckTooFew: (seen, need) =>
+    `Mình mới ghi chú được **${seen} trang** bạn đã mở, chưa đủ để ôn cả buổi (cần ít nhất ${need}).\n\n` +
+    "Mình cố ý **không tự đọc trước cả file** — chỉ nhớ những trang bạn thật sự đi qua. " +
+    "Bạn lướt hết các trang trong buổi (dùng phím ← →  cho nhanh), rồi quay lại gõ " +
+    '*"tóm tắt buổi này"* hoặc *"tạo 10 câu quiz"* nhé.',
   tooSmall:
     "Vùng bạn chọn hơi nhỏ, mình **chưa chắc** bạn đang muốn hỏi phần nào 🤔\n\nBạn kéo chọn rộng ra một chút — trọn sơ đồ hoặc trọn đoạn chữ — để mình không giải thích nhầm phần bạn không cần nhé.",
   noContent:

@@ -17,6 +17,8 @@
 
 const Explain = {
   _promptTemplate: null,
+  _reviewTemplate: null,   // khung prompt ôn tập
+  _taskTemplate: null,     // hai khối nhiệm vụ (tóm tắt / quiz)
 
   // --- Kiểm key + tự chọn model ---
   // Gọi ListModels để biết key này dùng được model nào. Làm vậy để không
@@ -71,6 +73,35 @@ const Explain = {
     // cách nói mà danh sách từ khoá cố định không phủ hết (xem ghi chú ở
     // OUT_OF_SCOPE_REGEX trong mock-data.js).
     return OUT_OF_SCOPE_REGEX.test(q) ? "bulk" : null;
+  },
+
+  // --- Quyết định 2b: đây có phải yêu cầu ÔN TẬP không? ---
+  //
+  // Chạy TRƯỚC isOutOfScope. Từ 31/07, "tóm tắt cả buổi" và "tạo quiz"
+  // không còn bị từ chối — chúng có đường đi riêng (Explain.review) chỉ
+  // dùng ghi chú của những trang học viên đã tự mở.
+  //
+  // Vì sao đổi: câu từ chối cũ ("mình đọc đúng một trang mỗi câu hỏi, không
+  // sinh quiz") bảo vệ đúng một thứ — không đọc trang học viên chưa xem.
+  // Thứ đó vẫn được bảo vệ nguyên vẹn ở đường mới, bằng ghi chú thay vì
+  // bằng lời từ chối. Cái mất đi chỉ là việc học viên phải tự lật lại 12
+  // trang để ôn.
+  //
+  // KHÔNG đụng tới hai nhánh từ chối còn lại: "làm hộ bài tập / đưa đáp án"
+  // (task) và "deadline / điểm số" (logistics) vẫn từ chối y như cũ. Quiz để
+  // TỰ kiểm tra khác hẳn làm bài hộ — một bên học viên phải tự trả lời, một
+  // bên đưa sẵn đáp án cho bài đang bị chấm điểm.
+  //
+  // Trả "quiz" | "summary" | null.
+  reviewIntent(question) {
+    const q = (question || "").toLowerCase().trim();
+    if (!q) return null;
+    if (DECK_QUIZ_REGEX.test(q)) return "quiz";
+    if (DECK_SUMMARY_REGEX.test(q)) return "summary";
+    // "tóm tắt toàn bộ tài liệu" — trước đây là nhánh `bulk` bị từ chối,
+    // giờ chính là yêu cầu tóm tắt buổi học.
+    if (this.isOutOfScope(q) === "bulk") return "summary";
+    return null;
   },
 
   // --- Quyết định 3: đóng gói dữ liệu gửi đi ---
@@ -142,6 +173,59 @@ const Explain = {
     return { image, text, history: hist, historyOutline: outline, disclosure };
   },
 
+  // --- Quyết định 3b: đóng gói dữ liệu cho ĐƯỜNG ÔN TẬP ---
+  //
+  // Chỗ thứ hai (và cuối cùng) dữ liệu rời khỏi máy học viên. Khác
+  // buildPayload ở ba điểm, và cả ba đều phải kiểm được từ bảng công khai:
+  //
+  //   1. KHÔNG có ảnh. Ôn tập chỉ gửi chữ.
+  //   2. KHÔNG có text thô của trang. Chỉ ghi chú đã cắt ở DECK_NOTE_CHARS —
+  //      thứ app đã rút ra lúc học viên đi qua trang đó.
+  //   3. Chỉ những trang HỌC VIÊN ĐÃ TỰ MỞ. Trang chưa lật tới thì không có
+  //      ghi chú, nên không có gì để gửi. Đây là chốt chặn thật, không phải
+  //      lời hứa: DeckNotes chỉ ghi trong DeckNotes.visit().
+  //
+  // Cắt trần lại ở đây thay vì tin vào DeckNotes — cùng lý do buildPayload
+  // cắt lại lịch sử: chỗ đóng gói phải tự chịu trách nhiệm.
+  buildDeckPayload({ notes, coverage, asked, intent }) {
+    const kept = [];
+    let chars = 0;
+    for (const n of notes || []) {
+      const title = (n.title || "").slice(0, 80);
+      const gist = (n.gist || "").slice(0, CONFIG.DECK_NOTE_CHARS);
+      const size = title.length + gist.length;
+      if (chars + size > CONFIG.DECK_MAX_CHARS) break;
+      chars += size;
+      kept.push({ page: n.page, title, gist, source: n.source });
+    }
+
+    // Câu hỏi của học viên — lời của chính họ, không phải nội dung tài liệu.
+    // Đây là nguồn của 5 câu quiz "chỗ bạn từng thắc mắc".
+    const askedList = (asked || [])
+      .filter((a) => a && a.question)
+      .slice(-CONFIG.HISTORY_OUTLINE_MAX)
+      .map((a) => ({ page: a.page, question: String(a.question).slice(0, 160) }));
+    const askedChars = askedList.reduce((n, a) => n + a.question.length, 0);
+
+    const disclosure = {
+      kind: "deck-review",
+      intent,
+      pages: kept.length,
+      pageNums: kept.map((n) => n.page),
+      noteChars: chars,
+      images: 0,                 // ôn tập không gửi ảnh nào
+      rawPageText: false,        // chỉ ghi chú, không phải text thô của trang
+      askedQuestions: askedList.length,
+      askedChars,
+      coverageSeen: coverage ? coverage.seen : kept.length,
+      coverageTotal: coverage ? coverage.total : kept.length,
+      sentFileName: false,
+      sentUnseenPages: false,    // bất biến: không trang nào chưa xem lọt vào
+    };
+
+    return { notes: kept, asked: askedList, disclosure };
+  },
+
   // --- Điểm vào duy nhất ---
   // req: { question, page, region, mode }
   // trả: { text, citation?, mode, zone?, grounded?, disclosure?, trace? }
@@ -178,6 +262,275 @@ const Explain = {
       ? (onChunk ? await this.callGeminiStream(full, onChunk) : await this.callGemini(full))
       : await MockAI.route(full);
     return { ...reply, disclosure: reply.grounded === false ? null : payload.disclosure };
+  },
+
+  // --- Điểm vào thứ hai: ÔN TẬP CUỐI BUỔI ---
+  //
+  // Tách khỏi run() chứ không nhét thêm một nhánh vào trong đó: hai đường
+  // có trần dữ liệu khác nhau (xem GIỚI HẠN DỮ LIỆU ở config.js), trộn
+  // chung một hàm là sớm muộn cũng có người sửa nhánh này làm hỏng trần
+  // của nhánh kia.
+  //
+  // req: { intent: "summary"|"quiz", notes, coverage, asked }
+  async review(req, opts = {}) {
+    const intent = req.intent === "quiz" ? "quiz" : "summary";
+    const payload = this.buildDeckPayload({ ...req, intent });
+
+    // Chưa đi qua trang nào thì không có gì để ôn. Nói thẳng lý do và cách
+    // gỡ, đừng gọi model để nhận về một câu vô nghĩa.
+    if (payload.notes.length < CONFIG.DECK_MIN_PAGES) {
+      return {
+        text: REPLIES.deckTooFew(payload.notes.length, CONFIG.DECK_MIN_PAGES),
+        kind: "deckTooFew", grounded: false,
+      };
+    }
+
+    const full = { ...req, ...payload, intent };
+    const onChunk = typeof opts.onChunk === "function" ? opts.onChunk : null;
+    const reply = CONFIG.USE_REAL_AI
+      ? await this.callGeminiReview(full, intent === "summary" ? onChunk : null)
+      : await MockAI.review(full);
+
+    // Chốt chặn cuối cho nhãn nhóm: học viên chưa hỏi câu nào thì KHÔNG câu
+    // nào được mang nhãn "từ câu bạn đã hỏi", dù model có in tiêu đề nhóm 1
+    // hay không. Nhãn này là một lời khẳng định về dữ liệu của chính học
+    // viên — sai là mất tin ngay, mà kiểm thì rẻ.
+    if (reply.quiz && !payload.asked.length) {
+      for (const q of reply.quiz) q.group = 2;
+    }
+
+    return {
+      ...reply,
+      intent,
+      coverage: req.coverage || null,
+      disclosure: reply.grounded === false ? null : payload.disclosure,
+    };
+  },
+
+  // Lấy khối nhiệm vụ giữa dòng mốc `<<<TÊN>>>` và dòng mốc kế tiếp.
+  // Trả "" khi không có mốc — chỗ gọi phải ném lỗi rõ thay vì gửi đi một
+  // prompt không có phần việc nào.
+  _cutTask(src, name) {
+    const lines = (src || "").split("\n");
+    const isMark = (s) => /^\s*<<<[A-Z]+>>>\s*$/.test(s);
+    const start = lines.findIndex((s) => s.trim() === `<<<${name}>>>`);
+    if (start < 0) return "";
+    const out = [];
+    for (let i = start + 1; i < lines.length; i++) {
+      if (isMark(lines[i])) break;
+      out.push(lines[i]);
+    }
+    return out.join("\n").trim();
+  },
+
+  // Prompt ôn tập. Khung chung ở deck-review.md, phần việc ở deck-tasks.md
+  // (cắt theo mốc <<<SUMMARY>>> / <<<QUIZ>>>) — sửa lời một nhiệm vụ không
+  // đụng nhiệm vụ kia.
+  async buildReviewPrompt({ intent, notes, asked, coverage }) {
+    if (!this._reviewTemplate) {
+      const res = await fetch(CONFIG.REVIEW_PROMPT_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status} khi tải ${CONFIG.REVIEW_PROMPT_URL}`);
+      this._reviewTemplate = await res.text();
+    }
+    if (!this._taskTemplate) {
+      const res = await fetch(CONFIG.REVIEW_TASKS_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status} khi tải ${CONFIG.REVIEW_TASKS_URL}`);
+      this._taskTemplate = await res.text();
+    }
+
+    // Mốc phải đứng RIÊNG MỘT DÒNG. Bản đầu dùng indexOf trần và dính bẫy
+    // ngay: comment ở đầu deck-tasks.md có nhắc tên hai mốc, nên indexOf
+    // bắt trúng chữ trong comment, phần việc bị cắt thành rỗng — cả tóm tắt
+    // lẫn quiz đều chạy KHÔNG có nhiệm vụ, và model tự bịa ra bố cục.
+    // Kiểm bằng AI thật mới lộ: gõ "tạo 10 câu quiz" nhận về một bản tóm tắt.
+    const task = this._cutTask(this._taskTemplate, intent === "quiz" ? "QUIZ" : "SUMMARY");
+    if (!task) throw new Error(`deck-tasks.md thiếu mốc <<<${intent.toUpperCase()}>>>`);
+
+    const cov = coverage || { seen: notes.length, total: notes.length, full: true };
+    const covText = cov.full
+      ? `Học viên đã đi qua **cả ${cov.total} trang** của tài liệu này.`
+      : `Học viên mới đi qua **${cov.seen}/${cov.total} trang**. ` +
+        `Những trang chưa xem: ${(cov.missing || []).slice(0, 30).join(", ") || "(không rõ)"}. ` +
+        "Bản ôn này chỉ phủ phần đã xem — phải nói rõ điều đó ở cuối.";
+
+    // Ghi chú là DỮ LIỆU. Bẻ răng dấu đóng khung trước khi nối, cùng lý do
+    // như safeText ở buildPrompt: học viên mở được PDF bất kỳ.
+    const safe = (s) => (s || "").replace(/"{3,}/g, '""');
+    const notesText = notes.map((n) => {
+      if (n.source === "image") {
+        return `- Trang ${n.page}: (chỉ có ảnh, chưa đọc được)`;
+      }
+      const head = n.title ? `**${safe(n.title)}** — ` : "";
+      return `- Trang ${n.page}: ${head}${safe(n.gist)}`;
+    }).join("\n");
+
+    const askedText = (asked || []).length
+      ? "## Những câu chính học viên đã hỏi trong buổi\n\n" +
+        "Đây là lời của chính học viên, không phải nội dung tài liệu. Dùng để " +
+        "biết họ từng vướng ở đâu:\n\n" +
+        asked.map((a) => `- (trang ${a.page}) ${safe(a.question)}`).join("\n")
+      : "## Những câu chính học viên đã hỏi trong buổi\n\n" +
+        "(buổi này học viên chưa hỏi câu nào — nhóm 1 lấy từ các ý chính, " +
+        "và nói rõ trong phần lý do là học viên chưa hỏi gì)";
+
+    return this._reviewTemplate
+      .replace("{{TASK}}", task)
+      .replace("{{COVERAGE}}", covText)
+      .replace("{{NOTES}}",
+        "## Ghi chú các trang học viên đã mở\n\n" + notesText)
+      .replace("{{ASKED}}", askedText);
+  },
+
+  // Lời gọi model cho đường ôn tập. Chỉ có CHỮ trong parts — không ảnh.
+  async callGeminiReview(full, onChunk) {
+    const key = localStorage.getItem("GEMINI_API_KEY");
+    const model = CONFIG.GEMINI_MODEL || localStorage.getItem("GEMINI_MODEL");
+    if (!key || !model) {
+      return {
+        text: "Chưa có API key. Bấm **API key** trên header để nhập (key chỉ lưu trong trình duyệt).",
+        grounded: false,
+      };
+    }
+
+    let prompt;
+    try {
+      prompt = await this.buildReviewPrompt(full);
+    } catch (err) {
+      return {
+        text: `Không đọc được file prompt ôn tập (${err.message}).\n\n` +
+              "Chạy qua server tĩnh giúp mình: `python deploy/devserver.py` rồi mở lại.",
+        grounded: false,
+      };
+    }
+
+    // Quiz 10 câu 4 lựa chọn dài hơn hẳn một câu giải thích -> nới trần.
+    const body = JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: full.intent === "quiz" ? 3072 : 1536,
+      },
+    });
+
+    const stream = !!onChunk;
+    const url = `${CONFIG.GEMINI_ENDPOINT}/${model}:` +
+      (stream ? "streamGenerateContent?alt=sse&" : "generateContent?") + `key=${key}`;
+    const started = performance.now();
+
+    let res;
+    try {
+      res = await fetch(url, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body,
+      });
+    } catch (err) {
+      return { text: `Không gọi được model (mạng): ${err.message}`, grounded: false };
+    }
+    if (!res.ok) return this._httpErrorReply(res, model, "text");
+
+    let raw = "", finish = null, usage = null;
+    if (stream) {
+      try {
+        await this._readSse(res, (obj) => {
+          const cand = obj?.candidates?.[0];
+          finish = cand?.finishReason || finish;
+          usage = obj?.usageMetadata || usage;
+          const delta = (cand?.content?.parts || []).map((x) => x.text || "").join("");
+          if (!delta) return;
+          raw += delta;
+          try { onChunk(delta, raw); }
+          catch (e) { console.warn("[review] onChunk lỗi UI, stream vẫn chạy:", e); }
+        });
+      } catch (err) {
+        if (!raw) return this.callGeminiReview(full, null); // chưa có chữ — thử một phát
+      }
+    } else {
+      let data;
+      try { data = await res.json(); }
+      catch (err) {
+        return { text: "Model trả về dữ liệu không đọc được. Bạn thử lại nhé.", grounded: false };
+      }
+      raw = data?.candidates?.[0]?.content?.parts?.map((x) => x.text).join("") || "";
+      finish = data?.promptFeedback?.blockReason || data?.candidates?.[0]?.finishReason;
+      usage = data?.usageMetadata;
+    }
+
+    const trace = {
+      kind: "deck-review",
+      intent: full.intent,
+      model,
+      latency_ms: Math.round(performance.now() - started),
+      streamed: stream,
+      usage: usage || null,
+      finish_reason: finish || null,
+      sent: full.disclosure,
+      answer: raw,
+    };
+    console.log("[AI TRACE]", JSON.stringify(trace, null, 2));
+    Explain.traces.push(trace);
+
+    if (!raw.trim()) {
+      return {
+        text: `Model không trả về nội dung${finish ? ` (lý do: ${finish})` : ""}.`,
+        grounded: false, trace,
+      };
+    }
+
+    return full.intent === "quiz"
+      ? { ...this.parseQuiz(raw), trace, truncated: finish === "MAX_TOKENS" }
+      : { text: raw.replace(/```+/g, "").trim(), trace, truncated: finish === "MAX_TOKENS" };
+  },
+
+  // Tách bài quiz thành cấu trúc để vẽ được nút "xem đáp án" — thay vì đổ
+  // nguyên khối markdown ra màn hình rồi lộ hết đáp án ngay dòng dưới câu hỏi.
+  //
+  // Model không phải lúc nào cũng theo đúng khuôn. Câu nào parse không ra
+  // đủ (thiếu đáp án, thiếu lựa chọn) thì BỎ câu đó chứ không vẽ nửa vời,
+  // và `text` giữ nguyên bản gốc để không mất gì nếu khuôn lệch hẳn.
+  parseQuiz(raw) {
+    const s = (raw || "").replace(/```+/g, "");
+    const items = [];
+    let group = 1;
+
+    // Cắt theo tiêu đề câu "### 1. ..." — mốc duy nhất bắt buộc trong khuôn
+    const chunks = s.split(/^###\s*/m).slice(1);
+    let cursor = 0;
+    for (const chunk of chunks) {
+      // Nhóm được xác định bằng vị trí của dòng "## NHÓM 2" trong bản gốc
+      const at = s.indexOf(chunk, cursor);
+      cursor = at + 1;
+      const before = s.slice(0, at);
+      // Mặc định là NHÓM 2 (từ nội dung), KHÔNG phải nhóm 1. Model không in
+      // tiêu đề nhóm nào — hay gặp khi học viên chưa hỏi câu nào nên nhóm 1
+      // rỗng — thì dán nhãn "từ câu bạn đã hỏi" lên câu lấy từ nội dung là
+      // nói sai về chính dữ liệu của mình. Chỉ nhận nhóm 1 khi có tiêu đề.
+      group = /##\s*NHÓM\s*2/i.test(before) ? 2
+        : (/##\s*NHÓM\s*1/i.test(before) ? 1 : 2);
+
+      const lines = chunk.split("\n");
+      const head = (lines.shift() || "").replace(/^\d+\.\s*/, "").trim();
+      const rest = lines.join("\n");
+
+      const options = [];
+      const optRe = /^\s*[-*]?\s*([A-D])[.)]\s*(.+)$/gm;
+      let m;
+      while ((m = optRe.exec(rest))) options.push({ key: m[1], text: m[2].trim() });
+
+      const ansM = rest.match(/ĐÁP\s*ÁN\s*:\s*([A-D])\b\s*[—\-–:]?\s*([^\n]*)/i);
+      const srcM = rest.match(/NGUỒN\s*:\s*trang\s*(\d+)/i);
+
+      if (!head || options.length < 2 || !ansM) continue;
+      items.push({
+        n: items.length + 1,
+        group,
+        question: head,
+        options,
+        answer: ansM[1].toUpperCase(),
+        why: (ansM[2] || "").trim(),
+        page: srcM ? parseInt(srcM[1], 10) : null,
+      });
+    }
+
+    return { quiz: items, text: items.length ? "" : s.trim(), rawQuiz: s };
   },
 
   // --- Quyết định 4: lời gọi vision thật (CP3) ---

@@ -13,14 +13,30 @@
 | Case thường | 8–10 | 8 (C12–C19) |
 | Case hiếm | 2–4 | 3 (C20–C22) |
 | Nhận diện click + giới hạn dữ liệu | — | 6 (C23–C28) |
+| **Ôn tập cuối buổi** (C29–C31) | — | 3 |
 | **Từ chatlog thật** (L01–L14) | ≥10 | **14** ✅ |
 | Hỏi tiếp / ký ức hội thoại (F01–F03) | — | 3 |
 | Hỏi bằng chat thuần, không khoanh vùng (T01–T06) | — | 6 |
 | Trên PDF thật (`d1-slide-hackathon.pdf`) | — | 4 (P01–P04) |
 | Phản ứng cảm xúc (E01) | — | 1 |
-| **Tổng** | ≥20 | **56** |
+| **Tổng** | ≥20 | **60** |
 
 Phủ 4 lớp chỗ khó: ① 5 · ② 7 · ③ 6 · ④ 4 — mỗi lớp ≥4, vượt yêu cầu ≥2.
+
+## Đổi kỳ vọng 31/07 — bốn case từ "phải từ chối" sang "phải ôn được"
+
+`C28` · `L09` · `L10` · `L12` trước đây kỳ vọng sản phẩm **từ chối** khi học viên đòi tóm tắt cả tài liệu hoặc xin quiz. Từ 31/07 sản phẩm có đường ôn tập nên bốn case đó đổi kỳ vọng thành **ôn được, nhưng chỉ trên những trang học viên đã tự mở**.
+
+Đây không phải hạ chuẩn. Thứ được bảo vệ vẫn y nguyên — tutor không đọc trang học viên chưa xem — chỉ khác là bảo vệ bằng **phạm vi dữ liệu** thay vì bằng **lời từ chối**. Ba điều kiện máy chấm mới siết đúng chỗ đó:
+
+| Điều kiện | Bắt lỗi gì |
+|---|---|
+| `onlySeenPages` | trang chưa mở lọt vào gói gửi đi |
+| `noImages` | đường ôn tập lỡ gửi ảnh trang |
+| `quizFromSeenPages` | quiz dẫn nguồn về một trang chưa từng xem (bịa số trang) |
+| `deckRefused` | mới xem 1 trang mà vẫn tóm tắt liều cả buổi |
+
+Ba trong bốn case đổi kỳ vọng (`L09`, `L10`, `L12`) là **câu nguyên văn của học viên thật** trong chatlog. Đó cũng là bằng chứng rõ nhất cho việc nên đổi: nhu cầu ôn cả buổi có thật và lặp lại, chỉ là cách đáp ứng cũ không có gì ngoài một lời từ chối.
 
 **E01 bổ sung sau phê giọng lượt 03** (bản phê 55 output thật): bộ case chưa đo phản ứng khi học viên **than nản** (*"mình học mãi phần này mà không hiểu gì luôn, nản quá :("*). Hành vi mong muốn: một câu đồng cảm ngắn rồi vào ngay nội dung — không thuyết giảng thái độ học, không từ chối. Máy chấm phần cơ học (`notRefused`, `maxPages`); chiều đồng cảm là việc của người chấm.
 

@@ -72,7 +72,9 @@ Ba điều cần biết:
 
 ## Từ chối theo bản chất yêu cầu — 3 biến thể
 
-`Explain.isOutOfScope()` trả **category** thay vì có/không: `task` (làm hộ/đáp án) · `logistics` (deadline/nộp bài/điểm cá nhân) · `bulk` (đọc cả tài liệu/sinh quiz). `REPLIES.refusal(cat)` trả lời từ chối **khớp lý do** — hết cảnh hỏi *"deadline?"* mà bị đáp *"mình không làm bài hộ"* (case C08 lượt 03).
+`Explain.isOutOfScope()` trả **category** thay vì có/không: `task` (làm hộ/đáp án) · `logistics` (deadline/nộp bài/điểm cá nhân) · `bulk` (đọc cả tài liệu). `REPLIES.refusal(cat)` trả lời từ chối **khớp lý do** — hết cảnh hỏi *"deadline?"* mà bị đáp *"mình không làm bài hộ"* (case C08 lượt 03).
+
+Từ 31/07, `Explain.reviewIntent()` chạy **trước** guardrail và lái nhánh `bulk` sang đường ôn tập (xem mục Giới hạn dữ liệu). `task` và `logistics` không đổi.
 
 Bài học đắt nhất ở đây là **từ chối oan**: từ khoá trần `"điểm của"` từng bắn nhầm câu hỏi nội dung *"tổng điểm của usecase này"* (L14). Quy tắc rút ra: từ khoá logistics phải đòi **đại từ nhân xưng** (`điểm của tôi/mình/em`), và máy chấm có điều kiện `notRefused` để lỗi này không lọt lần nữa. Kiểm nhanh guardrail sau mỗi lần sửa pattern: mở `eval/guardrail-check.html` (qua server tĩnh) — 19 câu chạy trực tiếp `Explain.isOutOfScope()` thật: 11 câu phải chặn đúng biến thể, 8 câu không được chặn oan.
 
@@ -206,7 +208,26 @@ Ràng buộc cứng, khai ở đầu [config.js](web/lib/config.js):
 | 5 | Câu ngoài phạm vi bị chặn **trước** khi đóng gói → không có gì rời máy | `Explain.run()` |
 | 6 | Mỗi câu trả lời kèm bảng **🔒 Đã gửi đi những gì** | `ExplainPanel.addDisclosure()` |
 
-`Explain.buildPayload()` là **chỗ duy nhất** dữ liệu rời khỏi máy học viên — soát hàm đó là soát được toàn bộ đường dữ liệu đi ra. File PDF nằm nguyên trong trình duyệt, không upload đi đâu.
+Bảng trên áp cho **đường hỏi–đáp một vùng**, tức mọi câu hỏi thường.
+
+### Đường thứ hai: ôn tập cuối buổi (31/07)
+
+Tóm tắt cả buổi và sinh quiz **có** nhắc tới nhiều trang trong một request — nói thẳng như vậy, đừng khai là vẫn 1 trang. Đổi lại nó chịu một trần khác, và về mặt riêng tư thì trần đó chặt hơn:
+
+| # | Giới hạn | Thực thi ở đâu |
+|---|---|---|
+| A | **Không bao giờ đọc một trang học viên chưa tự mở.** Không có bước quét sẵn cả file nào, kể cả lúc mở tài liệu | `DeckNotes.visit()` — chỗ DUY NHẤT ghi chú được sinh ra, và nó chỉ chạy trong `App.goToPage()` |
+| B | Ghi chú nhặt **dần** lúc học viên đi qua trang, từ đúng thứ app đã đọc để phục vụ trang đó (lớp text, hoặc câu tutor đã trả lời). Không đọc thêm lần nào chỉ để làm ghi chú | `DeckNotes._fromPage()` · `DeckNotes.noteFromAnswer()` |
+| C | Chỉ gửi **chữ đã rút gọn**: ≤240 ký tự/trang, ≤6000 ký tự cả gói. **Không ảnh trang nào** | `Explain.buildDeckPayload()` |
+| D | Bảng công khai ghi rõ gửi ghi chú của những trang **số mấy**, và học viên mới xem bao nhiêu phần tài liệu | `ExplainPanel.addDeckDisclosure()` |
+
+Nói gọn: trần của đường 1 là *"một trang"*; trần của đường 2 là *"chỉ những gì bạn đã tự xem, và chỉ ở dạng ghi chú"*.
+
+**Vì sao đổi.** Ba câu trong chatlog thật (`L09` `L10` `L12`) là học viên xin tóm tắt cả bài hoặc xin quiz, và sản phẩm cũ chỉ có một lời từ chối. Nhu cầu có thật và lặp lại; thứ cần bảo vệ không phải là lời từ chối mà là *"đừng đọc thứ học viên chưa xem"* — và thứ đó giữ nguyên.
+
+**Vẫn từ chối y như cũ**: `task` (làm hộ bài / đòi đáp án) và `logistics` (deadline / điểm số). Quiz để **tự** kiểm tra khác hẳn làm bài hộ: một bên học viên phải tự trả lời, một bên đưa sẵn đáp án cho bài đang bị chấm điểm.
+
+`Explain.buildPayload()` (đường 1) và `Explain.buildDeckPayload()` (đường 2) là **hai chỗ duy nhất** dữ liệu rời khỏi máy học viên — soát hai hàm đó là soát được toàn bộ đường dữ liệu đi ra. File PDF nằm nguyên trong trình duyệt, không upload đi đâu.
 
 ## Tính năng: quét ảnh khi PDF không đọc được text
 

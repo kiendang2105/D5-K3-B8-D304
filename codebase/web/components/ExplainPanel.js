@@ -299,6 +299,11 @@ const ExplainPanel = {
   // Công khai chính xác cái gì đã rời khỏi máy học viên.
   // Ràng buộc của tính năng: AI Tutor không được đọc/chuyển đi cả tài liệu.
   addDisclosure(div, d) {
+    // Ôn tập có trần dữ liệu khác hẳn (nhiều trang, nhưng chỉ ghi chú và
+    // chỉ trang đã xem) nên phải khai bằng bảng khác. Dùng chung bảng cũ
+    // là khai sai: nó ghi cứng "duy nhất trang N".
+    if (d.kind === "deck-review") return this.addDeckDisclosure(div, d);
+
     const box = el("details", "disclosure");
     const sum = el("summary");
     sum.textContent = `🔒 Đã gửi đi: 1 ảnh vùng ${d.imageW}×${d.imageH}px` +
@@ -339,6 +344,113 @@ const ExplainPanel = {
       ul.appendChild(li);
     }
     box.appendChild(ul);
+    div.appendChild(box);
+  },
+
+  // Bảng công khai của ĐƯỜNG ÔN TẬP. Khác bảng trên ở đúng thứ phải khác:
+  // đường này nhắc tới nhiều trang, nên nói thẳng ra là nhiều trang — và
+  // nói bù lại nó bị chặn ở đâu (chỉ trang đã xem, chỉ ghi chú, không ảnh).
+  // Khai "vẫn 1 trang" ở đây là nói dối.
+  addDeckDisclosure(div, d) {
+    const box = el("details", "disclosure deck");
+    const sum = el("summary");
+    sum.textContent =
+      `🔒 Đã gửi đi: ghi chú ${d.pages} trang (${d.noteChars} ký tự) · 0 ảnh`;
+    box.appendChild(sum);
+
+    const nums = (d.pageNums || []).join(", ");
+    const chuaXem = d.coverageTotal - d.coverageSeen;
+    const ul = el("ul");
+    const rows = [
+      `Trang gửi đi: <b>${d.pages} trang</b> — ${nums}. Đúng những trang <b>bạn đã tự mở</b>.`,
+      chuaXem > 0
+        ? `Trang bạn chưa mở: <b>${chuaXem} trang — KHÔNG gửi</b>, và tutor cũng chưa từng đọc.`
+        : "Bạn đã đi qua <b>cả tài liệu</b>, nên bản ôn phủ trọn buổi học.",
+      `Dạng dữ liệu: <b>ghi chú đã rút gọn</b> (tối đa ${CONFIG.DECK_NOTE_CHARS} ký tự/trang), ` +
+        "không phải text thô của trang.",
+      "Ảnh: <b>0</b>. Đường ôn tập không gửi ảnh trang nào.",
+      d.askedQuestions
+        ? `Câu hỏi của bạn trong buổi: <b>${d.askedQuestions} câu</b> (${d.askedChars} ký tự) — ` +
+          "lời của chính bạn, dùng để ra 5 câu quiz về chỗ bạn từng vướng."
+        : null,
+      "Tên file, trang chưa xem, ảnh trang: <b>không gửi</b>",
+    ];
+    for (const r of rows) {
+      if (!r) continue;
+      const li = el("li");
+      li.innerHTML = r;
+      ul.appendChild(li);
+    }
+    box.appendChild(ul);
+    div.appendChild(box);
+  },
+
+  // ---- Quiz ----
+  // Đáp án PHẢI giấu cho tới khi học viên tự chọn xong. Đổ cả câu hỏi lẫn
+  // đáp án ra một khối markdown thì mắt đọc luôn dòng dưới — bài quiz mất
+  // sạch tác dụng, thành một bản tóm tắt dài dòng.
+  addQuiz(div, items) {
+    const box = el("div", "quiz");
+
+    const cap = el("div", "quiz-cap");
+    const n1 = items.filter((q) => q.group === 1).length;
+    // Nói số câu THẬT SỰ có, không nói "10 câu" rồi hiện 6. Ghi chú ít thì
+    // ra ít câu là đúng — bịa cho đủ số mới là hỏng.
+    cap.innerHTML = mdBold(
+      `**${items.length} câu ôn tập** — ${n1} câu bám những chỗ bạn đã hỏi trong buổi, ` +
+      `${items.length - n1} câu từ nội dung buổi học.` +
+      (items.length < CONFIG.DECK_QUIZ_TOTAL
+        ? `\nÍt hơn ${CONFIG.DECK_QUIZ_TOTAL} câu vì ghi chú buổi này chỉ đủ cho ngần đó — ` +
+          "mở thêm trang rồi tạo lại sẽ được nhiều hơn."
+        : ""));
+    box.appendChild(cap);
+
+    let lastGroup = null;
+    for (const q of items) {
+      if (q.group !== lastGroup) {
+        lastGroup = q.group;
+        const h = el("div", "quiz-group");
+        h.textContent = q.group === 1
+          ? "① Từ những câu bạn đã hỏi" : "② Từ nội dung buổi học";
+        box.appendChild(h);
+      }
+
+      const card = el("div", "quiz-item");
+      const head = el("div", "quiz-q");
+      head.textContent = `${q.n}. ${q.question}`;
+      card.appendChild(head);
+
+      const opts = el("div", "quiz-opts");
+      const buttons = [];
+      for (const o of q.options) {
+        const b = el("button");
+        b.textContent = `${o.key}. ${o.text}`;
+        b.onclick = () => {
+          if (card.classList.contains("done")) return;
+          card.classList.add("done");
+          for (const other of buttons) {
+            other.disabled = true;
+            if (other.dataset.key === q.answer) other.classList.add("right");
+          }
+          if (o.key !== q.answer) b.classList.add("wrong");
+          reveal.hidden = false;
+        };
+        b.dataset.key = o.key;
+        buttons.push(b);
+        opts.appendChild(b);
+      }
+      card.appendChild(opts);
+
+      const reveal = el("div", "quiz-why");
+      reveal.hidden = true;
+      reveal.innerHTML = mdBold(
+        `**Đáp án: ${q.answer}**${q.why ? " — " + q.why : ""}` +
+        (q.page ? `  ·  *trang ${q.page}*` : ""));
+      card.appendChild(reveal);
+
+      box.appendChild(card);
+    }
+
     div.appendChild(box);
   },
 

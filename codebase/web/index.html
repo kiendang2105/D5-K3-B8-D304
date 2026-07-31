@@ -173,6 +173,11 @@
       <!-- Slide mẫu có tên riêng nên vẫn để chip; PDF thì ẩn đi -->
       <div class="page-tabs" id="page-tabs"></div>
     </div>
+
+    <!-- Tiến độ ghi chú buổi học. Phải hiện, vì nó là thứ DUY NHẤT quyết
+         định phần ôn tập biết được bao nhiêu: tutor chỉ nhớ trang học viên
+         đã tự mở, không tự đọc trước cả file. -->
+    <div class="deck-bar" id="deck-bar" hidden></div>
   </section>
 
   <!-- ---------- Panel VLearn Tutor ---------- -->
@@ -214,6 +219,7 @@
 <script src="lib/config.js"></script>
 <script src="lib/mock-data.js"></script>
 <script src="lib/conversation.js"></script>
+<script src="lib/deck-notes.js"></script>
 <script src="lib/pdf-source.js"></script>
 <script src="lib/content-detector.js"></script>
 <script src="lib/mock-ai.js"></script>

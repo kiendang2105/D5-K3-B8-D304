@@ -438,6 +438,64 @@ body.dark .msg.user .bubble { color: #0b1020; }
 }
 .scan-evidence .fix-page:hover { border-color: var(--indigo); color: var(--indigo); }
 
+/* ============================================================
+   Tiến độ ghi chú buổi học + quiz ôn tập
+   ============================================================ */
+
+/* Băng dưới thanh trang. Phải nhìn thấy được: nó là thứ duy nhất quyết
+   định phần ôn tập biết được bao nhiêu. */
+.deck-bar {
+  flex: none; margin: -8px 18px 14px; padding: 8px 14px;
+  border: 1px solid var(--border); border-top: none; border-radius: 0 0 14px 14px;
+  background: var(--panel);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 11.5px; color: var(--muted);
+}
+.deck-meter {
+  width: 84px; height: 6px; flex: none; border-radius: 999px;
+  background: var(--bg); overflow: hidden;
+}
+.deck-meter i { display: block; height: 100%; background: var(--indigo); border-radius: 999px; }
+.deck-bar.full .deck-meter i { background: #16a34a; }
+.deck-text b { color: var(--text); }
+.deck-bar button {
+  padding: 5px 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--indigo); background: var(--indigo-soft);
+  color: var(--indigo); font-family: inherit; font-size: 11.5px; font-weight: 700;
+}
+.deck-bar button:hover { background: var(--indigo); color: #fff; }
+
+/* Quiz. Đáp án giấu tới khi học viên tự chọn — hiện sẵn là mất tác dụng. */
+.quiz { margin-top: 10px; display: flex; flex-direction: column; gap: 9px; }
+.quiz-cap { font-size: 12px; color: var(--muted); }
+.quiz-group {
+  font-size: 11px; font-weight: 800; letter-spacing: .03em;
+  color: var(--indigo); margin-top: 4px;
+}
+.quiz-item {
+  padding: 11px 12px; border-radius: 11px;
+  border: 1px solid var(--border); background: var(--panel);
+}
+.quiz-q { font-size: 12.5px; font-weight: 700; line-height: 1.5; margin-bottom: 8px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 5px; }
+.quiz-opts button {
+  text-align: left; padding: 7px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg);
+  font-family: inherit; font-size: 12px; color: var(--text); line-height: 1.45;
+}
+.quiz-opts button:hover:not(:disabled) { border-color: var(--indigo); }
+.quiz-opts button:disabled { cursor: default; opacity: .75; }
+.quiz-opts button.right {
+  border-color: #16a34a; background: #dcfce7; color: #14532d; opacity: 1; font-weight: 700;
+}
+.quiz-opts button.wrong { border-color: #dc2626; background: #fee2e2; color: #7f1d1d; opacity: 1; }
+body.dark .quiz-opts button.right { background: #0f2c1c; color: #86efac; }
+body.dark .quiz-opts button.wrong { background: #2c1315; color: #fca5a5; }
+.quiz-why {
+  margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+  background: var(--indigo-soft); font-size: 11.5px; line-height: 1.6;
+}
+
 /* Công khai dữ liệu đã gửi đi */
 .disclosure {
   margin-top: 9px; padding: 9px 11px; border-radius: 11px;
