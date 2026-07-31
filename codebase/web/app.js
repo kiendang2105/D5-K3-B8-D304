@@ -18,6 +18,9 @@ const App = {
   source: null,
   currentPage: null,
   busy: false,
+  routing: false,   // đang trong routeChat (kể cả đoạn await getPage TRƯỚC ask) — chống double-submit
+  paging: false,    // đang lật trang — chặn giữ phím ← → dồn hàng chục lượt vẽ
+  pendingStep: null,// lần nhấn đến trong lúc đang vẽ, chạy nốt khi vẽ xong
   lastAsk: null,    // { question, region, page } — vùng đang bàn, để nối câu hỏi tiếp
   turns: [],        // lịch sử hội thoại (chỉ chữ), dùng cho câu hỏi tiếp
   chitchatTurn: 0,  // đổi câu đáp qua lại cho đỡ máy móc
@@ -61,6 +64,11 @@ const App = {
       if (ev.key === "Enter") this.jumpToTyped();
     });
     pgInput.addEventListener("blur", () => this.renderPager());
+
+    // Bắt phím ở tầng document chứ không gắn vào canvas: học viên không bấm
+    // vào slide trước rồi mới bấm phím, họ chỉ bấm phím. Gắn vào canvas thì
+    // phải focus đúng chỗ mới ăn — đọc tài liệu không ai làm vậy.
+    document.addEventListener("keydown", (ev) => this.onKeyNav(ev));
 
     this.buildDeckButtons();
     this.restoreKey();
@@ -255,13 +263,58 @@ const App = {
   },
 
   async step(delta) {
+    // Giữ phím ← hoặc bấm nút liên tục thì mỗi lần nhấn lại gọi goToPage, mà
+    // vẽ một trang PDF mất một lúc — không chặn thì hàng chục lượt vẽ chồng
+    // lên nhau và cuối cùng dừng ở trang nào là hên xui.
+    //
+    // Chặn thì phải GỘP chứ không được vứt: vứt thì nhấn nhanh mấy cái chỉ ăn
+    // một cái, người dùng tưởng bàn phím lag. Gộp = nhớ lần nhấn cuối, vẽ xong
+    // trang này thì đi tiếp — cùng lắm là chạy sau tay người một nhịp, nhưng
+    // không mất lần nhấn nào.
+    if (this.paging) { this.pendingStep = delta; return; }
+
     const list = this.pageList();
     const i = list.indexOf(this.currentPage ? this.currentPage.num : -1);
     if (i < 0) return;
     const j = delta === -Infinity ? 0
       : delta === Infinity ? list.length - 1
       : Math.max(0, Math.min(list.length - 1, i + delta));
-    if (list[j] !== list[i]) await this.goToPage(list[j]);
+    if (list[j] === list[i]) return;
+
+    this.paging = true;
+    try {
+      await this.goToPage(list[j]);
+    } finally {
+      this.paging = false;
+      const cho = this.pendingStep;
+      this.pendingStep = null;
+      if (cho != null) this.step(cho);
+    }
+  },
+
+  // Lật trang bằng phím mũi tên — thao tác mặc định của mọi trình đọc tài liệu.
+  //
+  // Ba chỗ phải chừa ra, nếu không là cướp phím của người dùng:
+  //   1. Đang gõ trong ô chat / ô hỏi vùng / ô số trang: ← → là để di con trỏ
+  //      trong câu đang viết, lật trang giữa lúc soạn câu hỏi là mất chỗ.
+  //   2. Có Ctrl / Alt / Cmd: Alt+← là "quay lại" của trình duyệt.
+  //   3. ↑ ↓ để nguyên cho việc cuộn trang.
+  onKeyNav(ev) {
+    if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.isComposing) return;
+
+    const t = ev.target;
+    if (t && t.closest &&
+        t.closest("input, textarea, select, [contenteditable='true']")) return;
+
+    const delta = {
+      ArrowLeft: -1, PageUp: -1,
+      ArrowRight: 1, PageDown: 1,
+      Home: -Infinity, End: Infinity,
+    }[ev.key];
+    if (delta === undefined) return;
+
+    ev.preventDefault(); // ← → không kéo thanh cuộn ngang nữa
+    this.step(delta);
   },
 
   async jumpToTyped() {
